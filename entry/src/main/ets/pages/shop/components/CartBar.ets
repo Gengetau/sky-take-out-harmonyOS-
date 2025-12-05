@@ -1,14 +1,37 @@
 import { CartService } from '../../../service/CartService';
+import { CartDialog } from './CartDialog';
 
 /**
  * 购物车条
  */
 @Component
 export struct CartBar {
-  // 🛒 使用 @ObjectLink 连接由父组件传入的 CartService 实例
-  @ObjectLink cartService: CartService;
+  @StorageProp('CartUpdateSignal') @Watch('onUpdate') cartSignal: number = 0;
+  @State totalCount: number = 0;
+  @State totalPrice: number = 0;
+  // ✨ 修正1：升级为 @State，使其能为子组件的 @ObjectLink 提供数据源
+  @State cartService: CartService = CartService.getInstance();
   // 起送费可以作为常量或从配置中读取
   private minOrderPrice: number = 20;
+  // 弹窗控制器
+  private cartDialogController: CustomDialogController = new CustomDialogController({
+    builder: CartDialog({
+      cartService: this.cartService
+    }),
+    alignment: DialogAlignment.Bottom,
+    customStyle: true,
+    autoCancel: true
+  });
+
+  aboutToAppear() {
+    this.onUpdate();
+  }
+
+  onUpdate() {
+    // 每次信号变了，重新从 Service 拉取最新数据
+    this.totalCount = this.cartService.totalCount;
+    this.totalPrice = this.cartService.totalPrice;
+  }
 
   build() {
     // 外层 Stack 用于让图标悬浮在 Bar 之上
@@ -21,8 +44,8 @@ export struct CartBar {
 
         // 中间：价格信息
         Column() {
-          if ( this.cartService.totalCount > 0 ) {
-            Text(`¥ ${ this.cartService.totalPrice.toFixed(2) }`)
+          if ( this.totalCount > 0 ) {
+            Text(`¥ ${ this.totalPrice.toFixed(2) }`)
               .fontSize(18).fontColor(Color.White).fontWeight(FontWeight.Bold)
             Text('预估配送费 ¥6').fontSize(10).fontColor('#999999')
           } else {
@@ -33,7 +56,7 @@ export struct CartBar {
 
         // 右侧：按钮
         Row() {
-          if ( this.cartService.totalPrice >= this.minOrderPrice ) {
+          if ( this.totalPrice >= this.minOrderPrice ) {
             Button('去结算')
               .type(ButtonType.Normal)
               .backgroundColor('#FFCC00')
@@ -43,6 +66,8 @@ export struct CartBar {
               .height('100%')
               .onClick(() => {
                 console.info('喵！去付钱！');
+                // ✨ 修正2：返回 true 来阻止事件冒泡
+                return true;
               })
           } else {
             Text(`¥${ this.minOrderPrice }起送`)
@@ -50,6 +75,11 @@ export struct CartBar {
           }
         }.height('100%')
       }
+      .onClick(() => {
+        if ( this.cartService.totalCount > 0 ) {
+          this.cartDialogController.open();
+        }
+      })
       .width('94%')
       .height(50)
       .backgroundColor('#222222')

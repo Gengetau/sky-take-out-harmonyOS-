@@ -9,32 +9,33 @@ import { CartService } from '../../../service/CartService';
 @Component
 export struct DishCard {
   dish: DishVO | undefined;
-  // ✨ 【最终奥义】从传送带上“消费” cartService 状态
-  @Consume('cartService') cartService: CartService;
   public onOpenFlavorDialog: (dish: DishVO) => void = () => {
   };
+  // 📡 监听广播：只要 AppStorage 里的 'CartUpdateSignal' 变了，就执行 onCartUpdate
+  @StorageProp('CartUpdateSignal') @Watch('updateQuantity') cartSignal: number = 0;
+  // 🔢 本地状态：当前菜品的数量
+  @State quantity: number = 0;
+  // 获取 Service 实例 (仅用于调用方法，不用于监听)
+  private cartService = CartService.getInstance();
 
   aboutToAppear(): void {
-    // console.info(`喵！[Trace] DishCard aboutToAppear() for dish: ${this.dish?.id}`);
+    // 初始化时先算一次
+    this.updateQuantity();
   }
 
-  // ✨ 普通的 get 方法，其响应性由 @Consume 提供的 cartService 来保证
-  get totalQuantity(): number {
-    // console.info(`喵！[Trace] DishCard get totalQuantity for dish: ${this.dish?.id}`);
+  // ⚡ 当信号变化时，重新计算数量
+  updateQuantity() {
     if (!this.dish ) {
-      return 0;
+      return;
     }
-    const count = this.cartService.getTotalQuantityForDish(this.dish.id);
-    return count;
-  }
 
-  get quantity(): number {
-    // console.info(`喵！[Trace] DishCard get quantity for dish: ${this.dish?.id}`);
-    if (!this.dish ) {
-      return 0;
-    }
-    const count = this.cartService.getDishQuantity(this.dish.id, '');
-    return count;
+    // 判断逻辑：如果有规格，我们显示总数；没规格，显示单品数量
+    // (通常列表页显示的是该菜品所有规格的总数，或者只操作默认规格)
+    // 这里我们统一逻辑：DishCard 显示该 DishID 下的所有数量
+    this.quantity = this.cartService.getTotalQuantityForDish(this.dish.id);
+
+    // 如果需要精确匹配无规格的：
+    // this.quantity = this.cartService.getDishQuantity(this.dish.id, '');
   }
 
   build() {
@@ -74,20 +75,17 @@ export struct DishCard {
                   .height(28)
                   .padding({ left: 12, right: 12 })
                   .fontSize(12)
-                  .onClick(() => {
-                    this.onOpenFlavorDialog(this.dish!);
-                  })
+                  .onClick(() => this.onOpenFlavorDialog(this.dish!))
 
-                // ✨ 逻辑修正：带规格的菜品，徽章数量应该用 totalQuantity
-                if ( this.totalQuantity > 0 ) {
-                  Text(this.totalQuantity.toString())
+                // 🔴 数量徽章 (监听 this.quantity)
+                if ( this.quantity > 0 ) {
+                  Text(this.quantity.toString())
                     .fontSize(10)
                     .fontColor(Color.White)
                     .backgroundColor('#FF3B30')
-                    .height(16)
-                    .constraintSize({ minWidth: 16 }) // 正确的设置最小宽度的方法
-                    .padding({ left: 4, right: 4 })
                     .borderRadius(8)
+                    .padding({ left: 4, right: 4 })
+                    .height(16)
                     .textAlign(TextAlign.Center)
                     .offset({ x: 8, y: -8 })
                 }
@@ -96,50 +94,50 @@ export struct DishCard {
               // ✨ 逻辑修正：无规格的菜品，应该用 quantity
               if ( this.quantity > 0 ) {
                 Row({ space: 8 }) {
+                  // ➖ 减号
                   Button() {
                     Image($r('app.media.ic_decrease'))
-                      .width(20).height(20)
+                      .width(24)
+                      .height(24)
+                      .fillColor('#AAAAAA') // 假设您有减号图，或者用 Text('-')
                   }
                   .width(28)
                   .height(28)
                   .type(ButtonType.Circle)
-                  .backgroundColor('#FFCC00')
+                  .backgroundColor('transparent')
+                  .border({ width: 1, color: '#DDDDDD' }) // 减号通常是空心或灰底
                   .onClick(() => {
-                    console.info(`喵！[Trace] DECREASE button clicked for dish: ${ this.dish!.id }`);
+                    // 调用减少方法
                     this.cartService.decreaseItemByDish(this.dish!.id, '');
                   })
 
-                  // ✨ 逻辑修正：显示 quantity
-                  Text(this.quantity.toString())
-                    .fontSize(16).fontWeight(FontWeight.Medium)
+                  // 🔢 数量
+                  Text(this.quantity.toString()).fontSize(16).fontWeight(FontWeight.Medium)
 
+                  // ➕ 加号
                   Button() {
-                    Image($r('app.media.ic_increase'))
-                      .width(20).height(20)
+                    Image($r('app.media.ic_increase')).width(24).height(24) // 假设您有加号图，或者用 Text('+')
                   }
                   .width(28)
                   .height(28)
                   .type(ButtonType.Circle)
                   .backgroundColor('#FFCC00')
                   .onClick(() => {
-                    console.info(`喵！[Trace] INCREASE button clicked for dish: ${ this.dish!.id }`);
                     this.cartService.addItem(this.dish!, '');
                   })
                 }
                 .alignItems(VerticalAlign.Center)
               } else {
                 Button() {
-                  Image($r('app.media.ic_increase'))
-                    .width(20).height(20)
+                  Image($r('app.media.ic_increase')).width(24).height(24)
                 }
                 .width(28)
                 .height(28)
                 .type(ButtonType.Circle)
                 .backgroundColor('#FFCC00')
                 .onClick(() => {
-                  console.info(`喵！[Trace] ADD button clicked for dish: ${ this.dish!.id }`);
                   this.cartService.addItem(this.dish!, '');
-                  promptAction.showToast({ message: `${ this.dish!.name } 已加入购物车` });
+                  promptAction.showToast({ message: '加购成功' }); // 可选：要不要提示看体验
                 })
               }
             }

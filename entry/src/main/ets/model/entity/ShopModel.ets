@@ -44,19 +44,19 @@ export class DishFlavor {
 export function parseFlavorOptions(value: string): string[] {
   try {
     // 检查字符串是否看起来像一个数组
-    if (value && value.startsWith('[') && value.endsWith(']')) {
-      const options:string[] = JSON.parse(value);
-      if (Array.isArray(options)) {
+    if ( value && value.startsWith('[') && value.endsWith(']') ) {
+      const options: string[] = JSON.parse(value);
+      if ( Array.isArray(options) ) {
         return options;
       }
     }
     // 如果它不是JSON数组字符串 (比如 "加冰", "标准"), 但也不是空的,
     // 就把它当作一个单一元素的数组返回
-    return value ? [value] : [];
-  } catch (e) {
-    console.error(`[ShopModel] 解析口味value失败: "${value}"`, e);
+    return value ? [ value ] : [];
+  } catch ( e ) {
+    console.error(`[ShopModel] 解析口味value失败: "${ value }"`, e);
     // 如果解析JSON出错，也把它当作单一元素返回，保证UI不崩溃
-    return value ? [value] : [];
+    return value ? [ value ] : [];
   }
 }
 
@@ -100,6 +100,8 @@ export class DishQueryDTO {
   }
 }
 
+// 监听装饰器
+@Observed
 export class CartItem {
   dishId: number;
   name: string;

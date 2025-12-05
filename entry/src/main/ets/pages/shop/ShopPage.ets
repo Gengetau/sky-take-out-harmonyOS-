@@ -1,5 +1,4 @@
 import { promptAction } from '@kit.ArkUI';
-import { getLocalImage } from '../../common/utils/ResourceMap';
 import { CategoryWithDishes } from '../../model/entity/MockData';
 import { DishVO } from '../../model/entity/ShopModel';
 import { CartService } from '../../service/CartService';
@@ -39,7 +38,7 @@ export struct ShopPage {
         }
       }
     }),
-    alignment: DialogAlignment.Bottom, // 底部弹出
+    alignment: DialogAlignment.Center, // 中间弹出
     customStyle: true // 使用自定义样式 (去默认圆角和边距)
   });
 
@@ -141,7 +140,7 @@ export struct ShopPage {
         }
 
         // 底部购物车
-        CartBar({ cartService: this.cartService })
+        CartBar()
           .height(120)
       }
       .height('100%')
