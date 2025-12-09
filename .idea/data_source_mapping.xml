@@ -2,6 +2,5 @@
 <project version="4">
   <component name="DataSourcePerFileMappings">
     <file url="file://$APPLICATION_CONFIG_DIR$/consoles/db/b1e5bc51-a3e3-4f99-b71d-c622ecb3a9ec/console.sql" value="b1e5bc51-a3e3-4f99-b71d-c622ecb3a9ec" />
-    <file url="file://$PROJECT_DIR$/sky.sql" value="b1e5bc51-a3e3-4f99-b71d-c622ecb3a9ec" />
   </component>
 </project>

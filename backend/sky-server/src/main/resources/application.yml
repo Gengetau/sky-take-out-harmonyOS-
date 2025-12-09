@@ -6,6 +6,9 @@ spring:
     active: dev
   main:
     allow-circular-references: true
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
   datasource:
     druid:
       driver-class-name: ${sky.datasource.driver-class-name}
@@ -13,13 +16,32 @@ spring:
       username: ${sky.datasource.username}
       password: ${sky.datasource.password}
 
-mybatis:
-  #mapper配置文件
+  # Redis 配置 (缓存)
+  redis:
+    cluster:
+      nodes:
+        - 120.55.93.210:6379
+        - 120.55.93.210:6380
+        - 120.55.93.210:6381
+      max-redirects: 3
+    lettuce:
+      pool:
+        max-active: 10
+        max-idle: 10
+        min-idle: 1
+        time-between-eviction-runs: 10s
+    password: 1234
+
+# MyBatis / MyBatis Plus 配置
+mybatis-plus:
+  # 映射文件位置 (注意：如果是 MyBatis Plus，这里改用 mybatis-plus)
   mapper-locations: classpath:mapper/*.xml
-  type-aliases-package: com.sky.entity
   configuration:
-    #开启驼峰命名
+    # 开启驼峰命名映射 (user_name -> userName)
     map-underscore-to-camel-case: true
+    # 打印 SQL 日志 (方便调试)
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  type-aliases-package: com.sky.entity
 
 logging:
   level:

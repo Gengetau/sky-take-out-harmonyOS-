@@ -1,5 +1,6 @@
 package com.sky.entity;
 
+import com.baomidou.mybatisplus.annotation.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -12,34 +13,40 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@TableName(value = "employee")
 public class Employee implements Serializable {
-
-    private static final long serialVersionUID = 1L;
-
-    private Long id;
-
-    private String username;
-
-    private String name;
-
-    private String password;
-
-    private String phone;
-
-    private String sex;
-
-    private String idNumber;
-
-    private Integer status;
-
-    //@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime createTime;
-
-    //@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime updateTime;
-
-    private Long createUser;
-
-    private Long updateUser;
-
+	
+	private static final long serialVersionUID = 1L;
+	
+	@TableId(type = IdType.AUTO)
+	private Long id;
+	
+	private String username;
+	
+	private String name;
+	
+	private String password;
+	
+	private String salt;
+	
+	private String phone;
+	
+	private String sex;
+	
+	private String idNumber;
+	
+	private Integer status;
+	
+	@TableField(fill = FieldFill.INSERT)
+	private LocalDateTime createTime;
+	
+	@TableField(fill = FieldFill.INSERT_UPDATE)
+	private LocalDateTime updateTime;
+	
+	@TableField(fill = FieldFill.INSERT)
+	private Long createUser;
+	
+	@TableField(fill = FieldFill.INSERT_UPDATE)
+	private Long updateUser;
+	
 }
