@@ -22,7 +22,7 @@ export struct ShopPage {
   // 3.控制器
   private rightScroller: Scroller = new Scroller();
   // 4.服务实例
-  // ✨ 【最终奥义】将 cartService “提供”给所有后代组件
+  // 将 cartService “提供”给所有后代组件
   @Provide('cartService') cartService: CartService = CartService.getInstance();
   // 5.标志变量
   private isClickScroll: boolean = false;
