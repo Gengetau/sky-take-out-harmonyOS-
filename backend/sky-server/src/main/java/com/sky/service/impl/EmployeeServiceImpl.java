@@ -4,11 +4,13 @@ import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.crypto.digest.DigestAlgorithm;
 import cn.hutool.crypto.digest.Digester;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.sky.constant.MessageConstant;
 import com.sky.constant.StatusConstant;
 import com.sky.dto.EmployeeDTO;
 import com.sky.dto.EmployeeLoginDTO;
+import com.sky.dto.EmployeePageQueryDTO;
 import com.sky.entity.Employee;
 import com.sky.exception.AccountLockedException;
 import com.sky.exception.AccountNotFoundException;
@@ -18,12 +20,15 @@ import com.sky.service.EmployeeService;
 import com.sky.utils.PasswordUtil;
 import com.sky.vo.EmployeeLoginVO;
 import jodd.util.Base64;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class EmployeeServiceImpl extends ServiceImpl<EmployeeMapper, Employee>
 		implements EmployeeService {
+	@Autowired
+	private EmployeeMapper employeeMapper;
 	
 	/**
 	 * 员工登录
@@ -31,6 +36,7 @@ public class EmployeeServiceImpl extends ServiceImpl<EmployeeMapper, Employee>
 	 * @param employeeLoginDTO
 	 * @return
 	 */
+	@Override
 	public EmployeeLoginVO login(EmployeeLoginDTO employeeLoginDTO) {
 		String username = employeeLoginDTO.getUsername();
 		String password = employeeLoginDTO.getPassword();
@@ -102,6 +108,23 @@ public class EmployeeServiceImpl extends ServiceImpl<EmployeeMapper, Employee>
 		save(newEmployee);
 		// 5. 返回结果
 		return Result.success();
+	}
+	
+	@Override
+	public Result<Page<Employee>> getEmployeeByPage(EmployeePageQueryDTO pageQueryDTO) {
+		// 1.获取数据
+		int currentPage = pageQueryDTO.getPage();
+		int pageSize = pageQueryDTO.getPageSize();
+		// 2.创建分页对象
+		Page<Employee> page = new Page<>(currentPage, pageSize);
+		LambdaQueryWrapper<Employee> queryWrapper = new LambdaQueryWrapper<>();
+		// 3.判断是否根据名字查询
+		queryWrapper.eq(pageQueryDTO.getName() != null,
+				Employee::getName, pageQueryDTO.getName());
+		// 4.查询结果
+		Page<Employee> employeePage = employeeMapper.selectPage(page, queryWrapper);
+		// 5.返回结果
+		return Result.success(employeePage);
 	}
 	
 }
