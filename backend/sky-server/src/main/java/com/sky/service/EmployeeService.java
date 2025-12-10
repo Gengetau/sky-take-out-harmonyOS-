@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.sky.dto.EmployeeDTO;
 import com.sky.dto.EmployeeLoginDTO;
 import com.sky.dto.EmployeePageQueryDTO;
+import com.sky.dto.PasswordEditDTO;
 import com.sky.entity.Employee;
 import com.sky.result.Result;
 import com.sky.vo.EmployeeLoginVO;
@@ -27,4 +28,6 @@ public interface EmployeeService extends IService<Employee> {
 	Result<String> updateEmployee(EmployeeDTO employeeDTO);
 	
 	Result<String> updateEmployeeStatus(Integer status, Long id);
+	
+	Result<String> editPassword(PasswordEditDTO passwordEditDTO);
 }
