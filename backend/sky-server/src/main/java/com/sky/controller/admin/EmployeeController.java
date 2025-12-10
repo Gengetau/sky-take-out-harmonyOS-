@@ -102,6 +102,18 @@ public class EmployeeController {
 	}
 	
 	/**
+	 * @param status 状态
+	 * @param id     员工id
+	 * @return Result<String>
+	 * @MethodName: updateEmployeeStatus
+	 * @Description: 修改员工状态
+	 */
+	@PostMapping("/status/{status}")
+	public Result<String> updateEmployeeStatus(@PathVariable Integer status, Long id) {
+		return employeeService.updateEmployeeStatus(status, id);
+	}
+	
+	/**
 	 * 退出
 	 *
 	 */

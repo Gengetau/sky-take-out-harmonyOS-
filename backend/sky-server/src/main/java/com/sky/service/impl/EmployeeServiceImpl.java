@@ -152,4 +152,21 @@ public class EmployeeServiceImpl extends ServiceImpl<EmployeeMapper, Employee>
 		return Result.success();
 	}
 	
+	@Override
+	@Transactional(rollbackFor = Exception.class)
+	public Result<String> updateEmployeeStatus(Integer status, Long id) {
+		// 1.查询
+		Employee employee = getById(id);
+		// 2.校验
+		if (employee == null) {
+			throw new AccountNotFoundException(MessageConstant.ACCOUNT_NOT_FOUND);
+		}
+		// 3.改变状态
+		employee.setStatus(status);
+		// 4.修改
+		updateById(employee);
+		// 5.返回
+		return Result.success();
+	}
+	
 }

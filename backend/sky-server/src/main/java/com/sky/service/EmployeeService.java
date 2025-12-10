@@ -25,4 +25,6 @@ public interface EmployeeService extends IService<Employee> {
 	Result<Page<EmployeeVO>> getEmployeeByPage(EmployeePageQueryDTO pageQueryDTO);
 	
 	Result<String> updateEmployee(EmployeeDTO employeeDTO);
+	
+	Result<String> updateEmployeeStatus(Integer status, Long id);
 }
