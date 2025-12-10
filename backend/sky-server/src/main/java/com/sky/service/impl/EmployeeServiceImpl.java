@@ -122,7 +122,7 @@ public class EmployeeServiceImpl extends ServiceImpl<EmployeeMapper, Employee>
 		Page<Employee> page = new Page<>(currentPage, pageSize);
 		LambdaQueryWrapper<Employee> queryWrapper = new LambdaQueryWrapper<>();
 		// 3.判断是否根据名字查询
-		queryWrapper.eq(pageQueryDTO.getName() != null,
+		queryWrapper.like(pageQueryDTO.getName() != null,
 				Employee::getName, pageQueryDTO.getName());
 		// 4.查询结果
 		Page<Employee> employeePage = employeeMapper.selectPage(page, queryWrapper);
