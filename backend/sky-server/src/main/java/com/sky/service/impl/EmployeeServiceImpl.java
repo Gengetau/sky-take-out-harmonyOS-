@@ -131,8 +131,25 @@ public class EmployeeServiceImpl extends ServiceImpl<EmployeeMapper, Employee>
 		List<EmployeeVO> vos = BeanUtil.copyToList(employeePage.getRecords(), EmployeeVO.class);
 		voPage.setRecords(vos);
 		voPage.setTotal(page.getTotal());
-		// 5.返回结果
+		// 6.返回结果
 		return Result.success(voPage);
+	}
+	
+	@Override
+	@Transactional(rollbackFor = Exception.class)
+	public Result<String> updateEmployee(EmployeeDTO employeeDTO) {
+		// 1.查询
+		Employee employee = getById(employeeDTO.getId());
+		// 2.校验
+		if (employee == null) {
+			throw new AccountNotFoundException(MessageConstant.ACCOUNT_NOT_FOUND);
+		}
+		// 3.复制
+		BeanUtil.copyProperties(employeeDTO, employee);
+		// 4.修改
+		updateById(employee);
+		// 5.返回
+		return Result.success();
 	}
 	
 }

@@ -91,11 +91,21 @@ public class EmployeeController {
 	}
 	
 	/**
+	 * @param employeeDTO 信息修改表单
+	 * @return Result<String>
+	 * @MethodName: updateEmployee
+	 * @Description: 修改员工信息
+	 */
+	@PutMapping
+	public Result<String> updateEmployee(@RequestBody EmployeeDTO employeeDTO) {
+		return employeeService.updateEmployee(employeeDTO);
+	}
+	
+	/**
 	 * 退出
 	 *
 	 */
 	@PostMapping("/logout")
-	
 	public Result<String> logout() {
 		BaseContext.removeCurrentId();
 		return Result.success();
