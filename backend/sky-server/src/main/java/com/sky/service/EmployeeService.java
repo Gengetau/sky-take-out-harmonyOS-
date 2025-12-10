@@ -8,6 +8,7 @@ import com.sky.dto.EmployeePageQueryDTO;
 import com.sky.entity.Employee;
 import com.sky.result.Result;
 import com.sky.vo.EmployeeLoginVO;
+import com.sky.vo.EmployeeVO;
 
 public interface EmployeeService extends IService<Employee> {
 	
@@ -21,5 +22,5 @@ public interface EmployeeService extends IService<Employee> {
 	
 	Result<String> saveEmployee(EmployeeDTO employeeDTO);
 	
-	Result<Page<Employee>> getEmployeeByPage(EmployeePageQueryDTO pageQueryDTO);
+	Result<Page<EmployeeVO>> getEmployeeByPage(EmployeePageQueryDTO pageQueryDTO);
 }
