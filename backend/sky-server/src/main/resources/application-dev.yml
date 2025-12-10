@@ -1,8 +1,14 @@
 sky:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    host: 120.55.93.210
+    host: 118.31.246.210
     port: 3306
     database: sky_take_out
     username: root
     password: xwq221319
+spring:
+  redis:
+    host: 118.31.246.210
+    port: 6379
+    password: 123456
+    database: 0
