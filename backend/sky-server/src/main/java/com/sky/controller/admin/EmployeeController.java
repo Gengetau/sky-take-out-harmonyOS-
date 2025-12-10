@@ -1,17 +1,18 @@
 package com.sky.controller.admin;
 
+import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.sky.constant.JwtClaimsConstant;
 import com.sky.context.BaseContext;
 import com.sky.dto.EmployeeDTO;
 import com.sky.dto.EmployeeLoginDTO;
 import com.sky.dto.EmployeePageQueryDTO;
-import com.sky.entity.Employee;
 import com.sky.properties.JwtProperties;
 import com.sky.result.Result;
 import com.sky.service.EmployeeService;
 import com.sky.utils.JwtUtil;
 import com.sky.vo.EmployeeLoginVO;
+import com.sky.vo.EmployeeVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -73,8 +74,20 @@ public class EmployeeController {
 	 * @Description: 员工分页查询
 	 */
 	@GetMapping("/page")
-	public Result<Page<Employee>> getEmployeeByPage(EmployeePageQueryDTO pageQueryDTO) {
+	public Result<Page<EmployeeVO>> getEmployeeByPage(EmployeePageQueryDTO pageQueryDTO) {
 		return employeeService.getEmployeeByPage(pageQueryDTO);
+	}
+	
+	/**
+	 * @param id 员工id
+	 * @return Result<Employee>
+	 * @MethodName: getEmployeeById
+	 * @Description: 根据id查询员工信息
+	 */
+	@GetMapping("/{id}")
+	public Result<EmployeeVO> getEmployeeById(@PathVariable Long id) {
+		EmployeeVO vo = BeanUtil.copyProperties(employeeService.getById(id), EmployeeVO.class);
+		return Result.success(vo);
 	}
 	
 	/**
@@ -82,6 +95,7 @@ public class EmployeeController {
 	 *
 	 */
 	@PostMapping("/logout")
+	
 	public Result<String> logout() {
 		BaseContext.removeCurrentId();
 		return Result.success();

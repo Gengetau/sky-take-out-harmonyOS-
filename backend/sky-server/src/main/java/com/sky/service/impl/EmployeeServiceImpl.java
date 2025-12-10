@@ -19,10 +19,13 @@ import com.sky.result.Result;
 import com.sky.service.EmployeeService;
 import com.sky.utils.PasswordUtil;
 import com.sky.vo.EmployeeLoginVO;
+import com.sky.vo.EmployeeVO;
 import jodd.util.Base64;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 public class EmployeeServiceImpl extends ServiceImpl<EmployeeMapper, Employee>
@@ -111,7 +114,7 @@ public class EmployeeServiceImpl extends ServiceImpl<EmployeeMapper, Employee>
 	}
 	
 	@Override
-	public Result<Page<Employee>> getEmployeeByPage(EmployeePageQueryDTO pageQueryDTO) {
+	public Result<Page<EmployeeVO>> getEmployeeByPage(EmployeePageQueryDTO pageQueryDTO) {
 		// 1.获取数据
 		int currentPage = pageQueryDTO.getPage();
 		int pageSize = pageQueryDTO.getPageSize();
@@ -123,8 +126,13 @@ public class EmployeeServiceImpl extends ServiceImpl<EmployeeMapper, Employee>
 				Employee::getName, pageQueryDTO.getName());
 		// 4.查询结果
 		Page<Employee> employeePage = employeeMapper.selectPage(page, queryWrapper);
+		// 5.封装vo对象
+		Page<EmployeeVO> voPage = new Page<>(currentPage, pageSize);
+		List<EmployeeVO> vos = BeanUtil.copyToList(employeePage.getRecords(), EmployeeVO.class);
+		voPage.setRecords(vos);
+		voPage.setTotal(page.getTotal());
 		// 5.返回结果
-		return Result.success(employeePage);
+		return Result.success(voPage);
 	}
 	
 }
