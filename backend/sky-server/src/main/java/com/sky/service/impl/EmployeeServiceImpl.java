@@ -8,9 +8,11 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.sky.constant.MessageConstant;
 import com.sky.constant.StatusConstant;
+import com.sky.context.BaseContext;
 import com.sky.dto.EmployeeDTO;
 import com.sky.dto.EmployeeLoginDTO;
 import com.sky.dto.EmployeePageQueryDTO;
+import com.sky.dto.PasswordEditDTO;
 import com.sky.entity.Employee;
 import com.sky.exception.AccountLockedException;
 import com.sky.exception.AccountNotFoundException;
@@ -44,27 +46,19 @@ public class EmployeeServiceImpl extends ServiceImpl<EmployeeMapper, Employee>
 		String username = employeeLoginDTO.getUsername();
 		String password = employeeLoginDTO.getPassword();
 		
-		// 1、根据用户名查询数据库中的数据
+		// 1.根据用户名查询数据库中的数据
 		Employee employee = getOne(new LambdaQueryWrapper<Employee>()
 				.eq(Employee::getUsername, username));
 		
-		// 2、处理各种异常情况（用户名不存在、密码不对、账号被锁定）
+		// 2.处理各种异常情况（用户名不存在、密码不对、账号被锁定）
 		if (employee == null) {
 			// 账号不存在
 			throw new AccountNotFoundException(MessageConstant.ACCOUNT_NOT_FOUND);
 		}
 		
-		// 密码比对
-		// 3.0解析盐字符串为字节数组
-		byte[] saltBytes = Base64.decode(employee.getSalt());
-		// 3.1构建Digester算法对象,使用sha256
-		Digester sha256 = new Digester(DigestAlgorithm.SHA256);
-		// 3.2设置盐,数据库中存储的salt
-		sha256.setSalt(saltBytes);
-		// 3.3对输入密码进行加盐处理
-		String inputPasswordHashed = sha256.digestHex(password);
-		// 3.4进行校验
-		boolean isPasswordCorrect = inputPasswordHashed.equals(employee.getPassword());
+		// 3.密码比对
+		boolean isPasswordCorrect = isPasswordCorrect(employee.getSalt(),
+				password, employee.getPassword());
 		if (!isPasswordCorrect) {
 			// 3.4.1校验失败
 			throw new AccountLockedException(MessageConstant.PASSWORD_ERROR);
@@ -76,7 +70,7 @@ public class EmployeeServiceImpl extends ServiceImpl<EmployeeMapper, Employee>
 			throw new AccountLockedException(MessageConstant.ACCOUNT_LOCKED);
 		}
 		
-		// 3、返回VO对象
+		// 5.返回VO对象
 		return BeanUtil.copyProperties(employee, EmployeeLoginVO.class);
 	}
 	
@@ -167,6 +161,60 @@ public class EmployeeServiceImpl extends ServiceImpl<EmployeeMapper, Employee>
 		updateById(employee);
 		// 5.返回
 		return Result.success();
+	}
+	
+	@Override
+	@Transactional(rollbackFor = Exception.class)
+	public Result<String> editPassword(PasswordEditDTO passwordEditDTO) {
+		// 0.获取当前登录管理员id
+		Long currentId = BaseContext.getCurrentId();
+		// 1.查询用户信息
+		Employee employee = getById(currentId);
+		if (employee == null) {
+			throw new AccountNotFoundException(MessageConstant.ACCOUNT_NOT_FOUND);
+		}
+		// 2.校验旧密码
+		boolean isPasswordCorrect = isPasswordCorrect(employee.getSalt(),
+				passwordEditDTO.getOldPassword(), employee.getPassword());
+		if (!isPasswordCorrect) {
+			// 校验失败
+			throw new AccountLockedException(MessageConstant.PASSWORD_ERROR);
+		}
+		// 3.加密新密码
+		// 3.1生成新盐
+		String newSalt = PasswordUtil.generateSecureSalt();
+		byte[] saltBytes = Base64.decode(newSalt);
+		// 3.2构建Digester算法对象,使用sha256
+		Digester sha256 = new Digester(DigestAlgorithm.SHA256);
+		sha256.setSalt(saltBytes);
+		// 3.3对新密码进行加密处理
+		String saltedHash = sha256.digestHex(passwordEditDTO.getNewPassword());
+		// 4.修改
+		employee.setPassword(saltedHash);
+		employee.setSalt(newSalt);
+		updateById(employee);
+		// 5.返回
+		return Result.success();
+	}
+	
+	/**
+	 * 密码校验方法
+	 *
+	 * @param salt          盐
+	 * @param inputPassword
+	 * @return
+	 */
+	private boolean isPasswordCorrect(String salt, String inputPassword, String exitPassword) {
+		// 1.解析盐字符串为字节数组
+		byte[] saltBytes = Base64.decode(salt);
+		// 2.构建Digester算法对象,使用sha256
+		Digester sha256 = new Digester(DigestAlgorithm.SHA256);
+		// 3.设置盐,数据库中存储的salt
+		sha256.setSalt(saltBytes);
+		// 4.对输入密码进行加盐处理
+		String inputPasswordHashed = sha256.digestHex(inputPassword);
+		// 5.进行校验
+		return inputPasswordHashed.equals(exitPassword);
 	}
 	
 }

@@ -7,6 +7,7 @@ import com.sky.context.BaseContext;
 import com.sky.dto.EmployeeDTO;
 import com.sky.dto.EmployeeLoginDTO;
 import com.sky.dto.EmployeePageQueryDTO;
+import com.sky.dto.PasswordEditDTO;
 import com.sky.properties.JwtProperties;
 import com.sky.result.Result;
 import com.sky.service.EmployeeService;
@@ -111,6 +112,17 @@ public class EmployeeController {
 	@PostMapping("/status/{status}")
 	public Result<String> updateEmployeeStatus(@PathVariable Integer status, Long id) {
 		return employeeService.updateEmployeeStatus(status, id);
+	}
+	
+	/**
+	 * @param passwordEditDTO 密码修改表单
+	 * @return Result<String>
+	 * @MethodName: editPassword
+	 * @Description: 修改密码
+	 */
+	@PutMapping("/editPassword")
+	public Result<String> editPassword(@RequestBody PasswordEditDTO passwordEditDTO) {
+		return employeeService.editPassword(passwordEditDTO);
 	}
 	
 	/**
