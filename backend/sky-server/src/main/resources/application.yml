@@ -16,21 +16,7 @@ spring:
       username: ${sky.datasource.username}
       password: ${sky.datasource.password}
 
-  # Redis 配置 (缓存)
-  redis:
-    cluster:
-      nodes:
-        - 120.55.93.210:6379
-        - 120.55.93.210:6380
-        - 120.55.93.210:6381
-      max-redirects: 3
-    lettuce:
-      pool:
-        max-active: 10
-        max-idle: 10
-        min-idle: 1
-        time-between-eviction-runs: 10s
-    password: 1234
+
 
 # MyBatis / MyBatis Plus 配置
 mybatis-plus:

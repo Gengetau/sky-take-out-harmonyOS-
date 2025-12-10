@@ -7,15 +7,19 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.sky.constant.MessageConstant;
 import com.sky.constant.StatusConstant;
+import com.sky.dto.EmployeeDTO;
 import com.sky.dto.EmployeeLoginDTO;
 import com.sky.entity.Employee;
 import com.sky.exception.AccountLockedException;
 import com.sky.exception.AccountNotFoundException;
 import com.sky.mapper.EmployeeMapper;
+import com.sky.result.Result;
 import com.sky.service.EmployeeService;
+import com.sky.utils.PasswordUtil;
 import com.sky.vo.EmployeeLoginVO;
 import jodd.util.Base64;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class EmployeeServiceImpl extends ServiceImpl<EmployeeMapper, Employee>
@@ -65,6 +69,39 @@ public class EmployeeServiceImpl extends ServiceImpl<EmployeeMapper, Employee>
 		
 		// 3、返回VO对象
 		return BeanUtil.copyProperties(employee, EmployeeLoginVO.class);
+	}
+	
+	@Override
+	@Transactional(rollbackFor = Exception.class)
+	public Result<String> saveEmployee(EmployeeDTO employeeDTO) {
+		// 0.验证账号是否已存在
+		Employee employee = getOne(new LambdaQueryWrapper<Employee>()
+				.eq(Employee::getUsername, employeeDTO.getUsername()));
+		if (employee != null) {
+			throw new AccountLockedException(MessageConstant.ACCOUNT_EXIT);
+		}
+		// 1.复制属性
+		Employee newEmployee = BeanUtil.copyProperties(employeeDTO, Employee.class);
+		// 2. 初始密码统一为123456
+		// 2.1 创建随机盐
+		String salt = PasswordUtil.generateSecureSalt();
+		// 2.2 解码盐字符串为字节数组，以供 Digester 使用
+		byte[] saltBytes = cn.hutool.core.codec
+				.Base64.decode(salt);
+		// 2.3 创建一个摘要算法对象，这里用 SHA-256
+		Digester sha256 = new Digester(DigestAlgorithm.SHA256);
+		sha256.setSalt(saltBytes); // 设置盐
+		// 2.4 执行哈希计算,获得加密密码
+		String saltedHash = sha256.digestHex("123456");
+		// 2.5将盐和加密密码存储进对象
+		newEmployee.setPassword(saltedHash);
+		newEmployee.setSalt(salt);
+		// 3. 设置账号状态
+		newEmployee.setStatus(StatusConstant.ENABLE);
+		// 4. 调用save()保存
+		save(newEmployee);
+		// 5. 返回结果
+		return Result.success();
 	}
 	
 }
