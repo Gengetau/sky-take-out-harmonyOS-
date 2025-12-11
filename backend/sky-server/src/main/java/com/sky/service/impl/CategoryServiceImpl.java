@@ -11,13 +11,19 @@ import com.sky.constant.StatusConstant;
 import com.sky.dto.CategoryDTO;
 import com.sky.dto.CategoryPageQueryDTO;
 import com.sky.entity.Category;
+import com.sky.entity.Dish;
+import com.sky.entity.SetMeal;
 import com.sky.exception.CategoryExitException;
 import com.sky.exception.CategoryNotFoundException;
+import com.sky.exception.DeletionNotAllowedException;
 import com.sky.mapper.CategoryMapper;
 import com.sky.result.Result;
 import com.sky.service.CategoryService;
+import com.sky.service.DishService;
+import com.sky.service.SetMealService;
 import com.sky.vo.CategoryVO;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,6 +40,11 @@ import java.util.List;
 @Slf4j
 public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category>
 		implements CategoryService {
+	@Autowired
+	private DishService dishService;
+	@Autowired
+	private SetMealService setMealService;
+	
 	// ==================================================
 	// =============== client 用户端方法 ===================
 	// ==================================================
@@ -129,6 +140,34 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category>
 		newCategory.setStatus(StatusConstant.ENABLE);// 默认启用
 		// 3.新增
 		save(newCategory);
+		// 4.返回
+		return Result.success();
+	}
+	
+	@Override
+	@Transactional(rollbackFor = Exception.class)
+	public Result<String> deleteCategoryById(Long id) {
+		// 1.校验是否存在
+		Category category = getById(id);
+		if (category == null) {
+			throw new CategoryNotFoundException(MessageConstant.CATEGORY_NOT_FOUND);
+		}
+		// 2.校验分类是否关连菜品或套餐
+		if (category.getType() == 1) {
+			long dishCount = dishService.count(new LambdaQueryWrapper<Dish>()
+					.eq(Dish::getCategoryId, id));
+			if (dishCount > 0) {
+				throw new DeletionNotAllowedException(MessageConstant.CATEGORY_BE_RELATED_BY_DISH);
+			}
+		} else {
+			long mealCount = setMealService.count(new LambdaQueryWrapper<SetMeal>()
+					.eq(SetMeal::getCategoryId, id));
+			if (mealCount > 0) {
+				throw new DeletionNotAllowedException(MessageConstant.CATEGORY_BE_RELATED_BY_SET_MEAL);
+			}
+		}
+		// 3.删除
+		removeById(id);
 		// 4.返回
 		return Result.success();
 	}
