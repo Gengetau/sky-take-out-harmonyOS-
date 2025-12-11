@@ -55,4 +55,15 @@ public class AdminCategoryController {
 	public Result<String> updateCategoryStatus(@PathVariable Integer status, @RequestParam Long id) {
 		return categoryService.updateCategoryStatus(status, id);
 	}
+	
+	/**
+	 * 新增分类
+	 *
+	 * @param categoryDTO
+	 * @return
+	 */
+	@PostMapping
+	public Result<String> addCategory(@RequestBody CategoryDTO categoryDTO) {
+		return categoryService.addCategory(categoryDTO);
+	}
 }
