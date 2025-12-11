@@ -7,9 +7,11 @@ import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.sky.constant.MessageConstant;
+import com.sky.constant.StatusConstant;
 import com.sky.dto.CategoryDTO;
 import com.sky.dto.CategoryPageQueryDTO;
 import com.sky.entity.Category;
+import com.sky.exception.CategoryExitException;
 import com.sky.exception.CategoryNotFoundException;
 import com.sky.mapper.CategoryMapper;
 import com.sky.result.Result;
@@ -108,6 +110,25 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category>
 		updateWrapper.eq(Category::getId, id);
 		updateWrapper.set(Category::getStatus, status);
 		update(updateWrapper);
+		// 4.返回
+		return Result.success();
+	}
+	
+	@Override
+	@Transactional(rollbackFor = Exception.class)
+	public Result<String> addCategory(CategoryDTO categoryDTO) {
+		// 1.校验
+		long count = count(new LambdaQueryWrapper<Category>()
+				.eq(Category::getName, categoryDTO.getName())
+				.or().eq(Category::getSort, categoryDTO.getSort()));
+		if (count > 0) {
+			throw new CategoryExitException(MessageConstant.CATEGORY_EXIT);
+		}
+		// 2.复制属性
+		Category newCategory = BeanUtil.copyProperties(categoryDTO, Category.class);
+		newCategory.setStatus(StatusConstant.ENABLE);// 默认启用
+		// 3.新增
+		save(newCategory);
 		// 4.返回
 		return Result.success();
 	}
