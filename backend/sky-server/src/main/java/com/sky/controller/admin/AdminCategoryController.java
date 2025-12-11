@@ -1,14 +1,13 @@
 package com.sky.controller.admin;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.sky.dto.CategoryDTO;
 import com.sky.dto.CategoryPageQueryDTO;
 import com.sky.result.Result;
 import com.sky.service.CategoryService;
 import com.sky.vo.CategoryVO;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * @author Gengetsu
@@ -32,5 +31,10 @@ public class AdminCategoryController {
 	@GetMapping("/page")
 	public Result<Page<CategoryVO>> getCategoryByPage(CategoryPageQueryDTO pageDTO) {
 		return categoryService.getCategoryByPage(pageDTO);
+	}
+	
+	@PutMapping
+	public Result<CategoryVO> updateCategory(@RequestBody CategoryDTO categoryDTO) {
+		return categoryService.updateCategory(categoryDTO);
 	}
 }
