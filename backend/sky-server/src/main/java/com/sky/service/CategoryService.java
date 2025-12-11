@@ -66,4 +66,12 @@ public interface CategoryService extends IService<Category> {
 	 * @return
 	 */
 	Result<String> addCategory(CategoryDTO categoryDTO);
+	
+	/**
+	 * 后台根据id删除分类
+	 *
+	 * @param id
+	 * @return
+	 */
+	Result<String> deleteCategoryById(Long id);
 }

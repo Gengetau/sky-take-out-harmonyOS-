@@ -66,4 +66,15 @@ public class AdminCategoryController {
 	public Result<String> addCategory(@RequestBody CategoryDTO categoryDTO) {
 		return categoryService.addCategory(categoryDTO);
 	}
+	
+	/**
+	 * 根据id删除分类
+	 *
+	 * @param id
+	 * @return
+	 */
+	@DeleteMapping
+	public Result<String> deleteCategoryById(Long id) {
+		return categoryService.deleteCategoryById(id);
+	}
 }
