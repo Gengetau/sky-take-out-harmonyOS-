@@ -5,14 +5,18 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.sky.constant.MessageConstant;
+import com.sky.dto.CategoryDTO;
 import com.sky.dto.CategoryPageQueryDTO;
 import com.sky.entity.Category;
+import com.sky.exception.CategoryNotFoundException;
 import com.sky.mapper.CategoryMapper;
 import com.sky.result.Result;
 import com.sky.service.CategoryService;
 import com.sky.vo.CategoryVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -70,5 +74,22 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category>
 		pageVO.setTotal(page1.getTotal());
 		// 6.返回数据
 		return Result.success(pageVO);
+	}
+	
+	@Override
+	@Transactional(rollbackFor = Exception.class)
+	public Result<CategoryVO> updateCategory(CategoryDTO categoryDTO) {
+		// 1.查询
+		Category category = getById(categoryDTO.getId());
+		// 2.验证
+		if (category == null) {
+			throw new CategoryNotFoundException(MessageConstant.CATEGORY_NOT_FOUND);
+		}
+		// 3.复制属性
+		BeanUtil.copyProperties(categoryDTO, category);
+		// 4.修改
+		updateById(category);
+		// 5.返回
+		return Result.success();
 	}
 }

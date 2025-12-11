@@ -2,6 +2,7 @@ package com.sky.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.sky.dto.CategoryDTO;
 import com.sky.dto.CategoryPageQueryDTO;
 import com.sky.entity.Category;
 import com.sky.result.Result;
@@ -34,10 +35,18 @@ public interface CategoryService extends IService<Category> {
 	// ==================================================
 	
 	/**
-	 * 后台菜品分页查询
+	 * 后台分类分页查询
 	 *
 	 * @param pageDTO
 	 * @return
 	 */
 	Result<Page<CategoryVO>> getCategoryByPage(CategoryPageQueryDTO pageDTO);
+	
+	/**
+	 * 后台分类信息修改
+	 *
+	 * @param categoryDTO
+	 * @return
+	 */
+	Result<CategoryVO> updateCategory(CategoryDTO categoryDTO);
 }
