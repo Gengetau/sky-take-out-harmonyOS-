@@ -49,4 +49,13 @@ public interface CategoryService extends IService<Category> {
 	 * @return
 	 */
 	Result<CategoryVO> updateCategory(CategoryDTO categoryDTO);
+	
+	/**
+	 * 后台更新分类状态
+	 *
+	 * @param status
+	 * @param id
+	 * @return
+	 */
+	Result<String> updateCategoryStatus(Integer status, Long id);
 }
