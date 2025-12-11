@@ -2,6 +2,8 @@ package com.sky.vo;
 
 import lombok.Data;
 
+import java.time.LocalDateTime;
+
 /**
  * @author Gengetsu
  * @version v1.0
@@ -24,4 +26,6 @@ public class CategoryVO {
 	private Integer sort;
 	
 	private Integer status;
+	
+	private LocalDateTime updateTime;
 }
