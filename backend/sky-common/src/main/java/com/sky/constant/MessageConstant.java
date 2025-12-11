@@ -11,6 +11,7 @@ public class MessageConstant {
 	public static final String ACCOUNT_EXIT = "账号已存在";
 	public static final String UNKNOWN_ERROR = "未知错误";
 	public static final String USER_NOT_LOGIN = "用户未登录";
+	public static final String BUSINESS_STATUS_IS_NOT_SET = "未设置营业状态";
 	public static final String CATEGORY_NOT_FOUND = "分类不存在";
 	public static final String CATEGORY_EXIT = "分类已存在";
 	public static final String CATEGORY_BE_RELATED_BY_SET_MEAL = "当前分类关联了套餐,不能删除";

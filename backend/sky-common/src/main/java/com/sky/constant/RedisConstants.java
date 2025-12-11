@@ -6,6 +6,8 @@ public class RedisConstants {
 	public static final String LOGIN_USER_KEY = "login:token:";
 	public static final Long LOGIN_USER_TTL = 60 * 7L;
 	
+	public static final String SHOP_STATUS_KEY = "shop:status";
+	
 	public static final String SHOP_TYPE_KEY = "cache:type";
 	
 	public static final String BLOOM_FILTER_KEY = "bloom:filter:";
