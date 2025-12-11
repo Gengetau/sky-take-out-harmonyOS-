@@ -1,7 +1,7 @@
 package com.sky.config;
 
 
-import com.sky.interceptor.LoginInterceptor;
+import com.sky.interceptor.JwtTokenAdminInterceptor;
 import com.sky.interceptor.RefenceTokenInterceptor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -22,6 +22,9 @@ public class MvcConfig implements WebMvcConfigurer {
 	@Resource
 	private StringRedisTemplate stringRedisTemplate;
 	
+	@Resource
+	private JwtTokenAdminInterceptor jwtTokenAdminInterceptor;
+	
 	// 添加拦截器
 	@Override
 	public void addInterceptors(InterceptorRegistry registry) {
@@ -29,9 +32,13 @@ public class MvcConfig implements WebMvcConfigurer {
 		// order控制拦截器顺序
 		registry.addInterceptor(new RefenceTokenInterceptor(stringRedisTemplate)).order(0);
 		// 拦截部分请求
-		registry.addInterceptor(new LoginInterceptor())
-				.excludePathPatterns(
-						"/client/user/**",
-						"/admin/**").order(1);
+		// registry.addInterceptor(new LoginInterceptor())
+		// 		.excludePathPatterns(
+		// 				"/client/user/**",
+		// 				"/admin/**").order(1);
+		// 添加jwt令牌拦截器
+		registry.addInterceptor(jwtTokenAdminInterceptor)
+				.addPathPatterns("/admin/**")
+				.excludePathPatterns("/admin/employee/login");
 	}
 }

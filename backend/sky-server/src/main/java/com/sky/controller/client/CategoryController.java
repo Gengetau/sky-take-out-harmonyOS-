@@ -14,7 +14,7 @@ import java.util.List;
 /**
  * @author Gengetsu
  * @version v1.0
- * @ClassName CategoryController
+ * @ClassName AdminCategoryController
  * @Description 菜品分类控制器
  * @dateTime 4/12/2025 上午11:18
  */

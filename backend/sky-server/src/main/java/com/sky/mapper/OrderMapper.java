@@ -1,22 +1,23 @@
 package com.sky.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.sky.entity.User;
+import com.sky.entity.Orders;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 
 /**
  * @author Gengetsu
  * @version v1.0
- * @ClassName UserMapper
- * @Description 用户持久层接口
- * @dateTime 3/12/2025 上午11:37
+ * @ClassName OrderMapper
+ * @Description 订单表持久层接口
+ * @dateTime 9/12/2025 下午12:55
  */
 @Mapper
-public interface UserMapper extends BaseMapper<User> {
-	Long getNewUserCountByTimeRange(
+public interface OrderMapper extends BaseMapper<Orders> {
+	Map<String, Object> getOrderDataByTimeRange(
 			@Param("begin") LocalDateTime begin,
 			@Param("end") LocalDateTime end);
 }
