@@ -12,3 +12,10 @@ spring:
     port: 6379
     password: 123456
     database: 0
+
+logging:
+  level:
+    org.springframework.data.redis: debug
+    io.lettuce: debug
+    org.redisson: debug
+
