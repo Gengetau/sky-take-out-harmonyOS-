@@ -33,8 +33,26 @@ public class AdminCategoryController {
 		return categoryService.getCategoryByPage(pageDTO);
 	}
 	
+	/**
+	 * 修改分类信息
+	 *
+	 * @param categoryDTO
+	 * @return
+	 */
 	@PutMapping
 	public Result<CategoryVO> updateCategory(@RequestBody CategoryDTO categoryDTO) {
 		return categoryService.updateCategory(categoryDTO);
+	}
+	
+	/**
+	 * 更新分类状态
+	 *
+	 * @param status
+	 * @param id
+	 * @return
+	 */
+	@PostMapping("/status/{status}")
+	public Result<String> updateCategoryStatus(@PathVariable Integer status, @RequestParam Long id) {
+		return categoryService.updateCategoryStatus(status, id);
 	}
 }

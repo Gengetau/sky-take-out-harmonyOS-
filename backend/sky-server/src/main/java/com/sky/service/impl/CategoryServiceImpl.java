@@ -2,6 +2,7 @@ package com.sky.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -90,6 +91,24 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category>
 		// 4.修改
 		updateById(category);
 		// 5.返回
+		return Result.success();
+	}
+	
+	@Override
+	@Transactional(rollbackFor = Exception.class)
+	public Result<String> updateCategoryStatus(Integer status, Long id) {
+		// 1.查询
+		Category category = getById(id);
+		// 2.验证
+		if (category == null) {
+			throw new CategoryNotFoundException(MessageConstant.CATEGORY_NOT_FOUND);
+		}
+		// 3.修改
+		LambdaUpdateWrapper<Category> updateWrapper = new LambdaUpdateWrapper<>();
+		updateWrapper.eq(Category::getId, id);
+		updateWrapper.set(Category::getStatus, status);
+		update(updateWrapper);
+		// 4.返回
 		return Result.success();
 	}
 }
