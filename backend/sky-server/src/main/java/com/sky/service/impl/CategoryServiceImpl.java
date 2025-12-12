@@ -171,4 +171,13 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category>
 		// 4.返回
 		return Result.success();
 	}
+	
+	@Override
+	public Result<List<CategoryVO>> getCategoryByType(Integer type) {
+		List<Category> list = list(new LambdaQueryWrapper<Category>().eq(Category::getType, type)
+				.eq(Category::getStatus, StatusConstant.ENABLE)
+				.orderByAsc(Category::getSort));
+		List<CategoryVO> vos = BeanUtil.copyToList(list, CategoryVO.class);
+		return Result.success(vos);
+	}
 }

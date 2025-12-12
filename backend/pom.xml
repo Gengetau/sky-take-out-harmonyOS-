@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns:xsi = "http://www.w3.org/2001/XMLSchema-instance"
+		 xmlns = "http://maven.apache.org/POM/4.0.0"
+		 xsi:schemaLocation = "http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <artifactId>spring-boot-starter-parent</artifactId>
@@ -30,6 +30,7 @@
         <jjwt>0.9.1</jjwt>
         <jaxb-api>2.3.1</jaxb-api>
         <poi>3.16</poi>
+		<oss.version>3.17.4</oss.version>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -38,6 +39,12 @@
                 <artifactId>mybatis-spring-boot-starter</artifactId>
                 <version>${mybatis.spring}</version>
             </dependency>
+
+			<dependency>
+				<groupId>com.aliyun.oss</groupId>
+				<artifactId>aliyun-sdk-oss</artifactId>
+				<version>${oss.version}</version>
+			</dependency>
 
             <dependency>
                 <groupId>org.projectlombok</groupId>
@@ -105,8 +112,8 @@
                 <version>${jaxb-api}</version>
             </dependency>
 
-            <!-- poi -->
-            <dependency>
+			<!-- poi -->
+			<dependency>
                 <groupId>org.apache.poi</groupId>
                 <artifactId>poi</artifactId>
                 <version>${poi}</version>
@@ -116,8 +123,8 @@
                 <artifactId>poi-ooxml</artifactId>
                 <version>${poi}</version>
             </dependency>
-            <!--微信支付-->
-            <dependency>
+			<!--微信支付-->
+			<dependency>
                 <groupId>com.github.wechatpay-apiv3</groupId>
                 <artifactId>wechatpay-apache-httpclient</artifactId>
                 <version>0.4.8</version>

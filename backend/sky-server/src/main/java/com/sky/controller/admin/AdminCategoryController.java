@@ -9,6 +9,8 @@ import com.sky.vo.CategoryVO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 /**
  * @author Gengetsu
  * @version v1.0
@@ -76,5 +78,16 @@ public class AdminCategoryController {
 	@DeleteMapping
 	public Result<String> deleteCategoryById(Long id) {
 		return categoryService.deleteCategoryById(id);
+	}
+	
+	/**
+	 * 根据类型查询分类
+	 *
+	 * @param type
+	 * @return
+	 */
+	@GetMapping("/list")
+	public Result<List<CategoryVO>> getCategoryByType(@RequestParam Integer type) {
+		return categoryService.getCategoryByType(type);
 	}
 }
