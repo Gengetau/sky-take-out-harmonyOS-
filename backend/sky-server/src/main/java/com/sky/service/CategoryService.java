@@ -74,4 +74,12 @@ public interface CategoryService extends IService<Category> {
 	 * @return
 	 */
 	Result<String> deleteCategoryById(Long id);
+	
+	/**
+	 * 根据类型查询分类
+	 *
+	 * @param type
+	 * @return
+	 */
+	Result<List<CategoryVO>> getCategoryByType(Integer type);
 }
