@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.sky.config.OSSConfig;
+import com.sky.constant.MessageConstant;
 import com.sky.dto.DishDTO;
 import com.sky.dto.DishPageQueryDTO;
 import com.sky.entity.Category;
@@ -235,6 +236,29 @@ public class DishServiceImpl extends ServiceImpl<DishMapper, Dish> implements Di
 			throw new DeletionNotAllowedException(DISH_BE_RELATED_BY_SET_MEAL);
 		}
 		removeBatchByIds(ids);
+		return Result.success();
+	}
+	
+	@Override
+	public Result<String> startOrStop(Integer status, Long id) {
+		// 停售
+		if (status.equals(StatusConsta
+				nt.DISABLE)) {
+			// 判断当前菜品是否在套餐中
+			List<SetMealDish> setMealDishes = setMealDishService.list(new LambdaQueryWrapper<SetMealDish>()
+					.eq(SetMealDish::getDishId, id));
+			if (setMealDishes != null && !setMealDishes.isEmpty()) {
+				// 菜品在套餐中，不能停售
+				throw new DeletionNotAllowedException(MessageConstant.DISH_IS_RELATED_TO_SETMEAL);
+			}
+		}
+		
+		Dish dish = Dish.builder()
+				.id(id)
+				.status(status)
+				.build();
+		updateById(dish);
+		
 		return Result.success();
 	}
 }

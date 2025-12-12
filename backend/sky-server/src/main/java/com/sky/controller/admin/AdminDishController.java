@@ -97,4 +97,16 @@ public class AdminDishController {
 				.collect(Collectors.toList());
 		return dishService.deleteBatch(ids);
 	}
+
+    /**
+     * 菜品启售、停售
+     * @param status
+     * @param id
+     * @return
+     */
+    @PostMapping("/status/{status}")
+    public Result<String> startOrStop(@PathVariable Integer status, @RequestParam Long id){
+        dishService.startOrStop(status,id);
+        return Result.success();
+    }
 }
