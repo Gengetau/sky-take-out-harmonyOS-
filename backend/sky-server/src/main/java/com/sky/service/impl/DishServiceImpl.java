@@ -12,7 +12,9 @@ import com.sky.dto.DishPageQueryDTO;
 import com.sky.entity.Category;
 import com.sky.entity.Dish;
 import com.sky.entity.DishFlavor;
+import com.sky.entity.SetMealDish;
 import com.sky.exception.CategoryNotFoundException;
+import com.sky.exception.DeletionNotAllowedException;
 import com.sky.exception.DishExitException;
 import com.sky.exception.DishNotFoundException;
 import com.sky.mapper.DishFlavorMapper;
@@ -20,6 +22,7 @@ import com.sky.mapper.DishMapper;
 import com.sky.result.Result;
 import com.sky.service.CategoryService;
 import com.sky.service.DishService;
+import com.sky.service.SetMealDishService;
 import com.sky.utils.AliOssUtil;
 import com.sky.vo.DishVO;
 import lombok.extern.slf4j.Slf4j;
@@ -46,6 +49,8 @@ import static com.sky.constant.StatusConstant.ENABLE;
 public class DishServiceImpl extends ServiceImpl<DishMapper, Dish> implements DishService {
 	@Autowired
 	private DishFlavorMapper dishFlavorMapper;
+	@Autowired
+	private SetMealDishService setMealDishService;
 	@Autowired
 	private CategoryService categoryService;
 	@Autowired
@@ -210,6 +215,26 @@ public class DishServiceImpl extends ServiceImpl<DishMapper, Dish> implements Di
 		Dish dish = getDish(dishDTO);
 		// 2.保存
 		updateById(dish);
+		return Result.success();
+	}
+	
+	@Override
+	@Transactional(rollbackFor = Exception.class)
+	public Result<String> deleteBatch(List<Long> ids) {
+		// 1. 校验是否存在启售菜品
+		long count = count(new LambdaQueryWrapper<Dish>()
+				.in(Dish::getId, ids)
+				.eq(Dish::getStatus, ENABLE));
+		if (count > 0) {
+			throw new DeletionNotAllowedException(DISH_ON_SALE);
+		}
+		// 2.校验菜品是否关联套餐
+		long count1 = setMealDishService.count(new LambdaQueryWrapper<SetMealDish>()
+				.in(SetMealDish::getId, ids));
+		if (count1 > 0) {
+			throw new DeletionNotAllowedException(DISH_BE_RELATED_BY_SET_MEAL);
+		}
+		removeBatchByIds(ids);
 		return Result.success();
 	}
 }

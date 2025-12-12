@@ -7,9 +7,12 @@ import com.sky.result.Result;
 import com.sky.service.DishService;
 import com.sky.vo.DishVO;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author Gengetsu
@@ -77,5 +80,21 @@ public class AdminDishController {
 	@PutMapping
 	public Result<String> updateDish(@RequestBody DishDTO dishDTO) {
 		return dishService.updateDish(dishDTO);
+	}
+	
+	/**
+	 * 批量删除菜品
+	 *
+	 * @param idsString
+	 * @return
+	 */
+	@DeleteMapping
+	@Transactional(rollbackFor = Exception.class)
+	public Result<String> deleteBatch(@RequestParam("ids") String idsString) {
+		// 将字符串转化为列表
+		List<Long> ids = Arrays.stream(idsString.split(","))
+				.map(Long::valueOf)
+				.collect(Collectors.toList());
+		return dishService.deleteBatch(ids);
 	}
 }

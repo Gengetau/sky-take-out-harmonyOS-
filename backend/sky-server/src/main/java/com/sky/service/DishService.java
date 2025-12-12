@@ -35,4 +35,6 @@ public interface DishService extends IService<Dish> {
 	Result<DishVO> getDishById(Long id);
 	
 	Result<String> updateDish(DishDTO dishDTO);
+	
+	Result<String> deleteBatch(List<Long> ids);
 }
