@@ -57,8 +57,25 @@ public class AdminDishController {
 		return dishService.getDishListByCategory(categoryId);
 	}
 	
+	/**
+	 * 根据id查询菜品信息
+	 *
+	 * @param id
+	 * @return
+	 */
 	@GetMapping("/{id}")
 	public Result<DishVO> getDishById(@PathVariable Long id) {
 		return dishService.getDishById(id);
+	}
+	
+	/**
+	 * 修改菜品信息
+	 *
+	 * @param dishDTO
+	 * @return
+	 */
+	@PutMapping
+	public Result<String> updateDish(@RequestBody DishDTO dishDTO) {
+		return dishService.updateDish(dishDTO);
 	}
 }

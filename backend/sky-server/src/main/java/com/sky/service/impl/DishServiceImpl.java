@@ -120,6 +120,14 @@ public class DishServiceImpl extends ServiceImpl<DishMapper, Dish> implements Di
 	@Override
 	@Transactional(rollbackFor = Exception.class)
 	public Result<String> saveDish(DishDTO dishDTO) {
+		Dish saveDish = getDish(dishDTO);
+		// 4.存储
+		save(saveDish);
+		// 5.返回
+		return Result.success();
+	}
+	
+	private Dish getDish(DishDTO dishDTO) {
 		// 1.校验
 		// 1.1校验所属分类是否存在及是否启用
 		long count = categoryService.count(new LambdaQueryWrapper<Category>()
@@ -139,10 +147,7 @@ public class DishServiceImpl extends ServiceImpl<DishMapper, Dish> implements Di
 		// 3.处理图片路径
 		String keyFromUrl = AliOssUtil.extractKeyFromUrl(dishDTO.getImage());
 		saveDish.setImage(keyFromUrl);
-		// 4.存储
-		save(saveDish);
-		// 5.返回
-		return Result.success();
+		return saveDish;
 	}
 	
 	@Override
@@ -196,6 +201,16 @@ public class DishServiceImpl extends ServiceImpl<DishMapper, Dish> implements Di
 		vo.setImage(signedUrl);
 		// 5.返回
 		return Result.success(vo);
+	}
+	
+	@Override
+	@Transactional(rollbackFor = Exception.class)
+	public Result<String> updateDish(DishDTO dishDTO) {
+		// 1.校验并转化
+		Dish dish = getDish(dishDTO);
+		// 2.保存
+		updateById(dish);
+		return Result.success();
 	}
 }
 

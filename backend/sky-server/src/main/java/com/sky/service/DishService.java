@@ -33,4 +33,6 @@ public interface DishService extends IService<Dish> {
 	Result<List<DishVO>> getDishListByCategory(Long categoryId);
 	
 	Result<DishVO> getDishById(Long id);
+	
+	Result<String> updateDish(DishDTO dishDTO);
 }
