@@ -1,68 +1,59 @@
 package com.sky.utils;
 
-import com.aliyun.oss.ClientException;
 import com.aliyun.oss.OSS;
-import com.aliyun.oss.OSSClientBuilder;
-import com.aliyun.oss.OSSException;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.ByteArrayInputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.util.Date;
 
-@Data
-@AllArgsConstructor
-@Slf4j
 public class AliOssUtil {
-
-    private String endpoint;
-    private String accessKeyId;
-    private String accessKeySecret;
-    private String bucketName;
-
-    /**
-     * 文件上传
-     *
-     * @param bytes
-     * @param objectName
-     * @return
-     */
-    public String upload(byte[] bytes, String objectName) {
-
-        // 创建OSSClient实例。
-        OSS ossClient = new OSSClientBuilder().build(endpoint, accessKeyId, accessKeySecret);
-
-        try {
-            // 创建PutObject请求。
-            ossClient.putObject(bucketName, objectName, new ByteArrayInputStream(bytes));
-        } catch (OSSException oe) {
-            System.out.println("Caught an OSSException, which means your request made it to OSS, "
-                    + "but was rejected with an error response for some reason.");
-            System.out.println("Error Message:" + oe.getErrorMessage());
-            System.out.println("Error Code:" + oe.getErrorCode());
-            System.out.println("Request ID:" + oe.getRequestId());
-            System.out.println("Host ID:" + oe.getHostId());
-        } catch (ClientException ce) {
-            System.out.println("Caught an ClientException, which means the client encountered "
-                    + "a serious internal problem while trying to communicate with OSS, "
-                    + "such as not being able to access the network.");
-            System.out.println("Error Message:" + ce.getMessage());
-        } finally {
-            if (ossClient != null) {
-                ossClient.shutdown();
-            }
-        }
-
-        //文件访问路径规则 https://BucketName.Endpoint/ObjectName
-        StringBuilder stringBuilder = new StringBuilder("https://");
-        stringBuilder
-                .append(bucketName)
-                .append(".")
-                .append(endpoint)
-                .append("/")
-                .append(objectName);
-
-        log.info("文件上传到:{}", stringBuilder.toString());
-
-        return stringBuilder.toString();
-    }
+	
+	private static final Logger log = LoggerFactory.getLogger(AliOssUtil.class);
+	
+	/**
+	 * 纯粹的上传方法，只负责把字节流扔上去
+	 * 返回 void 或者 boolean 即可，不需要返回 URL
+	 */
+	public static void upload(OSS ossClient, byte[] bytes, String objectName, String bucketName) {
+		try {
+			ossClient.putObject(bucketName, objectName, new ByteArrayInputStream(bytes));
+			// 记录日志即可
+		} catch (Exception e) {
+			// 这里建议抛出异常让 Service 层捕获，或者记录 Error
+			throw new RuntimeException("OSS上传失败", e);
+		}
+	}
+	
+	/**
+	 * 独立的获取签名 URL 方法
+	 */
+	public static String getSignedUrl(OSS ossClient, String objectName, String bucketName) {
+		// 设置2小时过期
+		Date expiration = new Date(new Date().getTime() + 2 * 3600 * 1000);
+		URL url = ossClient.generatePresignedUrl(bucketName, objectName, expiration);
+		return url.toString();
+	}
+	
+	/**
+	 * 从完整 OSS URL 中提取 Object Key (存库用)
+	 * 适用于：https://bucket.endpoint/path/to/file.jpg?Args...
+	 */
+	public static String extractKeyFromUrl(String fullUrl) {
+		try {
+			URI uri = new URI(fullUrl);
+			String path = uri.getPath();
+			// 去掉开头的斜杠 "/"
+			if (path.startsWith("/")) {
+				return path.substring(1);
+			}
+			return path;
+		} catch (URISyntaxException e) {
+			// 如果 URL 格式不对，就原样返回或者报错，看主人业务需求
+			return fullUrl;
+		}
+	}
 }

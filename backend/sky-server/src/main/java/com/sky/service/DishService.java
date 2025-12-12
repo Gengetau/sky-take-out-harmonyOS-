@@ -2,6 +2,7 @@ package com.sky.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.sky.dto.DishDTO;
 import com.sky.dto.DishPageQueryDTO;
 import com.sky.entity.Dish;
 import com.sky.result.Result;
@@ -26,4 +27,6 @@ public interface DishService extends IService<Dish> {
 	// =================== 管理端 =====================
 	// ===============================================
 	Result<Page<DishVO>> getDishByPage(DishPageQueryDTO dto);
+	
+	Result<String> saveDish(DishDTO dishDTO);
 }

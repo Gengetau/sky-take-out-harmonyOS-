@@ -16,6 +16,8 @@ public class MessageConstant {
 	public static final String CATEGORY_EXIT = "分类已存在";
 	public static final String CATEGORY_BE_RELATED_BY_SET_MEAL = "当前分类关联了套餐,不能删除";
 	public static final String CATEGORY_BE_RELATED_BY_DISH = "当前分类关联了菜品,不能删除";
+	public static final String THE_CURRENT_CLASSIFICATION_DOES_NOT_EXIST_OR_IS_DISABLE = "当前分类不存在或已禁用";
+	public static final String DISH_EXIT = "菜品已存在";
 	public static final String SHOPPING_CART_IS_NULL = "购物车数据为空，不能下单";
 	public static final String ADDRESS_BOOK_IS_NULL = "用户地址为空，不能下单";
 	public static final String LOGIN_FAILED = "登录失败";
