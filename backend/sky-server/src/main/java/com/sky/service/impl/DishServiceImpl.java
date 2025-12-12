@@ -30,8 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static com.sky.constant.MessageConstant.DISH_EXIT;
-import static com.sky.constant.MessageConstant.THE_CURRENT_CLASSIFICATION_DOES_NOT_EXIST_OR_IS_DISABLE;
+import static com.sky.constant.MessageConstant.*;
 import static com.sky.constant.StatusConstant.ENABLE;
 
 /**
@@ -82,27 +81,38 @@ public class DishServiceImpl extends ServiceImpl<DishMapper, Dish> implements Di
 		int pageSize = dto.getPageSize();
 		// 1.创建分页模型
 		Page<Dish> page = new Page<>(currentPage, pageSize);
-		// 2.查询
-		Page<Dish> dishPage = page(page);
-		// 3.复制属性
+		// 2.创建查询模型
+		LambdaQueryWrapper<Dish> qw = new LambdaQueryWrapper<>();
+		// 菜名模糊查询
+		qw.like(dto.getName() != null, Dish::getName, dto.getName());
+		// 分类查询
+		qw.eq(dto.getCategoryId() != null, Dish::getCategoryId, dto.getCategoryId());
+		// 状态查询
+		qw.eq(dto.getStatus() != null, Dish::getStatus, dto.getStatus());
+		// 3.查询
+		Page<Dish> dishPage = page(page, qw);
+		if (CollUtil.isEmpty(dishPage.getRecords())) {
+			return Result.error(ELIGIBLE_DISHES_DO_NOT_EXIST);
+		}
+		// 4.复制属性
 		List<DishVO> dishVOS = BeanUtil.copyToList(dishPage.getRecords(), DishVO.class);
 		List<Long> ids = dishVOS.stream().map(DishVO::getCategoryId)
 				.collect(Collectors.toList());
-		// 4.查询所属分类
+		// 5.查询所属分类
 		List<Category> categories = categoryService.listByIds(ids);
 		Map<Long, String> categoryMap = categories.stream()
 				.collect(Collectors.toMap(Category::getId, Category::getName));
-		// 5.组装属性并对image进行签名
+		// 6.组装属性并对image进行签名
 		dishVOS.forEach(vo -> {
 			vo.setCategoryName(categoryMap.get(vo.getCategoryId()));
 			String signedUrl = AliOssUtil.getSignedUrl(ossClient, vo.getImage(), ossConfig.getBucketName());
 			vo.setImage(signedUrl);
 		});
-		// 6.创建新的分页模型
+		// 7.创建新的分页模型
 		Page<DishVO> voPage = new Page<>(currentPage, pageSize);
 		voPage.setRecords(dishVOS);
 		voPage.setTotal(dishPage.getTotal());
-		// 7.返回
+		// 8.返回
 		return Result.success(voPage);
 	}
 	
