@@ -2,9 +2,11 @@ package com.sky.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
+import com.aliyun.oss.OSS;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.sky.config.OSSConfig;
 import com.sky.dto.DishDTO;
 import com.sky.dto.DishPageQueryDTO;
 import com.sky.entity.Category;
@@ -44,6 +46,10 @@ public class DishServiceImpl extends ServiceImpl<DishMapper, Dish> implements Di
 	private DishFlavorMapper dishFlavorMapper;
 	@Autowired
 	private CategoryService categoryService;
+	@Autowired
+	private OSS ossClient;
+	@Autowired
+	private OSSConfig ossConfig;
 	
 	@Override
 	public Result<List<DishVO>> queryDishList(Integer categoryId) {
@@ -78,11 +84,16 @@ public class DishServiceImpl extends ServiceImpl<DishMapper, Dish> implements Di
 		Page<Dish> dishPage = page(page);
 		// 3.复制属性
 		List<DishVO> dishVOS = BeanUtil.copyToList(dishPage.getRecords(), DishVO.class);
-		// 4.创建新的分页模型
+		// 4.对菜品的image进行签名
+		dishVOS.forEach(vo -> {
+			String signedUrl = AliOssUtil.getSignedUrl(ossClient, vo.getImage(), ossConfig.getBucketName());
+			vo.setImage(signedUrl);
+		});
+		// 5.创建新的分页模型
 		Page<DishVO> voPage = new Page<>(currentPage, pageSize);
 		voPage.setRecords(dishVOS);
 		voPage.setTotal(dishPage.getTotal());
-		// 5.返回
+		// 6.返回
 		return Result.success(voPage);
 	}
 	
