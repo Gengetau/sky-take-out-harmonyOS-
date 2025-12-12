@@ -29,4 +29,6 @@ public interface DishService extends IService<Dish> {
 	Result<Page<DishVO>> getDishByPage(DishPageQueryDTO dto);
 	
 	Result<String> saveDish(DishDTO dishDTO);
+	
+	Result<List<DishVO>> getDishListByCategory(Long categoryId);
 }

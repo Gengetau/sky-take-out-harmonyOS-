@@ -9,6 +9,8 @@ import com.sky.vo.DishVO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 /**
  * @author Gengetsu
  * @version v1.0
@@ -42,5 +44,16 @@ public class AdminDishController {
 	@PostMapping
 	public Result<String> saveDish(@RequestBody DishDTO dishDTO) {
 		return dishService.saveDish(dishDTO);
+	}
+	
+	/**
+	 * 根据分类id 查询菜品
+	 *
+	 * @param categoryId
+	 * @return
+	 */
+	@GetMapping("/list")
+	public Result<List<DishVO>> getDishListByCategory(@RequestParam("categoryId") Long categoryId) {
+		return dishService.getDishListByCategory(categoryId);
 	}
 }

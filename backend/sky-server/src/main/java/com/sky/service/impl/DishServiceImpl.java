@@ -143,5 +143,30 @@ public class DishServiceImpl extends ServiceImpl<DishMapper, Dish> implements Di
 		// 5.返回
 		return Result.success();
 	}
+	
+	@Override
+	public Result<List<DishVO>> getDishListByCategory(Long categoryId) {
+		// 1.校验所属分类是否存在及是否启用
+		long count = categoryService.count(new LambdaQueryWrapper<Category>()
+				.eq(Category::getId, categoryId)
+				.eq(Category::getStatus, ENABLE));
+		if (count <= 0) {
+			throw new CategoryNotFoundException(THE_CURRENT_CLASSIFICATION_DOES_NOT_EXIST_OR_IS_DISABLE);
+		}
+		// 2.查询
+		List<Dish> list = list(new LambdaQueryWrapper<Dish>()
+				.eq(Dish::getCategoryId, categoryId));
+		String name = categoryService.getObj(new LambdaQueryWrapper<Category>()
+				.eq(Category::getId, categoryId)
+				.select(Category::getName), null);
+		// 3.组装
+		List<DishVO> dishVOS = list.stream().map(dish -> {
+			DishVO dishVO = BeanUtil.copyProperties(dish, DishVO.class);
+			dishVO.setName(name);
+			return dishVO;
+		}).collect(Collectors.toList());
+		// 4.返回
+		return Result.success(dishVOS);
+	}
 }
 
