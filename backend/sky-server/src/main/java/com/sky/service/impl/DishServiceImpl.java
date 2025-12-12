@@ -27,6 +27,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import static com.sky.constant.MessageConstant.DISH_EXIT;
 import static com.sky.constant.MessageConstant.THE_CURRENT_CLASSIFICATION_DOES_NOT_EXIST_OR_IS_DISABLE;
@@ -84,16 +86,23 @@ public class DishServiceImpl extends ServiceImpl<DishMapper, Dish> implements Di
 		Page<Dish> dishPage = page(page);
 		// 3.复制属性
 		List<DishVO> dishVOS = BeanUtil.copyToList(dishPage.getRecords(), DishVO.class);
-		// 4.对菜品的image进行签名
+		List<Long> ids = dishVOS.stream().map(DishVO::getCategoryId)
+				.collect(Collectors.toList());
+		// 4.查询所属分类
+		List<Category> categories = categoryService.listByIds(ids);
+		Map<Long, String> categoryMap = categories.stream()
+				.collect(Collectors.toMap(Category::getId, Category::getName));
+		// 5.组装属性并对image进行签名
 		dishVOS.forEach(vo -> {
+			vo.setCategoryName(categoryMap.get(vo.getCategoryId()));
 			String signedUrl = AliOssUtil.getSignedUrl(ossClient, vo.getImage(), ossConfig.getBucketName());
 			vo.setImage(signedUrl);
 		});
-		// 5.创建新的分页模型
+		// 6.创建新的分页模型
 		Page<DishVO> voPage = new Page<>(currentPage, pageSize);
 		voPage.setRecords(dishVOS);
 		voPage.setTotal(dishPage.getTotal());
-		// 6.返回
+		// 7.返回
 		return Result.success(voPage);
 	}
 	
