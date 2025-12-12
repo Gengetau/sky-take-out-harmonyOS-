@@ -56,4 +56,9 @@ public class AdminDishController {
 	public Result<List<DishVO>> getDishListByCategory(@RequestParam("categoryId") Long categoryId) {
 		return dishService.getDishListByCategory(categoryId);
 	}
+	
+	@GetMapping("/{id}")
+	public Result<DishVO> getDishById(@PathVariable Long id) {
+		return dishService.getDishById(id);
+	}
 }

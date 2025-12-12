@@ -31,4 +31,6 @@ public interface DishService extends IService<Dish> {
 	Result<String> saveDish(DishDTO dishDTO);
 	
 	Result<List<DishVO>> getDishListByCategory(Long categoryId);
+	
+	Result<DishVO> getDishById(Long id);
 }

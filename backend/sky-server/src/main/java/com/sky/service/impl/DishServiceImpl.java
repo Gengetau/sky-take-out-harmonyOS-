@@ -14,6 +14,7 @@ import com.sky.entity.Dish;
 import com.sky.entity.DishFlavor;
 import com.sky.exception.CategoryNotFoundException;
 import com.sky.exception.DishExitException;
+import com.sky.exception.DishNotFoundException;
 import com.sky.mapper.DishFlavorMapper;
 import com.sky.mapper.DishMapper;
 import com.sky.result.Result;
@@ -92,7 +93,7 @@ public class DishServiceImpl extends ServiceImpl<DishMapper, Dish> implements Di
 		// 3.查询
 		Page<Dish> dishPage = page(page, qw);
 		if (CollUtil.isEmpty(dishPage.getRecords())) {
-			return Result.error(ELIGIBLE_DISHES_DO_NOT_EXIST);
+			throw new DishNotFoundException(ELIGIBLE_DISHES_DO_NOT_EXIST);
 		}
 		// 4.复制属性
 		List<DishVO> dishVOS = BeanUtil.copyToList(dishPage.getRecords(), DishVO.class);
@@ -158,15 +159,43 @@ public class DishServiceImpl extends ServiceImpl<DishMapper, Dish> implements Di
 				.eq(Dish::getCategoryId, categoryId));
 		String name = categoryService.getObj(new LambdaQueryWrapper<Category>()
 				.eq(Category::getId, categoryId)
-				.select(Category::getName), null);
+				.select(Category::getName), Object::toString);
 		// 3.组装
 		List<DishVO> dishVOS = list.stream().map(dish -> {
 			DishVO dishVO = BeanUtil.copyProperties(dish, DishVO.class);
 			dishVO.setName(name);
+			String signedUrl = AliOssUtil.getSignedUrl(ossClient, dishVO.getImage(), ossConfig.getBucketName());
+			dishVO.setImage(signedUrl);
 			return dishVO;
 		}).collect(Collectors.toList());
 		// 4.返回
 		return Result.success(dishVOS);
+	}
+	
+	@Override
+	public Result<DishVO> getDishById(Long id) {
+		// 1.根据id查询菜品
+		Dish dish = getById(id);
+		if (dish == null) {
+			throw new DishNotFoundException(ELIGIBLE_DISHES_DO_NOT_EXIST);
+		}
+		DishVO vo = BeanUtil.copyProperties(dish, DishVO.class);
+		log.info(vo.toString());
+		// 2.查询对应分类
+		String name = categoryService.getObj(new LambdaQueryWrapper<Category>()
+				.eq(Category::getId, dish.getCategoryId())
+				.select(Category::getName), Object::toString);
+		// 3.查询对应口味
+		List<DishFlavor> dishFlavors = dishFlavorMapper
+				.selectList(new LambdaQueryWrapper<DishFlavor>()
+						.eq(DishFlavor::getDishId, vo.getId()));
+		// 4.组装
+		vo.setCategoryName(name);
+		vo.setFlavors(dishFlavors);
+		String signedUrl = AliOssUtil.getSignedUrl(ossClient, vo.getImage(), ossConfig.getBucketName());
+		vo.setImage(signedUrl);
+		// 5.返回
+		return Result.success(vo);
 	}
 }
 
