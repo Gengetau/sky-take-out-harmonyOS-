@@ -16,4 +16,6 @@ import com.sky.vo.SetMealVO;
  */
 public interface SetMealService extends IService<SetMeal> {
 	Result<Page<SetMealVO>> getSetMealByPage(SetmealPageQueryDTO dto);
+	
+	Result<String> setMealStatus(Integer status, Long setmealId);
 }

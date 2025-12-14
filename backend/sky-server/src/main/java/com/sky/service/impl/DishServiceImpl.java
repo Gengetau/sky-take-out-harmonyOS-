@@ -241,6 +241,7 @@ public class DishServiceImpl extends ServiceImpl<DishMapper, Dish> implements Di
 	}
 	
 	@Override
+	@Transactional(rollbackFor = Exception.class)
 	public Result<String> startOrStop(Integer status, Long id) {
 		// 停售
 		if (status.equals(StatusConstant.DISABLE)) {

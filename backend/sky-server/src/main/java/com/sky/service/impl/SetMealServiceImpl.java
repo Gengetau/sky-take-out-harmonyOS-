@@ -20,6 +20,7 @@ import com.sky.vo.SetMealVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
@@ -85,5 +86,22 @@ public class SetMealServiceImpl extends ServiceImpl<SetMealMapper, SetMeal>
 		setMealVOPage.setTotal(setMealPage.getTotal());
 		// 10.返回
 		return Result.success(setMealVOPage);
+	}
+	
+	@Override
+	@Transactional(rollbackFor = Exception.class)
+	public Result<String> setMealStatus(Integer status, Long setmealId) {
+		// 1.查询套餐是否存在
+		long count = count(new LambdaQueryWrapper<SetMeal>().eq(SetMeal::getId, setmealId));
+		if (count <= 0) {
+			throw new SetMealNotFoundException(SET_MEAL_NOT_FOUND);
+		}
+		// 2.修改
+		SetMeal setMeal = SetMeal.builder()
+				.status(status)
+				.id(setmealId)
+				.build();
+		updateById(setMeal);
+		return Result.success();
 	}
 }
