@@ -1,5 +1,12 @@
 package com.sky.controller.admin;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.sky.dto.SetmealPageQueryDTO;
+import com.sky.result.Result;
+import com.sky.service.SetMealService;
+import com.sky.vo.SetMealVO;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -13,4 +20,17 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/admin/setmeal")
 public class AdminSetMealController {
+	@Autowired
+	private SetMealService setMealService;
+	
+	/**
+	 * 套餐分页查询
+	 *
+	 * @param dto
+	 * @return
+	 */
+	@GetMapping("/page")
+	public Result<Page<SetMealVO>> getSetMealByPage(SetmealPageQueryDTO dto) {
+		return setMealService.getSetMealByPage(dto);
+	}
 }
