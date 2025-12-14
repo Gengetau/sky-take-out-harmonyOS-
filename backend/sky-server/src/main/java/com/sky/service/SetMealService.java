@@ -21,4 +21,6 @@ public interface SetMealService extends IService<SetMeal> {
 	Result<String> setMealStatus(Integer status, Long setmealId);
 	
 	Result<String> saveSetMeal(SetmealDTO dto);
+	
+	Result<SetMealVO> getSetMealById(Long id);
 }

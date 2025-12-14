@@ -7,16 +7,20 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.sky.config.OSSConfig;
+import com.sky.constant.StatusConstant;
 import com.sky.dto.SetmealDTO;
 import com.sky.dto.SetmealPageQueryDTO;
 import com.sky.entity.Category;
+import com.sky.entity.Dish;
 import com.sky.entity.SetMeal;
 import com.sky.entity.SetMealDish;
 import com.sky.exception.SetMealExitException;
 import com.sky.exception.SetMealNotFoundException;
+import com.sky.exception.SetmealEnableFailedException;
 import com.sky.mapper.SetMealMapper;
 import com.sky.result.Result;
 import com.sky.service.CategoryService;
+import com.sky.service.DishService;
 import com.sky.service.SetMealDishService;
 import com.sky.service.SetMealService;
 import com.sky.utils.AliOssUtil;
@@ -30,8 +34,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static com.sky.constant.MessageConstant.SET_MEAL_EXIT;
-import static com.sky.constant.MessageConstant.SET_MEAL_NOT_FOUND;
+import static com.sky.constant.MessageConstant.*;
+import static com.sky.constant.StatusConstant.DISABLE;
 
 /**
  * @author Gengetsu
@@ -52,6 +56,8 @@ public class SetMealServiceImpl extends ServiceImpl<SetMealMapper, SetMeal>
 	private OSS ossClient;
 	@Autowired
 	private OSSConfig ossConfig;
+	@Autowired
+	private DishService dishService;
 	
 	@Override
 	public Result<Page<SetMealVO>> getSetMealByPage(SetmealPageQueryDTO dto) {
@@ -103,6 +109,22 @@ public class SetMealServiceImpl extends ServiceImpl<SetMealMapper, SetMeal>
 		if (count <= 0) {
 			throw new SetMealNotFoundException(SET_MEAL_NOT_FOUND);
 		}
+		// 2.查询套餐内所有菜品是否全部启售
+		if (status == StatusConstant.ENABLE) {
+			// 2.1获取相关菜品id
+			List<Long> ids = setMealDishService.list(new LambdaQueryWrapper<SetMealDish>()
+							.eq(SetMealDish::getSetMealId, setmealId))
+					.stream()
+					.map(SetMealDish::getDishId)
+					.collect(Collectors.toList());
+			// 2.2查询
+			long dishCount = dishService.count(new LambdaQueryWrapper<Dish>()
+					.in(Dish::getId, ids)
+					.eq(Dish::getStatus, DISABLE));
+			if (dishCount > 0) {
+				throw new SetmealEnableFailedException(SET_MEAL_ENABLE_FAILED);
+			}
+		}
 		// 2.修改
 		SetMeal setMeal = SetMeal.builder()
 				.status(status)
@@ -137,5 +159,29 @@ public class SetMealServiceImpl extends ServiceImpl<SetMealMapper, SetMeal>
 		setMealDishService.saveBatch(setMealDishes);
 		// 6.返回
 		return Result.success();
+	}
+	
+	@Override
+	public Result<SetMealVO> getSetMealById(Long id) {
+		// 1.查询 set_meal 表
+		SetMeal setMeal = getById(id);
+		if (setMeal == null) {
+			throw new SetMealNotFoundException(SET_MEAL_NOT_FOUND);
+		}
+		// 2.复制属性
+		SetMealVO setMealVO = BeanUtil.copyProperties(setMeal, SetMealVO.class);
+		// 3.查询 set_meal_dish 表，获取关联的菜品信息
+		List<SetMealDish> list = setMealDishService.list(new LambdaQueryWrapper<SetMealDish>()
+				.eq(SetMealDish::getSetMealId, setMeal.getId()));
+		// 4.查询所属分类名称
+		Category category = categoryService.getById(setMeal.getCategoryId());
+		setMealVO.setCategoryName(category.getName());
+		// 5.对image进行签名处理
+		String signedUrl = AliOssUtil.getSignedUrl(ossClient, setMealVO.getImage(), ossConfig.getBucketName());
+		setMealVO.setImage(signedUrl);
+		// 6.组装
+		setMealVO.setSetmealDishes(list);
+		// 7.返回
+		return Result.success(setMealVO);
 	}
 }

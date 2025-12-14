@@ -54,4 +54,15 @@ public class AdminSetMealController {
 	public Result<String> saveSetMeal(@RequestBody SetmealDTO dto) {
 		return setMealService.saveSetMeal(dto);
 	}
+	
+	/**
+	 * 根据 id 查询套餐
+	 *
+	 * @param id
+	 * @return
+	 */
+	@GetMapping("/{id}")
+	public Result<SetMealVO> getSetMealById(@PathVariable("id") Long id) {
+		return setMealService.getSetMealById(id);
+	}
 }
