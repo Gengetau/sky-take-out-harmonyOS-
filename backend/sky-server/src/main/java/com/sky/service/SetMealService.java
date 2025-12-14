@@ -2,6 +2,7 @@ package com.sky.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.sky.dto.SetmealDTO;
 import com.sky.dto.SetmealPageQueryDTO;
 import com.sky.entity.SetMeal;
 import com.sky.result.Result;
@@ -18,4 +19,6 @@ public interface SetMealService extends IService<SetMeal> {
 	Result<Page<SetMealVO>> getSetMealByPage(SetmealPageQueryDTO dto);
 	
 	Result<String> setMealStatus(Integer status, Long setmealId);
+	
+	Result<String> saveSetMeal(SetmealDTO dto);
 }

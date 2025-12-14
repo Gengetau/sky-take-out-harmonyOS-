@@ -7,13 +7,17 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.sky.config.OSSConfig;
+import com.sky.dto.SetmealDTO;
 import com.sky.dto.SetmealPageQueryDTO;
 import com.sky.entity.Category;
 import com.sky.entity.SetMeal;
+import com.sky.entity.SetMealDish;
+import com.sky.exception.SetMealExitException;
 import com.sky.exception.SetMealNotFoundException;
 import com.sky.mapper.SetMealMapper;
 import com.sky.result.Result;
 import com.sky.service.CategoryService;
+import com.sky.service.SetMealDishService;
 import com.sky.service.SetMealService;
 import com.sky.utils.AliOssUtil;
 import com.sky.vo.SetMealVO;
@@ -26,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static com.sky.constant.MessageConstant.SET_MEAL_EXIT;
 import static com.sky.constant.MessageConstant.SET_MEAL_NOT_FOUND;
 
 /**
@@ -41,6 +46,8 @@ public class SetMealServiceImpl extends ServiceImpl<SetMealMapper, SetMeal>
 		implements SetMealService {
 	@Autowired
 	private CategoryService categoryService;
+	@Autowired
+	private SetMealDishService setMealDishService;
 	@Autowired
 	private OSS ossClient;
 	@Autowired
@@ -102,6 +109,33 @@ public class SetMealServiceImpl extends ServiceImpl<SetMealMapper, SetMeal>
 				.id(setmealId)
 				.build();
 		updateById(setMeal);
+		return Result.success();
+	}
+	
+	@Override
+	@Transactional(rollbackFor = Exception.class)
+	public Result<String> saveSetMeal(SetmealDTO dto) {
+		// 1.校验套餐名称是否存在
+		long count = count(new LambdaQueryWrapper<SetMeal>().eq(SetMeal::getName, dto.getName()));
+		if (count > 0) {
+			throw new SetMealExitException(SET_MEAL_EXIT);
+		}
+		// 2.复制属性
+		SetMeal setMeal = BeanUtil.copyProperties(dto, SetMeal.class);
+		// 3.处理 image 地址
+		String keyFromUrl = AliOssUtil.extractKeyFromUrl(dto.getImage());
+		setMeal.setImage(keyFromUrl);
+		// 3.新增 set_meal 表
+		save(setMeal);
+		// 4.获取新增id 和套餐菜品
+		Long id = setMeal.getId();
+		List<SetMealDish> setMealDishes = dto.getSetMealDishes();
+		setMealDishes.forEach(setMealDish -> {
+			setMealDish.setSetMealId(id);
+		});
+		// 5.根据 id 批量新增 set_meal_dish 表
+		setMealDishService.saveBatch(setMealDishes);
+		// 6.返回
 		return Result.success();
 	}
 }

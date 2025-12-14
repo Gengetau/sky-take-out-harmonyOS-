@@ -175,7 +175,7 @@ public class DishServiceImpl extends ServiceImpl<DishMapper, Dish> implements Di
 		// 3.组装
 		List<DishVO> dishVOS = list.stream().map(dish -> {
 			DishVO dishVO = BeanUtil.copyProperties(dish, DishVO.class);
-			dishVO.setName(name);
+			dishVO.setCategoryName(name);
 			String signedUrl = AliOssUtil.getSignedUrl(ossClient, dishVO.getImage(), ossConfig.getBucketName());
 			dishVO.setImage(signedUrl);
 			return dishVO;

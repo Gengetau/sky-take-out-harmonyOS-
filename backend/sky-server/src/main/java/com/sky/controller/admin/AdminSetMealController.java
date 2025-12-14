@@ -1,6 +1,7 @@
 package com.sky.controller.admin;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.sky.dto.SetmealDTO;
 import com.sky.dto.SetmealPageQueryDTO;
 import com.sky.result.Result;
 import com.sky.service.SetMealService;
@@ -41,5 +42,16 @@ public class AdminSetMealController {
 	@PostMapping("/status/{status}")
 	public Result<String> setMealStatus(@PathVariable("status") Integer status, Long id) {
 		return setMealService.setMealStatus(status, id);
+	}
+	
+	/**
+	 * 新增套餐
+	 *
+	 * @param dto
+	 * @return
+	 */
+	@PostMapping
+	public Result<String> saveSetMeal(@RequestBody SetmealDTO dto) {
+		return setMealService.saveSetMeal(dto);
 	}
 }
