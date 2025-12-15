@@ -13,6 +13,7 @@ import com.sky.mapper.OrderMapper;
 import com.sky.result.Result;
 import com.sky.service.OrderDetailService;
 import com.sky.service.OrderService;
+import com.sky.vo.OrderStatisticsVO;
 import com.sky.vo.OrderVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +24,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static com.sky.constant.MessageConstant.ORDER_NOT_FOUND;
+import static com.sky.entity.Orders.*;
 
 /**
  * @author Gengetsu
@@ -84,5 +86,24 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
 		orderVOPage.setTotal(page.getTotal());
 		// 返回
 		return Result.success(orderVOPage);
+	}
+	
+	@Override
+	public Result<OrderStatisticsVO> getOrderStatistics() {
+		// 1.待接单数量
+		long toBeConfirmed = count(new LambdaQueryWrapper<Orders>()
+				.eq(Orders::getStatus, TO_BE_CONFIRMED));
+		// 2.待派送数量
+		long confirmed = count(new LambdaQueryWrapper<Orders>()
+				.eq(Orders::getStatus, CONFIRMED));
+		// 3.派送中数量
+		long deliveryInProgress = count(new LambdaQueryWrapper<Orders>()
+				.eq(Orders::getStatus, DELIVERY_IN_PROGRESS));
+		OrderStatisticsVO vo = OrderStatisticsVO.builder()
+				.toBeConfirmed(toBeConfirmed)
+				.confirmed(confirmed)
+				.deliveryInProgress(deliveryInProgress)
+				.build();
+		return Result.success(vo);
 	}
 }

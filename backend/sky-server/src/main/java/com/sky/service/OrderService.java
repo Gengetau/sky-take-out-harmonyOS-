@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.sky.dto.OrdersPageQueryDTO;
 import com.sky.entity.Orders;
 import com.sky.result.Result;
+import com.sky.vo.OrderStatisticsVO;
 import com.sky.vo.OrderVO;
 
 /**
@@ -16,4 +17,6 @@ import com.sky.vo.OrderVO;
  */
 public interface OrderService extends IService<Orders> {
 	Result<Page<OrderVO>> getOrdersByPage(OrdersPageQueryDTO dto);
+	
+	Result<OrderStatisticsVO> getOrderStatistics();
 }
