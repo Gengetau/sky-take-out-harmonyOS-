@@ -9,6 +9,10 @@ import com.sky.vo.SetMealVO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
 /**
  * @author Gengetsu
  * @version v1.0
@@ -75,5 +79,20 @@ public class AdminSetMealController {
 	@PutMapping
 	public Result<String> updateSetMeal(@RequestBody SetmealDTO dto) {
 		return setMealService.updateSetMeal(dto);
+	}
+	
+	/**
+	 * 批量删除套餐
+	 *
+	 * @param idsString
+	 * @return
+	 */
+	@DeleteMapping
+	public Result<String> deleteBatch(@RequestParam("ids") String idsString) {
+		// 将字符串转化为列表
+		List<Long> ids = Arrays.stream(idsString.split(","))
+				.map(Long::valueOf)
+				.collect(Collectors.toList());
+		return setMealService.deleteBatch(ids);
 	}
 }

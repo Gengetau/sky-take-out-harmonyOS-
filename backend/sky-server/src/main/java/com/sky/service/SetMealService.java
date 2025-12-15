@@ -8,6 +8,8 @@ import com.sky.entity.SetMeal;
 import com.sky.result.Result;
 import com.sky.vo.SetMealVO;
 
+import java.util.List;
+
 /**
  * @author Gengetsu
  * @version v1.0
@@ -25,4 +27,6 @@ public interface SetMealService extends IService<SetMeal> {
 	Result<SetMealVO> getSetMealById(Long id);
 	
 	Result<String> updateSetMeal(SetmealDTO dto);
+	
+	Result<String> deleteBatch(List<Long> ids);
 }

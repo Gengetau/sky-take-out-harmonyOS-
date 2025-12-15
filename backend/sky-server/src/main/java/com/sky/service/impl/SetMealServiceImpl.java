@@ -14,6 +14,7 @@ import com.sky.entity.Category;
 import com.sky.entity.Dish;
 import com.sky.entity.SetMeal;
 import com.sky.entity.SetMealDish;
+import com.sky.exception.DeletionNotAllowedException;
 import com.sky.exception.SetMealExitException;
 import com.sky.exception.SetMealNotFoundException;
 import com.sky.exception.SetmealEnableFailedException;
@@ -36,6 +37,7 @@ import java.util.stream.Collectors;
 
 import static com.sky.constant.MessageConstant.*;
 import static com.sky.constant.StatusConstant.DISABLE;
+import static com.sky.constant.StatusConstant.ENABLE;
 
 /**
  * @author Gengetsu
@@ -223,6 +225,24 @@ public class SetMealServiceImpl extends ServiceImpl<SetMealMapper, SetMeal>
 			setMealDishService.remove(new LambdaQueryWrapper<SetMealDish>().eq(SetMealDish::getSetMealId, setMealId));
 		}
 		// 8.返回
+		return Result.success();
+	}
+	
+	@Override
+	@Transactional(rollbackFor = Exception.class)
+	public Result<String> deleteBatch(List<Long> ids) {
+		// 1.校验是否有启售中的套餐
+		long count = count(new LambdaQueryWrapper<SetMeal>()
+				.in(SetMeal::getId, ids)
+				.eq(SetMeal::getStatus, ENABLE));
+		if (count > 0) {
+			throw new DeletionNotAllowedException(SET_MEAL_ON_SALE);
+		}
+		// 2.批量移除套餐相关菜品
+		setMealDishService.remove(new LambdaQueryWrapper<SetMealDish>()
+				.in(SetMealDish::getSetMealId, ids));
+		// 3.批量移除套餐
+		removeBatchByIds(ids);
 		return Result.success();
 	}
 	
