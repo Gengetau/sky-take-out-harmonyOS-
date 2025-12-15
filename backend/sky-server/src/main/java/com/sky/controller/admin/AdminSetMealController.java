@@ -65,4 +65,15 @@ public class AdminSetMealController {
 	public Result<SetMealVO> getSetMealById(@PathVariable("id") Long id) {
 		return setMealService.getSetMealById(id);
 	}
+	
+	/**
+	 * 修改套餐信息
+	 *
+	 * @param dto
+	 * @return
+	 */
+	@PutMapping
+	public Result<String> updateSetMeal(@RequestBody SetmealDTO dto) {
+		return setMealService.updateSetMeal(dto);
+	}
 }

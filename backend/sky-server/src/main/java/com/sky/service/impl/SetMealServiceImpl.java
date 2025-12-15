@@ -151,7 +151,7 @@ public class SetMealServiceImpl extends ServiceImpl<SetMealMapper, SetMeal>
 		save(setMeal);
 		// 4.获取新增id 和套餐菜品
 		Long id = setMeal.getId();
-		List<SetMealDish> setMealDishes = dto.getSetMealDishes();
+		List<SetMealDish> setMealDishes = dto.getSetmealDishes();
 		setMealDishes.forEach(setMealDish -> {
 			setMealDish.setSetMealId(id);
 		});
@@ -183,5 +183,61 @@ public class SetMealServiceImpl extends ServiceImpl<SetMealMapper, SetMeal>
 		setMealVO.setSetmealDishes(list);
 		// 7.返回
 		return Result.success(setMealVO);
+	}
+	
+	@Override
+	@Transactional(rollbackFor = Exception.class)
+	public Result<String> updateSetMeal(SetmealDTO dto) {
+		// 1.根据id 查询
+		SetMeal setMeal = getById(dto.getId());
+		if (setMeal == null) {
+			throw new SetMealNotFoundException(SET_MEAL_NOT_FOUND);
+		}
+		if (!dto.getName().equals(setMeal.getName())) {
+			// 校验新套餐名称是否存在
+			long count = count(new LambdaQueryWrapper<SetMeal>().eq(SetMeal::getName, dto.getName()));
+			if (count > 0) {
+				throw new SetMealExitException(SET_MEAL_EXIT);
+			}
+		}
+		// 2.复制属性
+		BeanUtil.copyProperties(dto, setMeal);
+		// 3.处理 image 地址
+		String keyFromUrl = AliOssUtil.extractKeyFromUrl(dto.getImage());
+		setMeal.setImage(keyFromUrl);
+		// 4.修改 set_meal 表
+		updateById(setMeal);
+		// 5.获取套餐id
+		Long setMealId = dto.getId();
+		// 6.获取套餐菜品
+		List<SetMealDish> setMealDishes = dto.getSetmealDishes();
+		// 7.判断套餐菜品是否为空
+		if (CollUtil.isNotEmpty(setMealDishes)) {
+			// 不为空则遍历赋值
+			setMealDishes.forEach(setMealDish -> {
+				setMealDish.setSetMealId(setMealId);
+			});
+			updateSetMealDish(setMealDishes);
+		} else {
+			// 为空则删除该套餐关联的菜品
+			setMealDishService.remove(new LambdaQueryWrapper<SetMealDish>().eq(SetMealDish::getSetMealId, setMealId));
+		}
+		// 8.返回
+		return Result.success();
+	}
+	
+	/**
+	 * 修改 set_meal_dish 表
+	 *
+	 * @param setMealDishes
+	 */
+	@Transactional(rollbackFor = Exception.class)
+	public void updateSetMealDish(List<SetMealDish> setMealDishes) {
+		// 1.获取套餐id
+		Long setMealId = setMealDishes.get(0).getSetMealId();
+		// 2.删除原套餐id对应的菜品
+		setMealDishService.remove(new LambdaQueryWrapper<SetMealDish>().eq(SetMealDish::getSetMealId, setMealId));
+		// 3.新增套餐对应的菜品
+		setMealDishService.saveBatch(setMealDishes);
 	}
 }
