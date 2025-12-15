@@ -260,3 +260,16 @@ INSERT INTO `set_meal_dish` (`set_meal_id`, `dish_id`, `name`, `price`, `copies`
 INSERT INTO `set_meal_dish` (`set_meal_id`, `dish_id`, `name`, `price`, `copies`) VALUES (32, 54, '清炒小油菜', 18.00, 1);
 INSERT INTO `set_meal_dish` (`set_meal_id`, `dish_id`, `name`, `price`, `copies`) VALUES (33, 62, '金汤酸菜牛蛙', 88.00, 1);
 INSERT INTO `set_meal_dish` (`set_meal_id`, `dish_id`, `name`, `price`, `copies`) VALUES (33, 49, '米饭', 2.00, 1);
+
+-- 订单测试数据
+INSERT INTO `orders` (id, number, status, user_id, address_book_id, order_time, checkout_time, pay_method, pay_status, amount, remark, phone, address, user_name, consignee, delivery_status)
+VALUES
+(4, '114514', 5, 4, 2, '2025-12-10 10:00:00', '2025-12-10 10:05:00', 1, 1, 8.00, '尽快送达', '13812312312', '北京市海淀区', '测试用户', '张三', 1),
+(5, '1919810', 1, 4, 2, '2025-12-11 11:30:00', NULL, 1, 0, 66.00, '多加点辣', '13812312312', '北京市海淀区', '测试用户', '张三', 1);
+
+-- 订单详情测试数据
+INSERT INTO `order_detail` (id, name, image, order_id, dish_id, set_meal_id, dish_flavor, number, amount)
+VALUES
+(5, '王老吉', '4e08407e6f1ed9ab1bf483cf5e96b48d.png', 4, 46, NULL, NULL, 1, 6.00),
+(6, '米饭', '5b267efec3728ad717ae07d5045238a8.png', 4, 49, NULL, NULL, 1, 2.00),
+(7, '经典酸菜鮰鱼', '8ef3eb9dc910acc4f57df6cc1dfecd11.png', 5, 52, NULL, '中辣', 1, 66.00);
