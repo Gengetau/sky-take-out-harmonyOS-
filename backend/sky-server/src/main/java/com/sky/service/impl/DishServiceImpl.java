@@ -8,6 +8,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.sky.config.OSSConfig;
 import com.sky.constant.MessageConstant;
+import com.sky.constant.StatusConstant;
 import com.sky.dto.DishDTO;
 import com.sky.dto.DishPageQueryDTO;
 import com.sky.entity.Category;
@@ -174,7 +175,7 @@ public class DishServiceImpl extends ServiceImpl<DishMapper, Dish> implements Di
 		// 3.组装
 		List<DishVO> dishVOS = list.stream().map(dish -> {
 			DishVO dishVO = BeanUtil.copyProperties(dish, DishVO.class);
-			dishVO.setName(name);
+			dishVO.setCategoryName(name);
 			String signedUrl = AliOssUtil.getSignedUrl(ossClient, dishVO.getImage(), ossConfig.getBucketName());
 			dishVO.setImage(signedUrl);
 			return dishVO;
@@ -240,10 +241,10 @@ public class DishServiceImpl extends ServiceImpl<DishMapper, Dish> implements Di
 	}
 	
 	@Override
+	@Transactional(rollbackFor = Exception.class)
 	public Result<String> startOrStop(Integer status, Long id) {
 		// 停售
-		if (status.equals(StatusConsta
-				nt.DISABLE)) {
+		if (status.equals(StatusConstant.DISABLE)) {
 			// 判断当前菜品是否在套餐中
 			List<SetMealDish> setMealDishes = setMealDishService.list(new LambdaQueryWrapper<SetMealDish>()
 					.eq(SetMealDish::getDishId, id));

@@ -186,7 +186,7 @@ CREATE TABLE `orders` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb3 COLLATE=utf8_bin COMMENT='订单表';
 
-DROP TABLE IF EXISTS `setmeal`;
+DROP TABLE IF EXISTS `set_meal`;
 CREATE TABLE `set_meal` (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键',
   `category_id` bigint NOT NULL COMMENT '菜品分类id',
@@ -203,7 +203,7 @@ CREATE TABLE `set_meal` (
   UNIQUE KEY `idx_set_meal_name` (`name`)
 ) ENGINE=InnoDB AUTO_INCREMENT=32 DEFAULT CHARSET=utf8mb3 COLLATE=utf8_bin COMMENT='套餐';
 
-DROP TABLE IF EXISTS `setmeal_dish`;
+DROP TABLE IF EXISTS `set_meal_dish`;
 CREATE TABLE `set_meal_dish` (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键',
   `set_meal_id` bigint DEFAULT NULL COMMENT '套餐id',
@@ -252,3 +252,11 @@ CREATE TABLE `shop_type`(
   Update_Time timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb3 COLLATE=utf8_bin COMMENT='店铺类型';
+
+INSERT INTO `set_meal` (`category_id`, `name`, `price`, `status`, `description`, `image`, `create_time`, `update_time`, `create_user`, `update_user`) VALUES (13, '健康搭配套餐A', 39.90, 1, '包含米饭和清炒小油菜，健康美味喵！', 'https://sky-itcast.oss-cn-beijing.aliyuncs.com/setmeal_healthy_a.png', NOW(), NOW(), 1, 1);
+INSERT INTO `set_meal` (`category_id`, `name`, `price`, `status`, `description`, `image`, `create_time`, `update_time`, `create_user`, `update_user`) VALUES (15, '麻辣诱惑套餐B', 68.80, 1, '金汤酸菜牛蛙配米饭，辣得过瘾喵！', 'https://sky-itcast.oss-cn-beijing.aliyuncs.com/setmeal_spicy_b.png', NOW(), NOW(), 1, 1);
+
+INSERT INTO `set_meal_dish` (`set_meal_id`, `dish_id`, `name`, `price`, `copies`) VALUES (32, 49, '米饭', 2.00, 1);
+INSERT INTO `set_meal_dish` (`set_meal_id`, `dish_id`, `name`, `price`, `copies`) VALUES (32, 54, '清炒小油菜', 18.00, 1);
+INSERT INTO `set_meal_dish` (`set_meal_id`, `dish_id`, `name`, `price`, `copies`) VALUES (33, 62, '金汤酸菜牛蛙', 88.00, 1);
+INSERT INTO `set_meal_dish` (`set_meal_id`, `dish_id`, `name`, `price`, `copies`) VALUES (33, 49, '米饭', 2.00, 1);
