@@ -19,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -105,5 +106,23 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
 				.deliveryInProgress(deliveryInProgress)
 				.build();
 		return Result.success(vo);
+	}
+	
+	@Override
+	public Result<OrderVO> getOrderDetailById(Long id) {
+		// 1.根据订单id 查询订单
+		Orders order = getById(id);
+		// 2.查询相关菜品
+		List<OrderDetail> orderDetails = orderDetailService.list(new LambdaQueryWrapper<OrderDetail>()
+				.eq(OrderDetail::getOrderId, id));
+		List<String> strings = new ArrayList<>();
+		orderDetails.forEach(orderDetail -> {
+			strings.add(orderDetail.getName());
+		});
+		// 3.复制属性
+		OrderVO orderVO = BeanUtil.copyProperties(order, OrderVO.class);
+		orderVO.setOrderDishes(strings.toString());
+		orderVO.setOrderDetailList(orderDetails);
+		return Result.success(orderVO);
 	}
 }

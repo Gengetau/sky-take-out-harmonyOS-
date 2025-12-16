@@ -19,4 +19,6 @@ public interface OrderService extends IService<Orders> {
 	Result<Page<OrderVO>> getOrdersByPage(OrdersPageQueryDTO dto);
 	
 	Result<OrderStatisticsVO> getOrderStatistics();
+	
+	Result<OrderVO> getOrderDetailById(Long id);
 }

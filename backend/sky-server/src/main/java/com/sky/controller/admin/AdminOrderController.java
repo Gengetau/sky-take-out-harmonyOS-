@@ -8,6 +8,7 @@ import com.sky.vo.OrderStatisticsVO;
 import com.sky.vo.OrderVO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -43,5 +44,16 @@ public class AdminOrderController {
 	@GetMapping("/statistics")
 	public Result<OrderStatisticsVO> getOrderStatistics() {
 		return orderService.getOrderStatistics();
+	}
+	
+	/**
+	 * 查询订单详情
+	 *
+	 * @param id
+	 * @return
+	 */
+	@GetMapping("/details/{id}")
+	public Result<OrderVO> getOrderDetailById(@PathVariable Long id) {
+		return orderService.getOrderDetailById(id);
 	}
 }
