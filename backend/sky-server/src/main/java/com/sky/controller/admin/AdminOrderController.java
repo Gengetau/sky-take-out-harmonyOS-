@@ -100,4 +100,15 @@ public class AdminOrderController {
 	public Result<String> complete(@PathVariable Long id) {
 		return orderService.complete(id);
 	}
+
+	/**
+	 * 派送订单
+	 *
+	 * @param id
+	 * @return
+	 */
+	@PutMapping("/delivery/{id}")
+	public Result<String> delivery(@PathVariable Long id) {
+		return orderService.delivery(id);
+	}
 }
