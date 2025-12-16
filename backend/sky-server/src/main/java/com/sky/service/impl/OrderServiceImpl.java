@@ -8,6 +8,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.sky.dto.OrdersCancelDTO;
 import com.sky.dto.OrdersConfirmDTO;
 import com.sky.dto.OrdersPageQueryDTO;
+import com.sky.dto.OrdersRejectionDTO;
 import com.sky.entity.OrderDetail;
 import com.sky.entity.Orders;
 import com.sky.exception.OrderBusinessException;
@@ -157,6 +158,22 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
 			throw new OrderBusinessException(ORDER_STATUS_ERROR);
 		}
 		orders.setStatus(CONFIRMED);
+		updateById(orders);
+		return Result.success();
+	}
+
+	@Override
+	public Result<String> rejection(OrdersRejectionDTO dto) {
+		Orders orders = getById(dto.getId());
+		if (!orders.getStatus().equals(TO_BE_CONFIRMED)) {
+			throw new OrderBusinessException(ORDER_STATUS_ERROR);
+		}
+		if (orders.getPayStatus().equals(PAID)) {
+			//TODO 用户已付款,需要退款
+		}
+		orders.setStatus(CANCELLED);
+		orders.setRejectionReason(dto.getRejectionReason());
+		orders.setCancelTime(LocalDateTime.now());
 		updateById(orders);
 		return Result.success();
 	}

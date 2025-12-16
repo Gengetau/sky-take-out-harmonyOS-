@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.sky.dto.OrdersCancelDTO;
 import com.sky.dto.OrdersConfirmDTO;
 import com.sky.dto.OrdersPageQueryDTO;
+import com.sky.dto.OrdersRejectionDTO;
 import com.sky.result.Result;
 import com.sky.service.OrderService;
 import com.sky.vo.OrderStatisticsVO;
@@ -76,5 +77,16 @@ public class AdminOrderController {
 	@PutMapping("/confirm")
 	public Result<String> confirm(@RequestBody OrdersConfirmDTO dto) {
 		return orderService.confirm(dto);
+	}
+
+	/**
+	 * 拒单
+	 *
+	 * @param dto
+	 * @return
+	 */
+	@PutMapping("/rejection")
+	public Result<String> rejection(@RequestBody OrdersRejectionDTO dto) {
+		return orderService.rejection(dto);
 	}
 }

@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.sky.dto.OrdersCancelDTO;
 import com.sky.dto.OrdersConfirmDTO;
 import com.sky.dto.OrdersPageQueryDTO;
+import com.sky.dto.OrdersRejectionDTO;
 import com.sky.entity.Orders;
 import com.sky.result.Result;
 import com.sky.vo.OrderStatisticsVO;
@@ -25,6 +26,8 @@ public interface OrderService extends IService<Orders> {
 	Result<OrderVO> getOrderDetailById(Long id);
 	
 	Result<String> cancel(OrdersCancelDTO dto);
-
+	
 	Result<String> confirm(OrdersConfirmDTO dto);
+	
+	Result<String> rejection(OrdersRejectionDTO dto);
 }
