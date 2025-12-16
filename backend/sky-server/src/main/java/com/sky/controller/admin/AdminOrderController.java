@@ -89,4 +89,15 @@ public class AdminOrderController {
 	public Result<String> rejection(@RequestBody OrdersRejectionDTO dto) {
 		return orderService.rejection(dto);
 	}
+
+	/**
+	 * 完成订单
+	 *
+	 * @param id
+	 * @return
+	 */
+	@PutMapping("/complete/{id}")
+	public Result<String> complete(@PathVariable Long id) {
+		return orderService.complete(id);
+	}
 }

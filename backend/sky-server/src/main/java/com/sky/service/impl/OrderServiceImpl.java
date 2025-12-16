@@ -177,4 +177,15 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
 		updateById(orders);
 		return Result.success();
 	}
+
+	@Override
+	public Result<String> complete(Long id) {
+		Orders orders = getById(id);
+		if (!orders.getStatus().equals(DELIVERY_IN_PROGRESS)) {
+			throw new OrderBusinessException(ORDER_STATUS_ERROR);
+		}
+		orders.setStatus(COMPLETED);
+		updateById(orders);
+		return Result.success();
+	}
 }

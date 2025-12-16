@@ -30,4 +30,6 @@ public interface OrderService extends IService<Orders> {
 	Result<String> confirm(OrdersConfirmDTO dto);
 	
 	Result<String> rejection(OrdersRejectionDTO dto);
+
+	Result<String> complete(Long id);
 }
