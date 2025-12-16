@@ -5,6 +5,7 @@ import cn.hutool.core.collection.CollUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.sky.dto.OrdersCancelDTO;
 import com.sky.dto.OrdersPageQueryDTO;
 import com.sky.entity.OrderDetail;
 import com.sky.entity.Orders;
@@ -19,12 +20,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import static com.sky.constant.MessageConstant.ORDER_NOT_FOUND;
+import static com.sky.constant.MessageConstant.ORDER_STATUS_ERROR;
 import static com.sky.entity.Orders.*;
 
 /**
@@ -124,5 +127,25 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
 		orderVO.setOrderDishes(strings.toString());
 		orderVO.setOrderDetailList(orderDetails);
 		return Result.success(orderVO);
+	}
+
+	@Override
+	public Result<String> cancel(OrdersCancelDTO dto) {
+		// 1.根据id查询订单
+		Orders orders = getById(dto.getId());
+		// 2.判断订单状态
+		if (orders.getStatus() > 2) {
+			throw new OrderBusinessException(ORDER_STATUS_ERROR);
+		}
+		// 3.已接单,但已付款,需要退款
+		if (orders.getPayStatus().equals(PAID)) {
+			// TODO 退款操作
+		}
+		// 4.更新订单状态
+		orders.setStatus(CANCELLED);
+		orders.setCancelReason(dto.getCancelReason());
+		orders.setCancelTime(LocalDateTime.now());
+		updateById(orders);
+		return Result.success();
 	}
 }
