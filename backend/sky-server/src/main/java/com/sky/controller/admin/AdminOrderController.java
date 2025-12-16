@@ -2,6 +2,7 @@ package com.sky.controller.admin;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.sky.dto.OrdersCancelDTO;
+import com.sky.dto.OrdersConfirmDTO;
 import com.sky.dto.OrdersPageQueryDTO;
 import com.sky.result.Result;
 import com.sky.service.OrderService;
@@ -64,5 +65,16 @@ public class AdminOrderController {
 	@PutMapping("/cancel")
 	public Result<String> cancel(@RequestBody OrdersCancelDTO dto) {
 		return orderService.cancel(dto);
+	}
+
+	/**
+	 * 接单
+	 *
+	 * @param dto
+	 * @return
+	 */
+	@PutMapping("/confirm")
+	public Result<String> confirm(@RequestBody OrdersConfirmDTO dto) {
+		return orderService.confirm(dto);
 	}
 }

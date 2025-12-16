@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.sky.dto.OrdersCancelDTO;
+import com.sky.dto.OrdersConfirmDTO;
 import com.sky.dto.OrdersPageQueryDTO;
 import com.sky.entity.OrderDetail;
 import com.sky.entity.Orders;
@@ -145,6 +146,17 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
 		orders.setStatus(CANCELLED);
 		orders.setCancelReason(dto.getCancelReason());
 		orders.setCancelTime(LocalDateTime.now());
+		updateById(orders);
+		return Result.success();
+	}
+
+	@Override
+	public Result<String> confirm(OrdersConfirmDTO dto) {
+		Orders orders = getById(dto.getId());
+		if (!orders.getStatus().equals(TO_BE_CONFIRMED)) {
+			throw new OrderBusinessException(ORDER_STATUS_ERROR);
+		}
+		orders.setStatus(CONFIRMED);
 		updateById(orders);
 		return Result.success();
 	}
