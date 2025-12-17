@@ -3,6 +3,7 @@ package com.sky.service;
 import com.sky.result.Result;
 import com.sky.vo.BusinessDataVO;
 import com.sky.vo.DishOverViewVO;
+import com.sky.vo.OrderOverViewVO;
 import com.sky.vo.SetmealOverViewVO;
 
 public interface WorkSpaceService {
@@ -14,6 +15,8 @@ public interface WorkSpaceService {
 	SetmealOverViewVO getSetmealOverView();
 	
 	DishOverViewVO getDishOverView();
+	
+	OrderOverViewVO getOrderOverView();
 	
 	Result<BusinessDataVO> getBusinessData();
 }

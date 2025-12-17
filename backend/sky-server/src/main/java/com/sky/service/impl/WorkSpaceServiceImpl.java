@@ -3,6 +3,7 @@ package com.sky.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.sky.constant.StatusConstant;
 import com.sky.entity.Dish;
+import com.sky.entity.Orders;
 import com.sky.entity.SetMeal;
 import com.sky.mapper.DishMapper;
 import com.sky.mapper.OrderMapper;
@@ -12,6 +13,7 @@ import com.sky.result.Result;
 import com.sky.service.WorkSpaceService;
 import com.sky.vo.BusinessDataVO;
 import com.sky.vo.DishOverViewVO;
+import com.sky.vo.OrderOverViewVO;
 import com.sky.vo.SetmealOverViewVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -88,7 +90,6 @@ WorkSpaceServiceImpl implements WorkSpaceService {
 		return new SetmealOverViewVO(sold, discontinued);
 	}
 	
-	@Override
 	public DishOverViewVO getDishOverView() {
 		LambdaQueryWrapper<Dish> queryWrapper = new LambdaQueryWrapper<>();
 		queryWrapper.eq(Dish::getStatus, StatusConstant.ENABLE);
@@ -97,5 +98,33 @@ WorkSpaceServiceImpl implements WorkSpaceService {
 		queryWrapper.eq(Dish::getStatus, StatusConstant.DISABLE);
 		Integer discontinued = Math.toIntExact(dishMapper.selectCount(queryWrapper));
 		return new DishOverViewVO(sold, discontinued);
+	}
+	
+	@Override
+	public OrderOverViewVO getOrderOverView() {
+		LocalDateTime beginTime = LocalDateTime.of(LocalDate.now(), LocalTime.MIN);
+		LocalDateTime endTime = LocalDateTime.of(LocalDate.now(), LocalTime.MAX);
+		LambdaQueryWrapper<Orders> queryWrapper = new LambdaQueryWrapper<>();
+		queryWrapper.between(Orders::getOrderTime, beginTime, endTime);
+		
+		LambdaQueryWrapper<Orders> waitingWrapper = new LambdaQueryWrapper<>();
+		waitingWrapper.eq(Orders::getStatus, Orders.TO_BE_CONFIRMED).between(Orders::getOrderTime, beginTime, endTime);
+		Integer waitingOrders = Math.toIntExact(orderMapper.selectCount(waitingWrapper));
+		
+		LambdaQueryWrapper<Orders> deliveredWrapper = new LambdaQueryWrapper<>();
+		deliveredWrapper.eq(Orders::getStatus, Orders.CONFIRMED).between(Orders::getOrderTime, beginTime, endTime);
+		Integer deliveredOrders = Math.toIntExact(orderMapper.selectCount(deliveredWrapper));
+		
+		LambdaQueryWrapper<Orders> completedWrapper = new LambdaQueryWrapper<>();
+		completedWrapper.eq(Orders::getStatus, Orders.COMPLETED).between(Orders::getOrderTime, beginTime, endTime);
+		Integer completedOrders = Math.toIntExact(orderMapper.selectCount(completedWrapper));
+		
+		LambdaQueryWrapper<Orders> cancelledWrapper = new LambdaQueryWrapper<>();
+		cancelledWrapper.eq(Orders::getStatus, Orders.CANCELLED).between(Orders::getOrderTime, beginTime, endTime);
+		Integer cancelledOrders = Math.toIntExact(orderMapper.selectCount(cancelledWrapper));
+		
+		Integer allOrders = Math.toIntExact(orderMapper.selectCount(queryWrapper));
+		
+		return new OrderOverViewVO(waitingOrders, deliveredOrders, completedOrders, cancelledOrders, allOrders);
 	}
 }
