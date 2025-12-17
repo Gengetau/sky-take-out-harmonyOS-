@@ -8,8 +8,6 @@
 		FROM Orders
 		WHERE Order_Time BETWEEN #{begin} AND #{end}
 	</select>
-		</if>
-	</select>
 	<select id="getTurnoverByDateRange" resultType="map">
 		select date(order_time) as date, sum(amount) as turnover from orders
 		where status = #{status} and order_time between #{begin} and #{end}
