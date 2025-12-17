@@ -33,4 +33,14 @@ public interface OrderMapper extends BaseMapper<Orders> {
 			@Param("begin") LocalDateTime begin,
 			@Param("end") LocalDateTime end,
 			@Param("status") Integer status);
+
+	/**
+	 * 根据时间范围统计订单数量
+	 * @param begin
+	 * @param end
+	 * @return
+	 */
+	List<Map> getOrderStatisticsByDateRange(
+			@Param("begin") LocalDateTime begin,
+			@Param("end") LocalDateTime end);
 }

@@ -13,4 +13,9 @@
 		where status = #{status} and order_time between #{begin} and #{end}
 		group by date(order_time)
 	</select>
+	<select id="getOrderStatisticsByDateRange" resultType="map">
+		select date(order_time) as date, count(id) as totalOrderCount, count(case when status = 5 then id end) as validOrderCount from orders
+		where order_time between #{begin} and #{end}
+		group by date(order_time)
+	</select>
 </mapper>
