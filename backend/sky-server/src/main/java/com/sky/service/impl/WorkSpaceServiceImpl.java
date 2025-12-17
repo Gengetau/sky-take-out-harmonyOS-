@@ -2,13 +2,16 @@ package com.sky.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.sky.constant.StatusConstant;
+import com.sky.entity.Dish;
 import com.sky.entity.SetMeal;
+import com.sky.mapper.DishMapper;
 import com.sky.mapper.OrderMapper;
 import com.sky.mapper.SetMealMapper;
 import com.sky.mapper.UserMapper;
 import com.sky.result.Result;
 import com.sky.service.WorkSpaceService;
 import com.sky.vo.BusinessDataVO;
+import com.sky.vo.DishOverViewVO;
 import com.sky.vo.SetmealOverViewVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,6 +39,8 @@ WorkSpaceServiceImpl implements WorkSpaceService {
 	private OrderMapper orderMapper;
 	@Autowired
 	private SetMealMapper setMealMapper;
+	@Autowired
+	private DishMapper dishMapper;
 	
 	@Override
 	public Result<BusinessDataVO> getBusinessData() {
@@ -81,5 +86,16 @@ WorkSpaceServiceImpl implements WorkSpaceService {
 		queryWrapper.eq(SetMeal::getStatus, StatusConstant.DISABLE);
 		Integer discontinued = Math.toIntExact(setMealMapper.selectCount(queryWrapper));
 		return new SetmealOverViewVO(sold, discontinued);
+	}
+	
+	@Override
+	public DishOverViewVO getDishOverView() {
+		LambdaQueryWrapper<Dish> queryWrapper = new LambdaQueryWrapper<>();
+		queryWrapper.eq(Dish::getStatus, StatusConstant.ENABLE);
+		Integer sold = Math.toIntExact(dishMapper.selectCount(queryWrapper));
+		queryWrapper.clear();
+		queryWrapper.eq(Dish::getStatus, StatusConstant.DISABLE);
+		Integer discontinued = Math.toIntExact(dishMapper.selectCount(queryWrapper));
+		return new DishOverViewVO(sold, discontinued);
 	}
 }
