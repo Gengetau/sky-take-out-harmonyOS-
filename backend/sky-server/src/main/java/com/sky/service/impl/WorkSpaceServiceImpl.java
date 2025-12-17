@@ -116,37 +116,67 @@ WorkSpaceServiceImpl implements WorkSpaceService {
 	}
 	
 	@Override
-	public OrderOverViewVO getOrderOverView() {
-		// 1. 获取当日起止时间
-		LocalDateTime beginTime = LocalDateTime.of(LocalDate.now(), LocalTime.MIN);
-		LocalDateTime endTime = LocalDateTime.of(LocalDate.now(), LocalTime.MAX);
-
-		// 2. 查询待接单数量
-		LambdaQueryWrapper<Orders> waitingWrapper = new LambdaQueryWrapper<>();
-		waitingWrapper.eq(Orders::getStatus, Orders.TO_BE_CONFIRMED).between(Orders::getOrderTime, beginTime, endTime);
-		Integer waitingOrders = Math.toIntExact(orderMapper.selectCount(waitingWrapper));
-
-		// 3. 查询待派送数量
-		LambdaQueryWrapper<Orders> deliveredWrapper = new LambdaQueryWrapper<>();
-		deliveredWrapper.eq(Orders::getStatus, Orders.CONFIRMED).between(Orders::getOrderTime, beginTime, endTime);
-		Integer deliveredOrders = Math.toIntExact(orderMapper.selectCount(deliveredWrapper));
-
-		// 4. 查询已完成数量
-		LambdaQueryWrapper<Orders> completedWrapper = new LambdaQueryWrapper<>();
-		completedWrapper.eq(Orders::getStatus, Orders.COMPLETED).between(Orders::getOrderTime, beginTime, endTime);
-		Integer completedOrders = Math.toIntExact(orderMapper.selectCount(completedWrapper));
-
-		// 5. 查询已取消数量
-		LambdaQueryWrapper<Orders> cancelledWrapper = new LambdaQueryWrapper<>();
-		cancelledWrapper.eq(Orders::getStatus, Orders.CANCELLED).between(Orders::getOrderTime, beginTime, endTime);
-		Integer cancelledOrders = Math.toIntExact(orderMapper.selectCount(cancelledWrapper));
-
-		// 6. 查询全部订单数量
-		LambdaQueryWrapper<Orders> queryWrapper = new LambdaQueryWrapper<>();
-		queryWrapper.between(Orders::getOrderTime, beginTime, endTime);
-		Integer allOrders = Math.toIntExact(orderMapper.selectCount(queryWrapper));
-		
-		// 7. 封装返回结果
-		return new OrderOverViewVO(waitingOrders, deliveredOrders, completedOrders, cancelledOrders, allOrders);
+	    public OrderOverViewVO getOrderOverView() {
+			// 1. 获取当日起止时间
+			LocalDateTime beginTime = LocalDateTime.of(LocalDate.now(), LocalTime.MIN);
+			LocalDateTime endTime = LocalDateTime.of(LocalDate.now(), LocalTime.MAX);
+	
+			// 2. 查询待接单数量
+			LambdaQueryWrapper<Orders> waitingWrapper = new LambdaQueryWrapper<>();
+			waitingWrapper.eq(Orders::getStatus, Orders.TO_BE_CONFIRMED).between(Orders::getOrderTime, beginTime, endTime);
+			Integer waitingOrders = Math.toIntExact(orderMapper.selectCount(waitingWrapper));
+	
+			// 3. 查询待派送数量
+			LambdaQueryWrapper<Orders> deliveredWrapper = new LambdaQueryWrapper<>();
+			deliveredWrapper.eq(Orders::getStatus, Orders.CONFIRMED).between(Orders::getOrderTime, beginTime, endTime);
+			Integer deliveredOrders = Math.toIntExact(orderMapper.selectCount(deliveredWrapper));
+	
+			// 4. 查询已完成数量
+			LambdaQueryWrapper<Orders> completedWrapper = new LambdaQueryWrapper<>();
+			completedWrapper.eq(Orders::getStatus, Orders.COMPLETED).between(Orders::getOrderTime, beginTime, endTime);
+			Integer completedOrders = Math.toIntExact(orderMapper.selectCount(completedWrapper));
+	
+			// 5. 查询已取消数量
+			LambdaQueryWrapper<Orders> cancelledWrapper = new LambdaQueryWrapper<>();
+			cancelledWrapper.eq(Orders::getStatus, Orders.CANCELLED).between(Orders::getOrderTime, beginTime, endTime);
+			Integer cancelledOrders = Math.toIntExact(orderMapper.selectCount(cancelledWrapper));
+	
+			// 6. 查询全部订单数量
+			LambdaQueryWrapper<Orders> queryWrapper = new LambdaQueryWrapper<>();
+			queryWrapper.between(Orders::getOrderTime, beginTime, endTime);
+			Integer allOrders = Math.toIntExact(orderMapper.selectCount(queryWrapper));
+			
+			// 7. 封装返回结果
+			return new OrderOverViewVO(waitingOrders, deliveredOrders, completedOrders, cancelledOrders, allOrders);
+		}
+	
+		@Override
+		public Result<BusinessDataVO> getBusinessData(LocalDateTime begin, LocalDateTime end) {
+			// 1.查询所有订单相关数据
+			Map<String, Object> orderData = orderMapper
+					.getOrderDataByTimeRange(begin, end);
+	
+			// 2.查询用户相关数据
+			Long newUserCount = userMapper.getNewUserCountByTimeRange(begin, end);
+	
+			// 3. 从聚合结果中获取数据
+			Double turnover = (Double) orderData.getOrDefault("turnover", 0.0);
+			Long validOrderCount = (Long) orderData.getOrDefault("validOrderCount", 0L);
+			Long totalOrderCount = (Long) orderData.getOrDefault("totalOrderCount", 0L);
+	
+			// 4. 计算订单完成率和平均客单价
+			Double orderCompletionRate = (totalOrderCount == 0) ? 0.0 : (double) validOrderCount / totalOrderCount;
+			Double unitPrice = (validOrderCount == 0) ? 0.0 : turnover / validOrderCount;
+	
+			// 5. 组装VO对象
+			BusinessDataVO businessDataVO = BusinessDataVO.builder()
+					.turnover(turnover)
+					.validOrderCount(validOrderCount.intValue())
+					.orderCompletionRate(orderCompletionRate)
+					.unitPrice(unitPrice)
+					.newUsers(newUserCount.intValue())
+					.build();
+			return Result.success(businessDataVO);
+		}
 	}
-}
+	
