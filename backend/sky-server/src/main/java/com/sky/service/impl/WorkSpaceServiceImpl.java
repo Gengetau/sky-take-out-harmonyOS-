@@ -1,10 +1,15 @@
 package com.sky.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.sky.constant.StatusConstant;
+import com.sky.entity.SetMeal;
 import com.sky.mapper.OrderMapper;
+import com.sky.mapper.SetMealMapper;
 import com.sky.mapper.UserMapper;
 import com.sky.result.Result;
 import com.sky.service.WorkSpaceService;
 import com.sky.vo.BusinessDataVO;
+import com.sky.vo.SetmealOverViewVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -23,11 +28,14 @@ import java.util.Map;
  */
 @Service
 @Slf4j
-public class WorkSpaceServiceImpl implements WorkSpaceService {
+public class
+WorkSpaceServiceImpl implements WorkSpaceService {
 	@Autowired
 	private UserMapper userMapper;
 	@Autowired
 	private OrderMapper orderMapper;
+	@Autowired
+	private SetMealMapper setMealMapper;
 	
 	@Override
 	public Result<BusinessDataVO> getBusinessData() {
@@ -62,5 +70,16 @@ public class WorkSpaceServiceImpl implements WorkSpaceService {
 				.newUsers(newUserCount.intValue())
 				.build();
 		return Result.success(businessDataVO);
+	}
+	
+	@Override
+	public SetmealOverViewVO getSetmealOverView() {
+		LambdaQueryWrapper<SetMeal> queryWrapper = new LambdaQueryWrapper<>();
+		queryWrapper.eq(SetMeal::getStatus, StatusConstant.ENABLE);
+		Integer sold = Math.toIntExact(setMealMapper.selectCount(queryWrapper));
+		queryWrapper.clear();
+		queryWrapper.eq(SetMeal::getStatus, StatusConstant.DISABLE);
+		Integer discontinued = Math.toIntExact(setMealMapper.selectCount(queryWrapper));
+		return new SetmealOverViewVO(sold, discontinued);
 	}
 }
