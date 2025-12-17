@@ -22,4 +22,12 @@ public interface ReportService {
      * @return
      */
     UserReportVO getUserStatistics(LocalDate begin, LocalDate end);
+
+    /**
+     * 营业额统计
+     * @param begin
+     * @param end
+     * @return
+     */
+    TurnoverReportVO getTurnoverStatistics(LocalDate begin, LocalDate end);
 }

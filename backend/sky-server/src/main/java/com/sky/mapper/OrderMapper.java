@@ -6,6 +6,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -20,4 +21,16 @@ public interface OrderMapper extends BaseMapper<Orders> {
 	Map<String, Object> getOrderDataByTimeRange(
 			@Param("begin") LocalDateTime begin,
 			@Param("end") LocalDateTime end);
+
+	/**
+	 * 根据时间范围和状态统计营业额
+	 * @param begin
+	 * @param end
+	 * @param status
+	 * @return
+	 */
+	List<Map> getTurnoverByDateRange(
+			@Param("begin") LocalDateTime begin,
+			@Param("end") LocalDateTime end,
+			@Param("status") Integer status);
 }
