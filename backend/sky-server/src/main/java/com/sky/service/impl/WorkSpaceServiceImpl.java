@@ -81,50 +81,72 @@ WorkSpaceServiceImpl implements WorkSpaceService {
 	
 	@Override
 	public SetmealOverViewVO getSetmealOverView() {
+		// 1. 创建查询对象
 		LambdaQueryWrapper<SetMeal> queryWrapper = new LambdaQueryWrapper<>();
+		// 2. 设置查询条件为已启售
 		queryWrapper.eq(SetMeal::getStatus, StatusConstant.ENABLE);
+		// 3. 查询已启售套餐数量
 		Integer sold = Math.toIntExact(setMealMapper.selectCount(queryWrapper));
+		// 4. 清空查询条件
 		queryWrapper.clear();
+		// 5. 设置查询条件为已停售
 		queryWrapper.eq(SetMeal::getStatus, StatusConstant.DISABLE);
+		// 6. 查询已停售套餐数量
 		Integer discontinued = Math.toIntExact(setMealMapper.selectCount(queryWrapper));
+		// 7. 封装返回结果
 		return new SetmealOverViewVO(sold, discontinued);
 	}
-	
+
+	@Override
 	public DishOverViewVO getDishOverView() {
+		// 1. 创建查询对象
 		LambdaQueryWrapper<Dish> queryWrapper = new LambdaQueryWrapper<>();
+		// 2. 设置查询条件为已启售
 		queryWrapper.eq(Dish::getStatus, StatusConstant.ENABLE);
+		// 3. 查询已启售菜品数量
 		Integer sold = Math.toIntExact(dishMapper.selectCount(queryWrapper));
+		// 4. 清空查询条件
 		queryWrapper.clear();
+		// 5. 设置查询条件为已停售
 		queryWrapper.eq(Dish::getStatus, StatusConstant.DISABLE);
+		// 6. 查询已停售菜品数量
 		Integer discontinued = Math.toIntExact(dishMapper.selectCount(queryWrapper));
+		// 7. 封装返回结果
 		return new DishOverViewVO(sold, discontinued);
 	}
 	
 	@Override
 	public OrderOverViewVO getOrderOverView() {
+		// 1. 获取当日起止时间
 		LocalDateTime beginTime = LocalDateTime.of(LocalDate.now(), LocalTime.MIN);
 		LocalDateTime endTime = LocalDateTime.of(LocalDate.now(), LocalTime.MAX);
-		LambdaQueryWrapper<Orders> queryWrapper = new LambdaQueryWrapper<>();
-		queryWrapper.between(Orders::getOrderTime, beginTime, endTime);
-		
+
+		// 2. 查询待接单数量
 		LambdaQueryWrapper<Orders> waitingWrapper = new LambdaQueryWrapper<>();
 		waitingWrapper.eq(Orders::getStatus, Orders.TO_BE_CONFIRMED).between(Orders::getOrderTime, beginTime, endTime);
 		Integer waitingOrders = Math.toIntExact(orderMapper.selectCount(waitingWrapper));
-		
+
+		// 3. 查询待派送数量
 		LambdaQueryWrapper<Orders> deliveredWrapper = new LambdaQueryWrapper<>();
 		deliveredWrapper.eq(Orders::getStatus, Orders.CONFIRMED).between(Orders::getOrderTime, beginTime, endTime);
 		Integer deliveredOrders = Math.toIntExact(orderMapper.selectCount(deliveredWrapper));
-		
+
+		// 4. 查询已完成数量
 		LambdaQueryWrapper<Orders> completedWrapper = new LambdaQueryWrapper<>();
 		completedWrapper.eq(Orders::getStatus, Orders.COMPLETED).between(Orders::getOrderTime, beginTime, endTime);
 		Integer completedOrders = Math.toIntExact(orderMapper.selectCount(completedWrapper));
-		
+
+		// 5. 查询已取消数量
 		LambdaQueryWrapper<Orders> cancelledWrapper = new LambdaQueryWrapper<>();
 		cancelledWrapper.eq(Orders::getStatus, Orders.CANCELLED).between(Orders::getOrderTime, beginTime, endTime);
 		Integer cancelledOrders = Math.toIntExact(orderMapper.selectCount(cancelledWrapper));
-		
+
+		// 6. 查询全部订单数量
+		LambdaQueryWrapper<Orders> queryWrapper = new LambdaQueryWrapper<>();
+		queryWrapper.between(Orders::getOrderTime, beginTime, endTime);
 		Integer allOrders = Math.toIntExact(orderMapper.selectCount(queryWrapper));
 		
+		// 7. 封装返回结果
 		return new OrderOverViewVO(waitingOrders, deliveredOrders, completedOrders, cancelledOrders, allOrders);
 	}
 }

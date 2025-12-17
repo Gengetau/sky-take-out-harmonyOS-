@@ -13,10 +13,22 @@ public interface WorkSpaceService {
 	 * @return
 	 */
 	SetmealOverViewVO getSetmealOverView();
-	
+
+	/**
+	 * 查询菜品总览
+	 * @return
+	 */
 	DishOverViewVO getDishOverView();
-	
+
+	/**
+	 * 查询订单管理数据
+	 * @return
+	 */
 	OrderOverViewVO getOrderOverView();
-	
+
+	/**
+	 * 查询今日运营数据
+	 * @return
+	 */
 	Result<BusinessDataVO> getBusinessData();
 }
