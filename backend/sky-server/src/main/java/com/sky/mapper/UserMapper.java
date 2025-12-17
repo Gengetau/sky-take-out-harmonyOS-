@@ -14,9 +14,19 @@ import java.time.LocalDateTime;
  * @Description 用户持久层接口
  * @dateTime 3/12/2025 上午11:37
  */
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+
 @Mapper
 public interface UserMapper extends BaseMapper<User> {
-	Long getNewUserCountByTimeRange(
-			@Param("begin") LocalDateTime begin,
-			@Param("end") LocalDateTime end);
+	Long getNewUserCountByTimeRange(LocalDateTime beginTime, LocalDateTime endTime);
+
+	/**
+	 * 根据时间范围统计用户数量
+	 * @param beginTime
+	 * @param endTime
+	 * @return
+	 */
+	List<Map> getUserCount(LocalDateTime beginTime, LocalDateTime endTime);
 }
