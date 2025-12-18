@@ -23,12 +23,12 @@ public interface CategoryService extends IService<Category> {
 	// ==================================================
 	
 	/**
-	 * 根据类型查询菜品分类
+	 * 查询所有已启用的菜品分类
+	 * (不按type过滤,带Redis缓存)
 	 *
-	 * @param type
 	 * @return
 	 */
-	Result<List<CategoryVO>> queryAllCategory(Integer type);
+	Result<List<CategoryVO>> queryAllEnabledCategories();
 	
 	// ==================================================
 	// =============== admin 管理端方法 ===================

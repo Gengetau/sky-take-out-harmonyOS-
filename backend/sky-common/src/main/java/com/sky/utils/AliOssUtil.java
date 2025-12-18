@@ -9,6 +9,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Date;
+import java.util.concurrent.TimeUnit;
 
 public class AliOssUtil {
 	
@@ -34,6 +35,15 @@ public class AliOssUtil {
 	public static String getSignedUrl(OSS ossClient, String objectName, String bucketName) {
 		// 设置2小时过期
 		Date expiration = new Date(new Date().getTime() + 2 * 3600 * 1000);
+		URL url = ossClient.generatePresignedUrl(bucketName, objectName, expiration);
+		return url.toString();
+	}
+	
+	/**
+	 * 独立的获取签名 URL 方法（可自定义过期时间）
+	 */
+	public static String getSignedUrl(OSS ossClient, String objectName, String bucketName, long duration, TimeUnit unit) {
+		Date expiration = new Date(new Date().getTime() + unit.toMillis(duration));
 		URL url = ossClient.generatePresignedUrl(bucketName, objectName, expiration);
 		return url.toString();
 	}

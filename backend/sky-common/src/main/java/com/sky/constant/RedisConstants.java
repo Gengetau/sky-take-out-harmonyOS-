@@ -10,6 +10,8 @@ public class RedisConstants {
 	
 	public static final String SHOP_TYPE_KEY = "cache:type";
 	
+	public static final Long CACHE_TYPE_TTL = 24L;
+	
 	public static final String BLOOM_FILTER_KEY = "bloom:filter:";
 	
 	public static final Long CACHE_NULL_TTL = 2L;
@@ -35,6 +37,21 @@ public class RedisConstants {
 	public static final String SHOP_GEO_KEY = "shop:geo:";
 	
 	public static final String USER_SIGN_KEY = "sign:";
+	
+	public static final String DISH_CACHE_KEY = "cache:dish:";
+	
+	// 单位：分钟
+	public static final Long CACHE_DISH_TTL = 60L;
+	
+	public static final String CATEGORY_ALL_KEY = "cache:category:all";
+	
+	// 单位：小时
+	public static final Long CACHE_CATEGORY_TTL = 24L;
+	
+	public static final String SETMEAL_CACHE_KEY = "cache:setmeal:";
+	
+	// 单位：分钟
+	public static final Long CACHE_SETMEAL_TTL = 60L;
 	
 	/*// 生成随机TTL
 	public static Long randomTTL() {
