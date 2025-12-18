@@ -46,25 +46,25 @@ export class MockData {
    * 🛠️ 辅助方法：把数据整合成 ListItemGroup 需要的结构
    * 结构：CategoryVO -> [DishVO, DishVO...]
    */
-  static getCategoryWithDishes(): CategoryWithDishes[] {
+  static getCategoryWithItems(): CategoryWithItems[] {
     const categories = MockData.getCategories();
     const allDishes = MockData.getDishes();
 
     return categories.map(cat => {
       // 找到该分类下的所有菜品
-      const dishes = allDishes.filter(d => d.categoryId === cat.id);
-      return new CategoryWithDishes(cat, dishes);
+      const items = allDishes.filter(d => d.categoryId === cat.id);
+      return new CategoryWithItems(cat, items);
     });
   }
 }
 
 // 📦 定义一个聚合类，专门给点餐页面的列表用
-export class CategoryWithDishes {
+export class CategoryWithItems {
   category: CategoryVO;
-  dishes: DishVO[];
+  items: DishVO[];
 
-  constructor(category: CategoryVO, dishes: DishVO[]) {
+  constructor(category: CategoryVO, items: DishVO[]) {
     this.category = category;
-    this.dishes = dishes;
+    this.items = items;
   }
 }

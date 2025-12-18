@@ -100,3 +100,70 @@
 - **‼️ 重要备注**:
   - `image` 字段是一个临时的 **阿里云 OSS 预签名 URL**，**有效期为 2 小时**。
   - 客户端**不应**对此 URL 进行缓存。每次请求此接口都会返回最新的有效链接。
+
+---
+
+## 4. 菜品分类 (`/client/category`)
+
+### 4.1 获取所有菜品分类
+
+- **接口地址**: `GET /client/category/all`
+- **功能描述**: 获取所有已启用的菜品和套餐分类，用于分类展示。
+- **请求参数**: 无
+- **返回数据**: `Result<List<CategoryVO>>`
+- **响应示例**:
+  ```json
+  {
+    "code": 1,
+    "msg": null,
+    "data": [
+      {
+        "id": 11,
+        "type": 1,
+        "name": "酒水饮料",
+        "sort": 10
+      },
+      {
+        "id": 12,
+        "type": 1,
+        "name": "传统主食",
+        "sort": 9
+      }
+    ]
+  }
+  ```
+- **备注**:
+  - 此接口数据在后端有24小时缓存，性能较高。
+
+---
+
+## 5. 套餐相关 (`/client/setmeal`)
+
+### 5.1 根据分类ID查询套餐
+
+- **接口地址**: `GET /client/setmeal/{categoryId}`
+- **功能描述**: 获取指定分类ID下的所有启用状态的套餐列表。
+- **请求参数**:
+  - `categoryId` (Long, 路径参数): 分类ID。
+- **返回数据**: `Result<List<SetMealVO>>`
+- **响应示例**:
+  ```json
+  {
+    "code": 1,
+    "msg": null,
+    "data": [
+      {
+        "id": 32,
+        "categoryId": 13,
+        "name": "健康搭配套餐A",
+        "price": 39.90,
+        "status": 1,
+        "description": "包含米饭和清炒小油菜，健康美味喵！",
+        "image": "https://<your-bucket>.oss-cn-beijing.aliyuncs.com/setmeal_healthy_a.png?OSSAccessKeyId=..."
+      }
+    ]
+  }
+  ```
+- **‼️ 重要备注**:
+  - `image` 字段是一个临时的 **阿里云 OSS 预签名 URL**，**有效期为 2 小时**。
+  - 此接口在后端有 60 分钟缓存，客户端**不应**对返回的 `image` URL 进行长期缓存。

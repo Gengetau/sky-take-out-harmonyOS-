@@ -100,6 +100,29 @@ export class DishQueryDTO {
   }
 }
 
+/**
+ * 套餐模型
+ */
+export class SetMealVO {
+  id: number;
+  categoryId: number;
+  name: string;
+  price: number;
+  status: number;
+  description: string;
+  image: string;
+
+  constructor(id: number, categoryId: number, name: string, price: number, status: number, description: string, image: string) {
+    this.id = id;
+    this.categoryId = categoryId;
+    this.name = name;
+    this.price = price;
+    this.status = status;
+    this.description = description;
+    this.image = image;
+  }
+}
+
 // 监听装饰器
 @Observed
 export class CartItem {

@@ -1,5 +1,5 @@
 import { promptAction } from '@kit.ArkUI';
-import { CategoryWithDishes } from '../../model/entity/MockData';
+import { CategoryWithItems } from '../../model/entity/MockData';
 import { DishVO } from '../../model/entity/ShopModel';
 import { CartService } from '../../service/CartService';
 import { ShopService } from '../../service/ShopService';
@@ -15,7 +15,7 @@ import { ShopHeader } from './components/ShopHeader';
 export struct ShopPage {
   @Consume('pageStack') pageStack: NavPathStack;
   // 1.数据源
-  @State categoryList: CategoryWithDishes[] = [];
+  @State categoryList: CategoryWithItems[] = [];
   // 2.状态变量
   @State currentCategoryIndex: number = 0; // 当前选中的分类索引
   @State isLoading: boolean = true; // 加个 loading 状态
@@ -90,7 +90,7 @@ export struct ShopPage {
           Row() {
             // 左侧：分类列表
             List({ initialIndex: 0 }) {
-              ForEach(this.categoryList, (item: CategoryWithDishes, index: number) => {
+              ForEach(this.categoryList, (item: CategoryWithItems, index: number) => {
                 ListItem() {
                   // 分类item布局
                   Text(item.category.name)
@@ -115,10 +115,10 @@ export struct ShopPage {
 
             // 右侧：菜品列表
             List({ scroller: this.rightScroller }) {
-              ForEach(this.categoryList, (group: CategoryWithDishes, groupIndex: number) => {
+              ForEach(this.categoryList, (group: CategoryWithItems, groupIndex: number) => {
                 // 分组组件，一个分类对应一个Group
                 ListItemGroup({ header: this.RightGroupHeader(group.category.name) }) {
-                  ForEach(group.dishes, (dish: DishVO) => {
+                  ForEach(group.items, (dish: DishVO) => {
                     ListItem() {
                       // 【最终方案】不再需要传递 cartService
                       DishCard({
