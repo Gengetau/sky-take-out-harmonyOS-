@@ -13,6 +13,7 @@
     "deviceTypes": [
       "phone"
     ],
+    "querySchemes": [ "weixin", "wechat" ],
     "deliveryWithInstall": true,
     "installationFree": false,
     "pages": "$profile:main_pages",

@@ -2,7 +2,6 @@
  * 首页
  */
 import { promptAction } from '@kit.ArkUI';
-import { getLocalImage } from '../../common/utils/ResourceMap';
 import { ShopTypeVO } from '../../model/entity/ShopTypeModel';
 import { HomeService } from '../../service/HomeService';
 
@@ -32,8 +31,6 @@ export struct HomePageContent {
 
     // ✅ 现在改成调用 Service
     const data = await HomeService.getShopTypes();
-
-    data
 
     if ( data.length > 0 ) {
       this.rawGridItems = data;
@@ -84,7 +81,7 @@ export struct HomePageContent {
                 ForEach(pageItems, (item: ShopTypeVO) => {
                   GridItem() {
                     Column({ space: 6 }) {
-                      Image(getLocalImage(item.icon))
+                      Image(item.icon)
                         .width(40).height(40)
                         .objectFit(ImageFit.Contain)
                       Text(item.name)
