@@ -10,6 +10,20 @@ export class ShopService {
   // 🔗 接口地址
   private static readonly CAT_URL = '/client/category';
   private static readonly DISH_URL = '/client/dish';
+  private static readonly SHOP_STATUS_URL = '/client/shop/status';
+
+  /**
+   * 0️⃣ 获取店铺营业状态
+   */
+  static async getShopStatus(): Promise<number> {
+    try {
+      const status = await HttpUtil.get<number>(ShopService.SHOP_STATUS_URL);
+      return status;
+    } catch (e) {
+      console.error('获取店铺状态失败喵', JSON.stringify(e));
+      return 0; // 默认返回休息中
+    }
+  }
 
   /**
    * 1️⃣ 获取分类列表

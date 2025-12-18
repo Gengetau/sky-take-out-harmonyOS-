@@ -8,9 +8,10 @@ import { CartService } from '../../../service/CartService';
 @Component
 export struct DishCard {
   dish: DishVO | undefined;
+  @Prop isShopOpen: boolean; // 新增：接收店铺营业状态
   public onOpenFlavorDialog: (dish: DishVO) => void = () => {
   };
-  // 📡 监听广播：只要 AppStorage 里的 'CartUpdateSignal' 变了，就执行 onCartUpdate
+  // 📡 监听广播：只要 AppStorage 里的 'CartUpdateSignal' 变了，就执行 onUpdate
   @StorageProp('CartUpdateSignal') @Watch('updateQuantity') cartSignal: number = 0;
   // 🔢 本地状态：当前菜品的数量
   @State quantity: number = 0;
@@ -74,7 +75,10 @@ export struct DishCard {
                   .height(28)
                   .padding({ left: 12, right: 12 })
                   .fontSize(12)
-                  .onClick(() => this.onOpenFlavorDialog(this.dish!))
+                  .enabled(this.isShopOpen) // Disable if shop is closed
+                  .onClick(() => {
+                    this.onOpenFlavorDialog(this.dish!);
+                  })
 
                 // 🔴 数量徽章 (监听 this.quantity)
                 if ( this.quantity > 0 ) {
@@ -105,8 +109,8 @@ export struct DishCard {
                   .type(ButtonType.Circle)
                   .backgroundColor('transparent')
                   .border({ width: 1, color: '#DDDDDD' }) // 减号通常是空心或灰底
+                  .enabled(this.isShopOpen) // Disable if shop is closed
                   .onClick(() => {
-                    // 调用减少方法
                     this.cartService.decreaseItemByDish(this.dish!.id, '');
                   })
 
@@ -121,6 +125,7 @@ export struct DishCard {
                   .height(28)
                   .type(ButtonType.Circle)
                   .backgroundColor('#FFCC00')
+                  .enabled(this.isShopOpen) // Disable if shop is closed
                   .onClick(() => {
                     this.cartService.addItem(this.dish!, '');
                   })
@@ -134,6 +139,7 @@ export struct DishCard {
                 .height(28)
                 .type(ButtonType.Circle)
                 .backgroundColor('#FFCC00')
+                .enabled(this.isShopOpen) // Disable if shop is closed
                 .onClick(() => {
                   this.cartService.addItem(this.dish!, '');
                   promptAction.showToast({ message: '加购成功' }); // 可选：要不要提示看体验

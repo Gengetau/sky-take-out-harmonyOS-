@@ -3,6 +3,8 @@
  */
 @Component
 export struct ShopHeader {
+  @Prop isShopOpen: boolean;
+
   build() {
     Stack({ alignContent: Alignment.Bottom }) {
 
@@ -33,18 +35,24 @@ export struct ShopHeader {
               .fontSize(18).fontWeight(FontWeight.Bold)
               .fontColor('#333333')
 
-            Text('营业中')
-              .fontSize(10)
-              .fontColor(Color.White)
-              .backgroundColor('#4CD964') // 绿色
-              .padding({
-                left: 4,
-                right: 4,
-                top: 2,
-                bottom: 2
-              })
-              .borderRadius(2)
-              .margin({ left: 8 })
+            // 根据状态显示
+            if (this.isShopOpen) {
+              Text('营业中')
+                .fontSize(10)
+                .fontColor(Color.White)
+                .backgroundColor('#4CD964') // 绿色
+                .padding({ left: 4, right: 4, top: 2, bottom: 2 })
+                .borderRadius(2)
+                .margin({ left: 8 })
+            } else {
+              Text('休息中')
+                .fontSize(10)
+                .fontColor(Color.White)
+                .backgroundColor('#AAAAAA') // 灰色
+                .padding({ left: 4, right: 4, top: 2, bottom: 2 })
+                .borderRadius(2)
+                .margin({ left: 8 })
+            }
           }.width('100%')
 
           // 配送信息 Row

@@ -178,7 +178,7 @@ export struct HomePageContent {
   RecommendItem() {
     Row() {
       // 这里可以模仿之前写的 IndexListItemUI，左图右文
-      Image($r('app.media.fig1'))
+      Image($r('app.media.logo'))
         .width(80).height(80).borderRadius(8)
         .margin({ right: 10 })
       Column() {

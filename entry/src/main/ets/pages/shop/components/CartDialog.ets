@@ -1,4 +1,3 @@
-import { getLocalImage } from '../../../common/utils/ResourceMap';
 import { CartItem } from '../../../model/entity/ShopModel';
 import { CartService } from '../../../service/CartService';
 
@@ -23,7 +22,7 @@ struct CartItemView {
 
   build() {
     Row() {
-      Image(getLocalImage(this.item.image))
+      Image(this.item.image)
         .width(40)
         .height(40)
         .margin({ right: 10 })

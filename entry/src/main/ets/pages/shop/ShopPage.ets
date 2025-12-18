@@ -19,10 +19,10 @@ export struct ShopPage {
   // 2.状态变量
   @State currentCategoryIndex: number = 0; // 当前选中的分类索引
   @State isLoading: boolean = true; // 加个 loading 状态
+  @State isShopOpen: boolean = false; // 店铺是否营业
   // 3.控制器
   private rightScroller: Scroller = new Scroller();
   // 4.服务实例
-  // 将 cartService “提供”给所有后代组件
   @Provide('cartService') cartService: CartService = CartService.getInstance();
   // 5.标志变量
   private isClickScroll: boolean = false;
@@ -48,8 +48,23 @@ export struct ShopPage {
 
   async loadData() {
     this.isLoading = true;
-    //  调用我们查询方法
-    const data = await ShopService.getShopData();
+
+    // 并发请求，提升加载速度
+
+    const results = await Promise.all([
+
+      ShopService.getShopStatus(),
+
+      ShopService.getShopData()
+
+    ]);
+
+
+    this.isShopOpen = results[0] === 1;
+
+    console.info("营业状态，{}", this.isShopOpen)
+
+    const data = results[1];
 
     if ( data.length > 0 ) {
       this.categoryList = data;
@@ -61,7 +76,7 @@ export struct ShopPage {
     NavDestination() {
       Column() {
         // 店招牌
-        ShopHeader()
+        ShopHeader({ isShopOpen: this.isShopOpen })
 
         if ( this.isLoading ) {
           // ⏳ 加载中显示一个 Loading
@@ -108,6 +123,7 @@ export struct ShopPage {
                       // 【最终方案】不再需要传递 cartService
                       DishCard({
                         dish: dish,
+                        isShopOpen: this.isShopOpen, // 传递营业状态
                         // ✨ 正确的父子通讯方式：父组件把一个函数（能力）传给子组件
                         onOpenFlavorDialog: (dishToOpen: DishVO) => {
                           this.currentDish = dishToOpen;
@@ -140,8 +156,7 @@ export struct ShopPage {
         }
 
         // 底部购物车
-        CartBar()
-          .height(120)
+        CartBar({ isShopOpen: this.isShopOpen })
       }
       .height('100%')
       .backgroundColor(Color.White)
