@@ -10,6 +10,8 @@ public class RedisConstants {
 	
 	public static final String SHOP_TYPE_KEY = "cache:type";
 	
+	public static final Long CACHE_TYPE_TTL = 24L;
+	
 	public static final String BLOOM_FILTER_KEY = "bloom:filter:";
 	
 	public static final Long CACHE_NULL_TTL = 2L;
