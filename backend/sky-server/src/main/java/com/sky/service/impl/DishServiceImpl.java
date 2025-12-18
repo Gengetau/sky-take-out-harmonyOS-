@@ -2,6 +2,7 @@ package com.sky.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.json.JSONUtil;
 import com.aliyun.oss.OSS;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -29,21 +30,25 @@ import com.sky.utils.AliOssUtil;
 import com.sky.vo.DishVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static com.sky.constant.MessageConstant.*;
+import static com.sky.constant.RedisConstants.CACHE_DISH_TTL;
+import static com.sky.constant.RedisConstants.DISH_CACHE_KEY;
 import static com.sky.constant.StatusConstant.ENABLE;
 
 /**
  * @author Gengetsu
  * @version v1.0
  * @ClassName DishServiceImpl
- * @Description
+ * @description
  * @dateTime 4/12/2025 上午11:02
  */
 @Service
@@ -59,26 +64,46 @@ public class DishServiceImpl extends ServiceImpl<DishMapper, Dish> implements Di
 	private OSS ossClient;
 	@Autowired
 	private OSSConfig ossConfig;
+	@Autowired
+	private StringRedisTemplate stringRedisTemplate;
 	
 	@Override
 	public Result<List<DishVO>> queryDishList(Integer categoryId) {
-		// 1.获取菜品
+		// 0.构造redis的key
+		String key = DISH_CACHE_KEY + categoryId;
+		// 1.从redis获取数据
+		String dishVOJson = stringRedisTemplate.opsForValue().get(key);
+		if (dishVOJson != null) {
+			// 2.存在，返回
+			List<DishVO> dishVOList = JSONUtil.toList(dishVOJson, DishVO.class);
+			return Result.success(dishVOList);
+		}
+		
+		// 3.不存在，查询数据库
 		List<Dish> list = list(new LambdaQueryWrapper<Dish>()
 				.eq(Dish::getCategoryId, categoryId)
 				.eq(Dish::getStatus, 1));
-		if (!CollUtil.isNotEmpty(list)) {
+		if (list.isEmpty()) {
 			return Result.error("获取菜品失败");
 		}
-		// 2.复制属性
+		// 4.复制属性
 		List<DishVO> dishVOS = BeanUtil.copyToList(list, DishVO.class);
-		// 3.设置菜品口味
+		// 5.设置菜品口味和签名
 		dishVOS.forEach(vo -> {
+			// 设置菜品口味
 			List<DishFlavor> dishFlavors = dishFlavorMapper
 					.selectList(new LambdaQueryWrapper<DishFlavor>()
 							.eq(DishFlavor::getDishId, vo.getId()));
 			vo.setFlavors(dishFlavors);
+			
+			// 对图片进行签名
+			String signedUrl = AliOssUtil.getSignedUrl(ossClient, vo.getImage(), ossConfig.getBucketName());
+			vo.setImage(signedUrl);
 		});
-		// 4.返回数据
+		
+		// 6.存入redis
+		stringRedisTemplate.opsForValue().set(key, JSONUtil.toJsonStr(dishVOS), CACHE_DISH_TTL, TimeUnit.MINUTES);
+		// 7.返回数据
 		return Result.success(dishVOS);
 	}
 	

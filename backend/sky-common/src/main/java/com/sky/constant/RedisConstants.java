@@ -38,6 +38,11 @@ public class RedisConstants {
 	
 	public static final String USER_SIGN_KEY = "sign:";
 	
+	public static final String DISH_CACHE_KEY = "cache:dish:";
+	
+	// 单位：分钟
+	public static final Long CACHE_DISH_TTL = 60L;
+	
 	/*// 生成随机TTL
 	public static Long randomTTL() {
 		long ttl = 30L;
