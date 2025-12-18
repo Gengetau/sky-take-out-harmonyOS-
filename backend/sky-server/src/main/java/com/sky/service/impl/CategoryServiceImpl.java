@@ -1,9 +1,10 @@
 package com.sky.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.collection.CollUtil;
+import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
-import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.sky.constant.MessageConstant;
@@ -24,10 +25,15 @@ import com.sky.service.SetMealService;
 import com.sky.vo.CategoryVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+import static com.sky.constant.RedisConstants.CACHE_CATEGORY_TTL;
+import static com.sky.constant.RedisConstants.CATEGORY_ALL_KEY;
 
 /**
  * @author Gengetsu
@@ -44,19 +50,39 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category>
 	private DishService dishService;
 	@Autowired
 	private SetMealService setMealService;
+	@Autowired
+	private StringRedisTemplate stringRedisTemplate;
 	
 	// ==================================================
 	// =============== client 用户端方法 ===================
 	// ==================================================
 	@Override
-	public Result<List<CategoryVO>> queryAllCategory(Integer type) {
+	public Result<List<CategoryVO>> queryAllEnabledCategories() {
+		// 1.从redis获取数据
+		String categoryAllJson = stringRedisTemplate.opsForValue().get(CATEGORY_ALL_KEY);
+		
+		// 2.存在，返回
+		if (categoryAllJson != null) {
+			List<CategoryVO> categoryVOList = JSONUtil.toList(categoryAllJson, CategoryVO.class);
+			return Result.success(categoryVOList);
+		}
+		
+		// 3.不存在，查询数据库（查询所有已启用的分类，并按sort排序）
 		List<Category> list = list(new LambdaQueryWrapper<Category>()
-				.eq(Category::getType, type));
-		if (CollectionUtils.isEmpty(list)) {
+				.eq(Category::getStatus, StatusConstant.ENABLE)
+				.orderByAsc(Category::getSort));
+		
+		if (CollUtil.isEmpty(list)) {
 			return Result.error("菜品分类查询失败");
 		}
+		
+		// 4.复制属性
 		List<CategoryVO> vos = BeanUtil.copyToList(list, CategoryVO.class);
 		
+		// 5.存入redis
+		stringRedisTemplate.opsForValue().set(CATEGORY_ALL_KEY, JSONUtil.toJsonStr(vos), CACHE_CATEGORY_TTL, TimeUnit.HOURS);
+		
+		// 6.返回
 		return Result.success(vos);
 	}
 	

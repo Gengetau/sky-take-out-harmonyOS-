@@ -43,6 +43,11 @@ public class RedisConstants {
 	// 单位：分钟
 	public static final Long CACHE_DISH_TTL = 60L;
 	
+	public static final String CATEGORY_ALL_KEY = "cache:category:all";
+	
+	// 单位：小时
+	public static final Long CACHE_CATEGORY_TTL = 24L;
+	
 	/*// 生成随机TTL
 	public static Long randomTTL() {
 		long ttl = 30L;
