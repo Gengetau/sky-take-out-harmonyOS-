@@ -1,5 +1,4 @@
 import { promptAction } from '@kit.ArkUI';
-import { getLocalImage } from '../../../common/utils/ResourceMap';
 import { DishVO } from '../../../model/entity/ShopModel';
 import { CartService } from '../../../service/CartService';
 
@@ -45,7 +44,7 @@ export struct DishCard {
     } else {
       // ✨ build() 方法现在非常纯粹，只负责UI描述！
       Row({ space: 10 }) {
-        Image(getLocalImage(this.dish.image))
+        Image(this.dish.image)
           .width(80)
           .height(80)
           .borderRadius(5)
