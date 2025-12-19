@@ -9,6 +9,8 @@ import com.sky.vo.UserHolder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 @Slf4j
 public class AddressBookServiceImpl extends ServiceImpl<AddressBookMapper, AddressBook> implements AddressBookService {
@@ -27,5 +29,20 @@ public class AddressBookServiceImpl extends ServiceImpl<AddressBookMapper, Addre
         queryWrapper.eq(AddressBook::getIsDefault, 1);
         
         return getOne(queryWrapper);
+    }
+
+    /**
+     * 条件查询
+     * @param addressBook
+     * @return
+     */
+    @Override
+    public List<AddressBook> list(AddressBook addressBook) {
+        LambdaQueryWrapper<AddressBook> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(null != addressBook.getUserId(), AddressBook::getUserId, addressBook.getUserId());
+        queryWrapper.eq(null != addressBook.getPhone(), AddressBook::getPhone, addressBook.getPhone());
+        queryWrapper.eq(null != addressBook.getIsDefault(), AddressBook::getIsDefault, addressBook.getIsDefault());
+
+        return list(queryWrapper);
     }
 }
