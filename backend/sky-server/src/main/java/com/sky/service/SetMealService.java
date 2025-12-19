@@ -28,15 +28,14 @@ public interface SetMealService extends IService<SetMeal> {
 	
 	Result<String> updateSetMeal(SetmealDTO dto);
 	
-	 * @param ids
-	 * @return
-	 */
 	Result<String> deleteBatch(List<Long> ids);
 	
 	/**
 	 * 根据分类id查询套餐
+	 *
 	 * @param categoryId
 	 * @return
 	 */
 	Result<List<SetMealVO>> getByCategoryId(Long categoryId);
+	
 }
