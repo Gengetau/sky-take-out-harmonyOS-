@@ -19,6 +19,10 @@
     {
       "name": "slogan",
       "value": "定义品质生活"
+    },
+    {
+      "name": "location_reason",
+      "value": "需要获取您的位置以提供精准的配送服务"
     }
   ]
 }

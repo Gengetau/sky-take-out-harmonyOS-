@@ -5,6 +5,8 @@ import { Login } from './Login';
 import { ConfirmOrderView } from './main/ConfirmOrderPage';
 import { MainTabs } from './MainTabs';
 import { ShopPage } from './shop/ShopPage';
+import { AddressEditPage } from './address/AddressEditPage';
+import { AddressMapPage } from './address/AddressMapPage';
 
 
 @Entry
@@ -23,6 +25,10 @@ struct Index {
       ShopPage() // 直接调用组件，不需要 Builder 包装函数
     } else if ( name === 'ConfirmOrderPage' ) {
       ConfirmOrderView()
+    } else if ( name === 'AddressEditPage' ) {
+      AddressEditPage()
+    } else if ( name === 'AddressMapPage' ) {
+      AddressMapPage()
     }
   }
 

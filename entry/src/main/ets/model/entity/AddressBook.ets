@@ -5,6 +5,7 @@
  */
 export interface AddressBook {
   id: number;
+  userId?: number;   // 用户ID
   consignee: string; // 收货人
   phone: string;     // 手机号
   sex: string;       // 性别 0 女 1 男

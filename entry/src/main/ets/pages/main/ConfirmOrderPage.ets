@@ -3,6 +3,8 @@ import { AddressBook } from '../../model/entity/AddressBook';
 import { CartItem } from '../../model/entity/ShopModel';
 import { CartService } from '../../service/CartService';
 import { OrderService } from '../../service/OrderService';
+import { AddressEditPage } from '../address/AddressEditPage';
+import { AddressListView } from '../address/components/AddressListView';
 
 /**
  * 确认订单弹窗组件
@@ -10,11 +12,11 @@ import { OrderService } from '../../service/OrderService';
  */
 @Component
 export struct ConfirmOrderView {
-  // @Consume('pageStack') pageStack: NavPathStack; // 不再需要路由栈，因为我在 Sheet 里
-  
+  // ✨ 妮娅修正：手动接收 pageStack，确保万无一失
+  pageStack: NavPathStack = new NavPathStack();
   // 接受一个关闭回调，用于关闭弹窗
-  onClose: () => void = () => {};
-
+  onClose: () => void = () => {
+  };
   @State cartService: CartService = CartService.getInstance();
   // 监听购物车更新信号，并触发手动同步
   @StorageProp('CartUpdateSignal') @Watch('onCartUpdate') cartSignal: number = 0;
@@ -25,6 +27,11 @@ export struct ConfirmOrderView {
   @State defaultAddress: AddressBook | null = null;
   @State remark: string = '';
   @State isLoading: boolean = false;
+  // ✨ 控制地址列表弹窗
+  @State showAddressList: boolean = false;
+  // ✨ 控制是否正在“新增地址”模式 (内容替换)
+  @State isEditingAddress: boolean = false;
+  
   // 费用配置 (模拟)
   private packAmount: number = 2; // 模拟打包费
   private deliveryPrice: number = 6; // 模拟配送费
@@ -97,8 +104,7 @@ export struct ConfirmOrderView {
 
   showPaymentDialog(amount: number) {
     AlertDialog.show({
-      title: '正在支付...',
-      message: `需支付 ¥${ amount.toFixed(2) }
+      title: '正在支付...',message: `需支付 ¥${ amount.toFixed(2) }
 (模拟支付环境)`,
       autoCancel: false,
       alignment: DialogAlignment.Center,
@@ -124,51 +130,100 @@ export struct ConfirmOrderView {
     });
   }
 
+  @Builder
+  AddressListBuilder() {
+    AddressListView({
+      selectedId: this.defaultAddress?.id || 0,
+      onSelect: (addr: AddressBook) => {
+        this.defaultAddress = addr;
+        // 记得关闭弹窗
+        this.showAddressList = false;
+      },
+      onClose: () => {
+        this.showAddressList = false;
+      },
+      onNewAddress: () => {
+        console.info('喵！切换到新增地址模式');
+        this.showAddressList = false;
+        this.isEditingAddress = true;
+      }
+    })
+  }
+
   build() {
-    Column() {
-      // --- 顶部标题栏 (自定义) ---
-      Row() {
-        Text('确认订单')
-          .fontSize(18).fontWeight(FontWeight.Bold)
-          .layoutWeight(1).textAlign(TextAlign.Center)
-      }
-      .width('100%')
-      .height(50)
-      .padding({ left: 16, right: 16 })
-      .backgroundColor('#F1F3F5')
+    Stack() {
+      if (this.isEditingAddress) {
+        // --- 新增地址模式 ---
+        AddressEditPage({
+          onClose: () => {
+            this.isEditingAddress = false;
+            // 回来时重新打开地址选择，方便用户选刚才新建的（如果逻辑需要）
+            this.showAddressList = true;
+          },
+          onSaveSuccess: () => {
+            this.isEditingAddress = false;
+            this.showAddressList = true;
+          }
+        })
+      } else {
+        // --- 确认订单详情模式 ---
+        Column() {
+          // --- 顶部标题栏 (自定义) ---
+          Row() {
+            Text('确认订单')
+              .fontSize(18).fontWeight(FontWeight.Bold)
+              .layoutWeight(1).textAlign(TextAlign.Center)
+          }
+          .width('100%')
+          .height(50)
+          .padding({ left: 16, right: 16 })
+          .backgroundColor('#F1F3F5')
 
-      // --- 内容区域 ---
-      Scroll() {
-        Column({ space: 12 }) {
+          // --- 内容区域 ---
+          Scroll() {
+            Column({ space: 12 }) {
 
-          // 1. 地址卡片
-          this.AddressSection()
+              // 1. 地址卡片
+              this.AddressSection()
 
-          // 2. 预计送达时间
-          this.DeliveryTimeSection()
+              // 2. 预计送达时间
+              this.DeliveryTimeSection()
 
-          // 3. 订单详情卡片
-          this.OrderDetailSection()
+              // 3. 订单详情卡片
+              this.OrderDetailSection()
 
-          // 4. 备注卡片
-          this.RemarkSection()
+              // 4. 备注卡片
+              this.RemarkSection()
 
-          // 底部留白，防止被 BottomBar 遮挡
-          Blank().height(80)
+              // 底部留白，防止被 BottomBar 遮挡
+              Blank().height(80)
+            }
+            .padding(12)
+            .width('100%')
+          }
+          .layoutWeight(1)
+          .backgroundColor('#F1F3F5')
+
+          // --- 底部支付栏 ---
+          this.BottomBar()
+
         }
-        .padding(12)
         .width('100%')
+        .height('100%')
+        .backgroundColor('#F1F3F5')
+        // ✨ 嵌套弹窗：选择地址
+        .bindSheet(this.showAddressList, this.AddressListBuilder(), {
+          height: SheetSize.MEDIUM, 
+          dragBar: true,
+          backgroundColor: '#F1F3F5',
+          onDisappear: () => {
+            this.showAddressList = false;
+          }
+        })
       }
-      .layoutWeight(1)
-      .backgroundColor('#F1F3F5')
-
-      // --- 底部支付栏 ---
-      this.BottomBar()
-
     }
     .width('100%')
     .height('100%')
-    .backgroundColor('#F1F3F5')
   }
 
   @Builder
@@ -186,7 +241,10 @@ export struct ConfirmOrderView {
           Text(this.defaultAddress.phone).fontSize(14).fontColor('#999999').margin({ left: 10 })
         }
       } else {
-        Text('请选择收货地址 +').fontSize(16).fontWeight(FontWeight.Bold).fontColor('#FFCC00')
+        Text('请选择收货地址 +')
+          .fontSize(16)
+          .fontWeight(FontWeight.Bold)
+          .fontColor('#FFCC00')
       }
     }
     .width('100%')
@@ -194,6 +252,11 @@ export struct ConfirmOrderView {
     .backgroundColor(Color.White)
     .borderRadius(8)
     .alignItems(HorizontalAlign.Start)
+    .onClick(() => {
+      console.info('喵！点击了选择收货地址，准备打开列表弹窗...');
+      // 打开地址列表弹窗
+      this.showAddressList = true;
+    })
   }
 
   @Builder

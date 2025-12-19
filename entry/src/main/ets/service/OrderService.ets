@@ -10,27 +10,29 @@ export class OrderService {
   
   /**
    * 获取默认收货地址
-   * TODO: 暂时返回 Mock 数据，等后端接口 ready 了再对接 喵！
    */
-  static async getDefaultAddress(): Promise<AddressBook> {
-    // 模拟网络延迟
-    await new Promise<void>(resolve => setTimeout(resolve, 500));
+  static async getDefaultAddress(): Promise<AddressBook | null> {
+    try {
+      return await HttpUtil.get<AddressBook>('/client/addressBook/default');
+    } catch (e) {
+      console.warn('喵！获取默认地址失败或无默认地址:', e);
+      return null;
+    }
+  }
 
-    return {
-      id: 1,
-      consignee: '妮娅Master',
-      phone: '13800138000',
-      sex: '1',
-      provinceCode: '110000',
-      provinceName: '北京市',
-      cityCode: '110100',
-      cityName: '北京市',
-      districtCode: '110101',
-      districtName: '东城区',
-      detail: '喵喵大街1号院 天空之城 8-808',
-      label: '家',
-      isDefault: 1
-    };
+  /**
+   * 获取当前用户的所有地址
+   */
+  static async getAddressList(): Promise<AddressBook[]> {
+    return HttpUtil.get<AddressBook[]>('/client/addressBook/list');
+  }
+
+  /**
+   * 新增地址
+   * @param address 地址信息
+   */
+  static async addAddress(address: AddressBook): Promise<string> {
+    return HttpUtil.post<string>('/client/addressBook', address);
   }
 
   /**

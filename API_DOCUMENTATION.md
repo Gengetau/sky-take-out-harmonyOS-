@@ -25,9 +25,9 @@
   }
   ```
 - **备注**:
-  - `data` 值为 `1` 表示 **营业中**。
-  - `data` 值为 `0` 表示 **休息中** (已打烊)。
-  - 如果 Redis 未设置状态，接口会默认返回 `0`。
+    - `data` 值为 `1` 表示 **营业中**。
+    - `data` 值为 `0` 表示 **休息中** (已打烊)。
+    - 如果 Redis 未设置状态，接口会默认返回 `0`。
 
 ---
 
@@ -61,8 +61,8 @@
   }
   ```
 - **‼️ 重要备注**:
-  - `icon` 字段是一个临时的 **阿里云 OSS 预签名 URL**，**有效期为 24 小时**。
-  - 客户端**严禁**对此 URL 进行长期缓存 (如 `localStorage`)。每次启动应用时建议重新获取，以确保链接始终有效。后端已做缓存优化，性能无忧。
+    - `icon` 字段是一个临时的 **阿里云 OSS 预签名 URL**，**有效期为 24 小时**。
+    - 客户端**严禁**对此 URL 进行长期缓存 (如 `localStorage`)。每次启动应用时建议重新获取，以确保链接始终有效。后端已做缓存优化，性能无忧。
 
 ---
 
@@ -73,7 +73,7 @@
 - **接口地址**: `GET /client/dish/{categoryId}`
 - **功能描述**: 根据指定的分类ID，获取该分类下的所有启用状态的菜品列表。
 - **请求参数**:
-  - `categoryId` (Integer, 路径参数): 分类ID。
+    - `categoryId` (Integer, 路径参数): 分类ID。
 - **返回数据**: `Result<List<DishVO>>`
 - **响应示例**:
   ```json
@@ -98,8 +98,8 @@
   }
   ```
 - **‼️ 重要备注**:
-  - `image` 字段是一个临时的 **阿里云 OSS 预签名 URL**，**有效期为 2 小时**。
-  - 客户端**不应**对此 URL 进行缓存。每次请求此接口都会返回最新的有效链接。
+    - `image` 字段是一个临时的 **阿里云 OSS 预签名 URL**，**有效期为 2 小时**。
+    - 客户端**不应**对此 URL 进行缓存。每次请求此接口都会返回最新的有效链接。
 
 ---
 
@@ -133,7 +133,7 @@
   }
   ```
 - **备注**:
-  - 此接口数据在后端有24小时缓存，性能较高。
+    - 此接口数据在后端有24小时缓存，性能较高。
 
 ---
 
@@ -144,7 +144,7 @@
 - **接口地址**: `GET /client/setmeal/{categoryId}`
 - **功能描述**: 获取指定分类ID下的所有启用状态的套餐列表。
 - **请求参数**:
-  - `categoryId` (Long, 路径参数): 分类ID。
+    - `categoryId` (Long, 路径参数): 分类ID。
 - **返回数据**: `Result<List<SetMealVO>>`
 - **响应示例**:
   ```json
@@ -164,6 +164,112 @@
     ]
   }
   ```
-- **‼️ 重要备注**:
-  - `image` 字段是一个临时的 **阿里云 OSS 预签名 URL**，**有效期为 2 小时**。
-  - 此接口在后端有 60 分钟缓存，客户端**不应**对返回的 `image` URL 进行长期缓存。
+    - **‼️ 重要备注**:                                                                                           │
+        - `image` 字段是一个临时的 **阿里云 OSS 预签名 URL**，**有效期为 2 小时**。 │
+        - 此接口在后端有 60 分钟缓存，客户端**不应**对返回的 `image` URL 进行长期缓存。
+
+--- 
+
+## 6. 地址簿相关 (`/client/addressBook`)
+
+### 6.1 新增地址
+
+- **接口地址**: `POST /client/addressBook`
+- **功能描述**: 新增当前登录用户的地址信息。
+- **请求参数 (JSON)**:
+  - `consignee`: 收货人
+  - `sex`: 性别 (0 女, 1 男)
+  - `phone`: 手机号
+  - `provinceCode`: 省级区划编号
+  - `provinceName`: 省级名称
+  - `cityCode`: 市级区划编号
+  - `cityName`: 市级名称
+  - `districtCode`: 区级区划编号
+  - `districtName`: 区级名称
+  - `detail`: 详细地址
+  - `label`: 标签 (家, 公司, 学校)
+- **请求示例**:
+  ```json
+  {
+    "consignee": "王小明",
+    "sex": "1",
+    "phone": "13800138000",
+    "provinceName": "广东省",
+    "cityName": "广州市",
+    "districtName": "天河区",
+    "detail": "珠江新城花城大道1号",
+    "label": "家"
+  }
+  ```
+- **返回数据**: `Result<String>`
+
+### 6.2 查询当前登录用户的所有地址信息
+
+- **接口地址**: `GET /client/addressBook/list`
+- **功能描述**: 查询当前登录用户的所有收货地址信息。
+- **请求参数**: 无
+- **返回数据**: `Result<List<AddressBook>>`
+- **响应示例**:
+  ```json
+  {
+    "code": 1,
+    "msg": null,
+    "data": [
+      {
+        "id": 1,
+        "userId": 1,
+        "consignee": "张三",
+        "sex": "1",
+        "phone": "13812312312",
+        "provinceName": "北京市",
+        "cityName": "北京市",
+        "districtName": "海淀区",
+        "detail": "中关村大街1号",
+        "label": "公司",
+        "isDefault": 1
+      },
+      {
+        "id": 2,
+        "userId": 1,
+        "consignee": "李四",
+        "sex": "0",
+        "phone": "13900000000",
+        "provinceName": "北京市",
+        "cityName": "北京市",
+        "districtName": "朝阳区",
+        "detail": "建国路88号",
+        "label": "家",
+        "isDefault": 0
+      }
+    ]
+  }
+  ```
+
+### 6.2 查询默认地址
+
+- **接口地址**: `GET /client/addressBook/default`
+- **功能描述**: 查询当前登录用户的默认收货地址。
+- **请求参数**: 无
+- **返回数据**: `Result<AddressBook>`
+- **响应示例**:
+  ```json
+  {
+    "code": 1,
+    "msg": null,
+    "data": {
+      "id": 1,
+      "userId": 1,
+      "consignee": "张三",
+      "sex": "1",
+      "phone": "13812312312",
+      "provinceName": "北京市",
+      "cityName": "北京市",
+      "districtName": "海淀区",
+      "detail": "中关村大街1号",
+      "label": "公司",
+      "isDefault": 1
+    }
+  }
+  ```
+- **备注**:
+    - 如果当前用户没有设置默认地址，`data` 将为 `null`，且返回状态码为 `0` (Error) 喵。
