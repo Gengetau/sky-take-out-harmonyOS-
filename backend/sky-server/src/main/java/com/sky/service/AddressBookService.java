@@ -13,9 +13,8 @@ public interface AddressBookService extends IService<AddressBook> {
     AddressBook getDefault();
 
     /**
-     * 条件查询
-     * @param addressBook
+     * 查询当前登录用户的所有地址信息
      * @return
      */
-    List<AddressBook> list(AddressBook addressBook);
+    List<AddressBook> listByUser();
 }

@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.sky.vo.UserHolder;
 import java.util.List;
 
 @RestController
@@ -30,9 +29,7 @@ public class AddressBookController {
     @GetMapping("/list")
     @ApiOperation("查询当前登录用户的所有地址信息")
     public Result<List<AddressBook>> list() {
-        AddressBook addressBook = new AddressBook();
-        addressBook.setUserId(UserHolder.getUser().getId());
-        return Result.success(addressBookService.list(addressBook));
+        return Result.success(addressBookService.listByUser());
     }
 
     /**
