@@ -52,6 +52,8 @@ public class RedisConstants {
 	
 	// 单位：分钟
 	public static final Long CACHE_SETMEAL_TTL = 60L;
+
+    public static final String USER_DEFAULT_ADDRESS_KEY = "cache:user:default_address:";
 	
 	/*// 生成随机TTL
 	public static Long randomTTL() {
