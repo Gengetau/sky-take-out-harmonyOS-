@@ -49,6 +49,9 @@ public class RefenceTokenInterceptor implements HandlerInterceptor {
 		UserLoginVO userVO = BeanUtil.fillBeanWithMap(userMap, new UserLoginVO(), false);
 		
 		// 5.保存用户信息到ThreadLocal
+		if (userMap.isEmpty()) {
+			return true;
+		}
 		UserHolder.saveUser(userVO);
 		
 		// 6.刷新token有效期
