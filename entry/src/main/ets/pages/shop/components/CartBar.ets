@@ -7,6 +7,9 @@ import { CartDialog } from './CartDialog';
 @Component
 export struct CartBar {
   @Prop isShopOpen: boolean;
+  // 增加一个点击去结算的回调，通知父组件弹窗
+  onCheckout: () => void = () => {};
+  
   @StorageProp('CartUpdateSignal') @Watch('onUpdate') cartSignal: number = 0;
   @State totalCount: number = 0;
   @State totalPrice: number = 0;
@@ -67,6 +70,9 @@ export struct CartBar {
                 .height('100%')
                 .onClick(() => {
                   console.info('喵！去付钱！');
+                  if (this.onCheckout) {
+                    this.onCheckout();
+                  }
                   // ✨ 修正2：返回 true 来阻止事件冒泡
                   return true;
                 })

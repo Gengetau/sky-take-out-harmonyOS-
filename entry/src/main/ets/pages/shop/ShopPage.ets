@@ -3,6 +3,7 @@ import { CategoryWithItems } from '../../model/entity/MockData';
 import { DishVO } from '../../model/entity/ShopModel';
 import { CartService } from '../../service/CartService';
 import { ShopService } from '../../service/ShopService';
+import { ConfirmOrderView } from '../main/ConfirmOrderPage'; // 引入 ConfirmOrderView
 import { CartBar } from './components/CartBar';
 import { DishCard } from './components/DishCard';
 import { FlavorDialog } from './components/FlavorDialog';
@@ -20,6 +21,8 @@ export struct ShopPage {
   @State currentCategoryIndex: number = 0; // 当前选中的分类索引
   @State isLoading: boolean = true; // 加个 loading 状态
   @State isShopOpen: boolean = false; // 店铺是否营业
+  // ✨ 新增：控制确认订单弹窗的显示
+  @State showConfirmOrder: boolean = false;
   // 3.控制器
   private rightScroller: Scroller = new Scroller();
   // 4.服务实例
@@ -70,6 +73,16 @@ export struct ShopPage {
       this.categoryList = data;
     }
     this.isLoading = false;
+  }
+
+  // ✨ 构建半模态弹窗的内容
+  @Builder
+  ConfirmOrderBuilder() {
+    ConfirmOrderView({
+      onClose: () => {
+        this.showConfirmOrder = false;
+      }
+    })
   }
 
   build() {
@@ -156,10 +169,26 @@ export struct ShopPage {
         }
 
         // 底部购物车
-        CartBar({ isShopOpen: this.isShopOpen })
+        CartBar({
+          isShopOpen: this.isShopOpen,
+          // ✨ 连接弹窗逻辑
+          onCheckout: () => {
+            this.showConfirmOrder = true;
+          }
+        })
       }
       .height('100%')
       .backgroundColor(Color.White)
+      // ✨ 绑定半模态转场
+      .bindSheet($$this.showConfirmOrder, this.ConfirmOrderBuilder(), {
+        height: SheetSize.LARGE, // 大概是屏幕的 90% 左右，也可以自定义 height: 600
+        dragBar: true, // 显示顶部的小横条，允许拖拽关闭
+        // showCloseIcon: true, // ✨ 开启原生关闭图标
+        backgroundColor: '#F1F3F5',
+        onDisappear: () => {
+          this.showConfirmOrder = false;
+        }
+      })
     }
     .hideTitleBar(true)
   }

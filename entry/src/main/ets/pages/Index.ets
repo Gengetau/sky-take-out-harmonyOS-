@@ -2,6 +2,7 @@ import { common } from '@kit.AbilityKit';
 import { HttpUtil } from '../common/utils/HttpUtil';
 import { PreferencesUtil } from '../common/utils/PreferencesUtil';
 import { Login } from './Login';
+import { ConfirmOrderView } from './main/ConfirmOrderPage';
 import { MainTabs } from './MainTabs';
 import { ShopPage } from './shop/ShopPage';
 
@@ -20,6 +21,8 @@ struct Index {
       MainTabs();
     } else if ( name === 'ShopPage' ) { // 👈 新增这一行！
       ShopPage() // 直接调用组件，不需要 Builder 包装函数
+    } else if ( name === 'ConfirmOrderPage' ) {
+      ConfirmOrderView()
     }
   }
 
