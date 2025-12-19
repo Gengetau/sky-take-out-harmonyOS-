@@ -68,4 +68,15 @@ public class AddressBookServiceImpl extends ServiceImpl<AddressBookMapper, Addre
 		queryWrapper.eq(AddressBook::getUserId, userId);
 		return list(queryWrapper);
 	}
+	
+    /**
+     * 新增地址
+     * @param addressBook
+     */
+    @Override
+    public void add(AddressBook addressBook) {
+        addressBook.setUserId(UserHolder.getUser().getId());
+        addressBook.setIsDefault(0); // 新增地址强制设为非默认，由专门接口控制默认设置
+        super.save(addressBook);
+    }
 }
