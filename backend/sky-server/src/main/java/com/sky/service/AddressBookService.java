@@ -20,10 +20,10 @@ public interface AddressBookService extends IService<AddressBook> {
 	 */
 	List<AddressBook> listByUser();
 	
-    /**
-     * 新增地址
-     * @param addressBook
-     */
-    void add(AddressBook addressBook);
-}
+	/**
+	 * 新增地址
+	 *
+	 * @param addressBook
+	 */
+	void add(AddressBook addressBook);
 }

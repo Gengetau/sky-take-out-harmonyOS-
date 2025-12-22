@@ -16,7 +16,7 @@ import com.sky.utils.AliOssUtil;
 import com.sky.vo.ShopTypeVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -38,32 +38,22 @@ import static com.sky.constant.RedisConstants.SHOP_TYPE_KEY;
 public class ShopTypeServiceImpl extends ServiceImpl<ShopTypeMapper, ShopType>
 		implements ShopTypeService {
 	@Autowired
-	private StringRedisTemplate stringRedisTemplate;
-	@Autowired
 	private OSS ossClient;
 	@Autowired
 	private OSSConfig ossConfig;
 	
 	@Override
+	@Cacheable(cacheNames = "shopTypeCache", key = "'all'")
 	public Result<List<ShopTypeVO>> queryList() {
-		// 1.查询redis是否有缓存
-		String shopTypeJson = stringRedisTemplate.opsForValue().get(SHOP_TYPE_KEY);
-		
-		// 2.存在，返回结果
-		if (StrUtil.isNotBlank(shopTypeJson)) {
-			List<ShopTypeVO> types = JSONUtil.toList(shopTypeJson, ShopTypeVO.class);
-			return Result.success(types);
-		}
-		
-		// 3.不存在，查询数据库
+		// 1.查询数据库
 		List<ShopType> types = list(new LambdaQueryWrapper<ShopType>().orderByAsc(ShopType::getSort));
 		
-		// 4.数据库不存在，返回错误
+		// 2.数据库不存在，返回错误
 		if (CollUtil.isEmpty(types)) {
 			return Result.error("店铺类型不存在");
 		}
 		
-		// 5.进行OSS图片签名并转换为VO
+		// 3.进行OSS图片签名并转换为VO
 		List<ShopTypeVO> shopTypeVOS = types.stream().map(shopType -> {
 			ShopTypeVO vo = new ShopTypeVO();
 			BeanUtil.copyProperties(shopType, vo);
@@ -75,10 +65,7 @@ public class ShopTypeServiceImpl extends ServiceImpl<ShopTypeMapper, ShopType>
 			return vo;
 		}).collect(Collectors.toList());
 		
-		// 6.写入缓存
-		stringRedisTemplate.opsForValue().set(SHOP_TYPE_KEY, JSONUtil.toJsonStr(shopTypeVOS), CACHE_TYPE_TTL, TimeUnit.HOURS);
-		
-		// 7.返回结果
+		// 4.返回结果
 		return Result.success(shopTypeVOS);
 	}
 }

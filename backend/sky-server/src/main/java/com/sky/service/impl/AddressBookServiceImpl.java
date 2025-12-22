@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -69,14 +70,16 @@ public class AddressBookServiceImpl extends ServiceImpl<AddressBookMapper, Addre
 		return list(queryWrapper);
 	}
 	
-    /**
-     * 新增地址
-     * @param addressBook
-     */
-    @Override
-    public void add(AddressBook addressBook) {
-        addressBook.setUserId(UserHolder.getUser().getId());
-        addressBook.setIsDefault(0); // 新增地址强制设为非默认，由专门接口控制默认设置
-        super.save(addressBook);
-    }
+	/**
+	 * 新增地址
+	 *
+	 * @param addressBook
+	 */
+	@Override
+	@Transactional(rollbackFor = Exception.class)
+	public void add(AddressBook addressBook) {
+		addressBook.setUserId(UserHolder.getUser().getId());
+		addressBook.setIsDefault(0); // 新增地址强制设为非默认，由专门接口控制默认设置
+		save(addressBook);
+	}
 }

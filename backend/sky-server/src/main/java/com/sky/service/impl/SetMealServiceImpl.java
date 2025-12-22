@@ -28,7 +28,8 @@ import com.sky.utils.AliOssUtil;
 import com.sky.vo.SetMealVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import cn.hutool.json.JSONUtil;
@@ -40,8 +41,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static com.sky.constant.MessageConstant.*;
-import static com.sky.constant.RedisConstants.CACHE_SETMEAL_TTL;
-import static com.sky.constant.RedisConstants.SETMEAL_CACHE_KEY;
 import static com.sky.constant.StatusConstant.DISABLE;
 import static com.sky.constant.StatusConstant.ENABLE;
 
@@ -66,8 +65,6 @@ public class SetMealServiceImpl extends ServiceImpl<SetMealMapper, SetMeal>
 	private OSSConfig ossConfig;
 	@Autowired
 	private DishService dishService;
-	@Autowired
-	private StringRedisTemplate stringRedisTemplate;
 	
 	@Override
 	public Result<Page<SetMealVO>> getSetMealByPage(SetmealPageQueryDTO dto) {
@@ -113,6 +110,7 @@ public class SetMealServiceImpl extends ServiceImpl<SetMealMapper, SetMeal>
 	
 	@Override
 	@Transactional(rollbackFor = Exception.class)
+	@CacheEvict(cacheNames = "setmealCache", allEntries = true)
 	public Result<String> setMealStatus(Integer status, Long setmealId) {
 		// 1.查询套餐是否存在
 		long count = count(new LambdaQueryWrapper<SetMeal>().eq(SetMeal::getId, setmealId));
@@ -146,6 +144,7 @@ public class SetMealServiceImpl extends ServiceImpl<SetMealMapper, SetMeal>
 	
 	@Override
 	@Transactional(rollbackFor = Exception.class)
+	@CacheEvict(cacheNames = "setmealCache", allEntries = true)
 	public Result<String> saveSetMeal(SetmealDTO dto) {
 		// 1.校验套餐名称是否存在
 		long count = count(new LambdaQueryWrapper<SetMeal>().eq(SetMeal::getName, dto.getName()));
@@ -197,6 +196,7 @@ public class SetMealServiceImpl extends ServiceImpl<SetMealMapper, SetMeal>
 	
 	@Override
 	@Transactional(rollbackFor = Exception.class)
+	@CacheEvict(cacheNames = "setmealCache", allEntries = true)
 	public Result<String> updateSetMeal(SetmealDTO dto) {
 		// 1.根据id 查询
 		SetMeal setMeal = getById(dto.getId());
@@ -238,6 +238,7 @@ public class SetMealServiceImpl extends ServiceImpl<SetMealMapper, SetMeal>
 	
 	@Override
 	@Transactional(rollbackFor = Exception.class)
+	@CacheEvict(cacheNames = "setmealCache", allEntries = true)
 	public Result<String> deleteBatch(List<Long> ids) {
 		// 1.校验是否有启售中的套餐
 		long count = count(new LambdaQueryWrapper<SetMeal>()
@@ -255,18 +256,9 @@ public class SetMealServiceImpl extends ServiceImpl<SetMealMapper, SetMeal>
 	}
 	
 	@Override
+	@Cacheable(cacheNames = "setmealCache", key = "#categoryId")
 	public Result<List<SetMealVO>> getByCategoryId(Long categoryId) {
-		// 1. 构造redis的key
-		String key = SETMEAL_CACHE_KEY + categoryId;
-		
-		// 2. 从redis获取数据
-		String setMealVOJson = stringRedisTemplate.opsForValue().get(key);
-		if (setMealVOJson != null) {
-			List<SetMealVO> setMealVOList = JSONUtil.toList(setMealVOJson, SetMealVO.class);
-			return Result.success(setMealVOList);
-		}
-		
-		// 3. 不存在，查询数据库
+		// 1. 不存在，查询数据库
 		List<SetMeal> list = list(new LambdaQueryWrapper<SetMeal>()
 				.eq(SetMeal::getCategoryId, categoryId)
 				.eq(SetMeal::getStatus, StatusConstant.ENABLE));
@@ -275,7 +267,7 @@ public class SetMealServiceImpl extends ServiceImpl<SetMealMapper, SetMeal>
 			return Result.success(null); // 或者返回空列表
 		}
 		
-		// 4. 转换为VO并签名
+		// 2. 转换为VO并签名
 		List<SetMealVO> vos = list.stream().map(setMeal -> {
 			SetMealVO vo = BeanUtil.copyProperties(setMeal, SetMealVO.class);
 			String signedUrl = AliOssUtil.getSignedUrl(ossClient, vo.getImage(), ossConfig.getBucketName());
@@ -283,10 +275,7 @@ public class SetMealServiceImpl extends ServiceImpl<SetMealMapper, SetMeal>
 			return vo;
 		}).collect(Collectors.toList());
 		
-		// 5. 存入redis
-		stringRedisTemplate.opsForValue().set(key, JSONUtil.toJsonStr(vos), CACHE_SETMEAL_TTL, TimeUnit.MINUTES);
-		
-		// 6. 返回
+		// 3. 返回
 		return Result.success(vos);
 	}
 	
