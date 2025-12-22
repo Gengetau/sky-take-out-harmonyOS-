@@ -33,6 +33,12 @@
     "deviceTypes": [
       "phone"
     ],
+    "metadata": [
+      {
+        "name": "client_id",
+        "value": "6917592583015219834"
+      }
+    ],
     "querySchemes": [ "weixin", "wechat" ],
     "deliveryWithInstall": true,
     "installationFree": false,
