@@ -5,13 +5,13 @@
         "name": "default",
         "type": "HarmonyOS",
         "material": {
-          "certpath": "C:\\Users\\11567\\.ohos\\config\\default_SkyDelivery_04o-kFiS2-n1fkH_5QSV6f3wGLeIklnXCiU9ZewaCCE=.cer",
+          "certpath": "C:/Users/11567/.ohos/config/default_SkyDelivery_04o-kFiS2-n1fkH_5QSV6f3wGLeIklnXCiU9ZewaCCE=.cer",
           "keyAlias": "debugKey",
-          "keyPassword": "00000019E08C97FF6A195BDC7911090191018451310A715C161CE90B522EF1080235C68054DBC1CB2E",
-          "profile": "C:\\Users\\11567\\.ohos\\config\\default_SkyDelivery_04o-kFiS2-n1fkH_5QSV6f3wGLeIklnXCiU9ZewaCCE=.p7b",
+          "keyPassword": "00000019F5CCCDC874FB6E615F2825273A897E41073083D0DF4C5CF92156AF65D59DCA4F84CFD55413",
+          "profile": "C:/Users/11567/.ohos/config/default_SkyDelivery_04o-kFiS2-n1fkH_5QSV6f3wGLeIklnXCiU9ZewaCCE=.p7b",
           "signAlg": "SHA256withECDSA",
-          "storeFile": "C:\\Users\\11567\\.ohos\\config\\default_SkyDelivery_04o-kFiS2-n1fkH_5QSV6f3wGLeIklnXCiU9ZewaCCE=.p12",
-          "storePassword": "000000195E8FF544EF09437539A4105BFD191FDCF362BBE84D5D9B809CE06174D027F9961DCAD5857A"
+          "storeFile": "C:/Users/11567/.ohos/config/default_SkyDelivery_04o-kFiS2-n1fkH_5QSV6f3wGLeIklnXCiU9ZewaCCE=.p12",
+          "storePassword": "000000198370BDE477D6692DBD3E6340C62522309FA21092C990EAF719F1C981D87E3C476BD547C826"
         }
       }
     ],

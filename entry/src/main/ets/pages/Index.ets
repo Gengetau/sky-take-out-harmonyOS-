@@ -1,12 +1,12 @@
 import { common } from '@kit.AbilityKit';
 import { HttpUtil } from '../common/utils/HttpUtil';
 import { PreferencesUtil } from '../common/utils/PreferencesUtil';
+import { AddressEditPage } from './address/AddressEditPage';
+import { AddressMapPage } from './address/AddressMapPage';
 import { Login } from './Login';
 import { ConfirmOrderView } from './main/ConfirmOrderPage';
 import { MainTabs } from './MainTabs';
 import { ShopPage } from './shop/ShopPage';
-import { AddressEditPage } from './address/AddressEditPage';
-import { AddressMapPage } from './address/AddressMapPage';
 
 
 @Entry
@@ -120,7 +120,7 @@ struct Index {
             .objectFit(ImageFit.Contain)
             .margin({ bottom: 20 })
 
-          Text('苍穹外卖')
+          Text('Meow外卖')
             .fontSize(24)
             .fontWeight(FontWeight.Bold)
             .fontColor('#333333')
