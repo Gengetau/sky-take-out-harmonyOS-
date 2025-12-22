@@ -114,7 +114,25 @@ export class HttpUtil {
     }
   }
 
-  // ... 还可以加 put, delete 等 ...
+  static async put<T>(url: string, data?: object): Promise<T> {
+    HttpUtil.init();
+    try {
+      const resp = await HttpUtil.session!.put(url, data);
+      return HttpUtil.handleResponse<T>(resp);
+    } catch ( err ) {
+      return HttpUtil.handleError(err);
+    }
+  }
+
+  static async delete<T>(url: string): Promise<T> {
+    HttpUtil.init();
+    try {
+      const resp = await HttpUtil.session!.delete(url);
+      return HttpUtil.handleResponse<T>(resp);
+    } catch ( err ) {
+      return HttpUtil.handleError(err);
+    }
+  }
 
   /**
    *  核心逻辑：统一处理后端返回的结果

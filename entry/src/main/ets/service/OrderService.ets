@@ -36,6 +36,38 @@ export class OrderService {
   }
 
   /**
+   * 设置默认地址
+   * @param id 地址ID
+   */
+  static async setDefaultAddress(id: number): Promise<string> {
+    return HttpUtil.put<string>(`/client/addressBook/default/${id}`);
+  }
+
+  /**
+   * 删除地址
+   * @param id 地址ID
+   */
+  static async deleteAddress(id: number): Promise<string> {
+    return HttpUtil.delete<string>(`/client/addressBook?id=${id}`);
+  }
+
+  /**
+   * 根据ID查询地址
+   * @param id 地址ID
+   */
+  static async getAddressById(id: number): Promise<AddressBook> {
+    return HttpUtil.get<AddressBook>(`/client/addressBook/${id}`);
+  }
+
+  /**
+   * 修改地址
+   * @param address 地址信息
+   */
+  static async updateAddress(address: AddressBook): Promise<string> {
+    return HttpUtil.put<string>('/client/addressBook', address);
+  }
+
+  /**
    * 提交订单
    * @param submitDTO 订单提交信息
    */
