@@ -26,4 +26,11 @@ public interface AddressBookService extends IService<AddressBook> {
 	 * @param addressBook
 	 */
 	void add(AddressBook addressBook);
+
+	/**
+	 * 设置默认地址
+	 *
+	 * @param id
+	 */
+	void setDefault(Long id);
 }

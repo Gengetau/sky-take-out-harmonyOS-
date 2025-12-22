@@ -3,6 +3,7 @@ package com.sky.service.impl;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.sky.constant.RedisConstants;
 import com.sky.entity.AddressBook;
@@ -81,5 +82,33 @@ public class AddressBookServiceImpl extends ServiceImpl<AddressBookMapper, Addre
 		addressBook.setUserId(UserHolder.getUser().getId());
 		addressBook.setIsDefault(0); // 新增地址强制设为非默认，由专门接口控制默认设置
 		save(addressBook);
+	}
+
+	/**
+	 * 设置默认地址
+	 *
+	 * @param id
+	 */
+	@Override
+	@Transactional(rollbackFor = Exception.class)
+	public void setDefault(Long id) {
+		Long userId = UserHolder.getUser().getId();
+
+		// 1. 将该用户所有地址设置为非默认
+		LambdaUpdateWrapper<AddressBook> updateWrapper = new LambdaUpdateWrapper<>();
+		updateWrapper.eq(AddressBook::getUserId, userId);
+		updateWrapper.set(AddressBook::getIsDefault, 0);
+		update(updateWrapper);
+
+		// 2. 将指定地址设置为默认
+		AddressBook addressBook = AddressBook.builder()
+				.id(id)
+				.isDefault(1)
+				.build();
+		updateById(addressBook);
+
+		// 3. 清理 Redis 缓存
+		String key = RedisConstants.USER_DEFAULT_ADDRESS_KEY + userId;
+		stringRedisTemplate.delete(key);
 	}
 }

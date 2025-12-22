@@ -7,11 +7,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -20,45 +16,63 @@ import java.util.List;
 @Api(tags = "C端-地址簿相关接口")
 @Slf4j
 public class AddressBookController {
-
-    @Autowired
-    private AddressBookService addressBookService;
-
-    /**
-     * 新增地址
-     * @param addressBook
-     * @return
-     */
-    @PostMapping
-    @ApiOperation("新增地址")
-    public Result<String> add(@RequestBody AddressBook addressBook) {
-        log.info("新增地址：{}", addressBook);
-        addressBookService.add(addressBook);
-        return Result.success();
-    }
-
-    /**
-     * 查询当前登录用户的所有地址信息
-     * @return
-     */
-    @GetMapping("/list")
-    @ApiOperation("查询当前登录用户的所有地址信息")
-    public Result<List<AddressBook>> list() {
-        return Result.success(addressBookService.listByUser());
-    }
-
-    /**
-     * 查询默认地址
-     * @return
-     */
-    @GetMapping("/default")
-    @ApiOperation("查询默认地址")
-    public Result<AddressBook> getDefault() {
-        log.info("查询当前用户的默认地址喵");
-        AddressBook addressBook = addressBookService.getDefault();
-        if (addressBook != null) {
-            return Result.success(addressBook);
-        }
-        return Result.error("没有找到默认地址喵");
-    }
+	
+	@Autowired
+	private AddressBookService addressBookService;
+	
+	/**
+	 * 新增地址
+	 *
+	 * @param addressBook
+	 * @return
+	 */
+	@PostMapping
+	@ApiOperation("新增地址")
+	public Result<String> add(@RequestBody AddressBook addressBook) {
+		log.info("新增地址：{}", addressBook);
+		addressBookService.add(addressBook);
+		return Result.success();
+	}
+	
+	/**
+	 * 查询当前登录用户的所有地址信息
+	 *
+	 * @return
+	 */
+	@GetMapping("/list")
+	@ApiOperation("查询当前登录用户的所有地址信息")
+	public Result<List<AddressBook>> list() {
+		return Result.success(addressBookService.listByUser());
+	}
+	
+	/**
+	 * 查询默认地址
+	 *
+	 * @return
+	 */
+	@GetMapping("/default")
+	@ApiOperation("查询默认地址")
+	public Result<AddressBook> getDefault() {
+		log.info("查询当前用户的默认地址喵");
+		AddressBook addressBook = addressBookService.getDefault();
+		if (addressBook != null) {
+			return Result.success(addressBook);
+		}
+		return Result.error("没有找到默认地址喵");
+	}
+	
+	/**
+	 * 设置默认地址
+	 *
+	 * @param id
+	 * @return
+	 */
+	@PutMapping("/default/{id}")
+	@ApiOperation("设置默认地址")
+	public Result<String> setDefault(@PathVariable("id")
+									 Long id) {
+		log.info("设置默认地址喵，ID：{}", id);
+		addressBookService.setDefault(id);
+		return Result.success();
+	}
 }
