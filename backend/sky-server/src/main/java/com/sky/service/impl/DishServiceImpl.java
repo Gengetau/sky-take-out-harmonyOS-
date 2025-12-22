@@ -2,7 +2,6 @@ package com.sky.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
-import cn.hutool.json.JSONUtil;
 import com.aliyun.oss.OSS;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -27,10 +26,10 @@ import com.sky.service.CategoryService;
 import com.sky.service.DishService;
 import com.sky.service.SetMealDishService;
 import com.sky.utils.AliOssUtil;
+import com.sky.utils.CacheClient;
 import com.sky.vo.DishVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -65,46 +64,49 @@ public class DishServiceImpl extends ServiceImpl<DishMapper, Dish> implements Di
 	@Autowired
 	private OSSConfig ossConfig;
 	@Autowired
-	private StringRedisTemplate stringRedisTemplate;
+	private CacheClient cacheClient;
 	
 	@Override
 	public Result<List<DishVO>> queryDishList(Integer categoryId) {
-		// 0.构造redis的key
-		String key = DISH_CACHE_KEY + categoryId;
-		// 1.从redis获取数据
-		String dishVOJson = stringRedisTemplate.opsForValue().get(key);
-		if (dishVOJson != null) {
-			// 2.存在，返回
-			List<DishVO> dishVOList = JSONUtil.toList(dishVOJson, DishVO.class);
-			return Result.success(dishVOList);
-		}
-		
-		// 3.不存在，查询数据库
-		List<Dish> list = list(new LambdaQueryWrapper<Dish>()
-				.eq(Dish::getCategoryId, categoryId)
-				.eq(Dish::getStatus, 1));
-		if (list.isEmpty()) {
+		List<DishVO> list = cacheClient.queryListWithPassThrough(
+				DISH_CACHE_KEY,
+				categoryId,
+				DishVO.class,
+				(id) -> {
+					// 1.查询数据库
+					List<Dish> dishes = list(new LambdaQueryWrapper<Dish>()
+							.eq(Dish::getCategoryId, id)
+							.eq(Dish::getStatus, 1));
+					
+					if (dishes.isEmpty()) {
+						return null;
+					}
+					
+					// 2.复制属性
+					List<DishVO> dishVOS = BeanUtil.copyToList(dishes, DishVO.class);
+					
+					// 3.设置菜品口味和签名
+					dishVOS.forEach(vo -> {
+						// 设置菜品口味
+						List<DishFlavor> dishFlavors = dishFlavorMapper
+								.selectList(new LambdaQueryWrapper<DishFlavor>()
+										.eq(DishFlavor::getDishId, vo.getId()));
+						vo.setFlavors(dishFlavors);
+
+						// 对图片进行签名
+						String signedUrl = AliOssUtil.getSignedUrl(ossClient, vo.getImage(), ossConfig.getBucketName());
+						vo.setImage(signedUrl);
+					});
+					return dishVOS;
+				},
+				CACHE_DISH_TTL,
+				TimeUnit.MINUTES
+		);
+
+		if (list == null) {
 			return Result.error("获取菜品失败");
 		}
-		// 4.复制属性
-		List<DishVO> dishVOS = BeanUtil.copyToList(list, DishVO.class);
-		// 5.设置菜品口味和签名
-		dishVOS.forEach(vo -> {
-			// 设置菜品口味
-			List<DishFlavor> dishFlavors = dishFlavorMapper
-					.selectList(new LambdaQueryWrapper<DishFlavor>()
-							.eq(DishFlavor::getDishId, vo.getId()));
-			vo.setFlavors(dishFlavors);
-			
-			// 对图片进行签名
-			String signedUrl = AliOssUtil.getSignedUrl(ossClient, vo.getImage(), ossConfig.getBucketName());
-			vo.setImage(signedUrl);
-		});
-		
-		// 6.存入redis
-		stringRedisTemplate.opsForValue().set(key, JSONUtil.toJsonStr(dishVOS), CACHE_DISH_TTL, TimeUnit.MINUTES);
-		// 7.返回数据
-		return Result.success(dishVOS);
+		return Result.success(list);
 	}
 	
 	@Override
@@ -155,6 +157,8 @@ public class DishServiceImpl extends ServiceImpl<DishMapper, Dish> implements Di
 		Dish saveDish = getDish(dishDTO);
 		// 4.存储
 		save(saveDish);
+		// 清理缓存
+		cleanCache(DISH_CACHE_KEY + dishDTO.getCategoryId());
 		// 5.返回
 		return Result.success();
 	}
@@ -242,6 +246,8 @@ public class DishServiceImpl extends ServiceImpl<DishMapper, Dish> implements Di
 		Dish dish = getDish(dishDTO);
 		// 2.保存
 		updateById(dish);
+		// 清理所有菜品缓存
+		cleanCache(DISH_CACHE_KEY + "*");
 		return Result.success();
 	}
 	
@@ -262,6 +268,8 @@ public class DishServiceImpl extends ServiceImpl<DishMapper, Dish> implements Di
 			throw new DeletionNotAllowedException(DISH_BE_RELATED_BY_SET_MEAL);
 		}
 		removeBatchByIds(ids);
+		// 清理所有菜品缓存
+		cleanCache(DISH_CACHE_KEY + "*");
 		return Result.success();
 	}
 	
@@ -284,8 +292,19 @@ public class DishServiceImpl extends ServiceImpl<DishMapper, Dish> implements Di
 				.status(status)
 				.build();
 		updateById(dish);
+		// 清理所有菜品缓存
+		cleanCache(DISH_CACHE_KEY + "*");
 		
 		return Result.success();
+	}
+
+	/**
+	 * 清理缓存
+	 * @param pattern
+	 */
+	private void cleanCache(String pattern) {
+		java.util.Set<String> keys = cacheClient.keys(pattern);
+		cacheClient.delete(keys);
 	}
 }
 

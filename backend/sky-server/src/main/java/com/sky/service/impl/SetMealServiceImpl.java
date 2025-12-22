@@ -25,10 +25,10 @@ import com.sky.service.DishService;
 import com.sky.service.SetMealDishService;
 import com.sky.service.SetMealService;
 import com.sky.utils.AliOssUtil;
+import com.sky.utils.CacheClient;
 import com.sky.vo.SetMealVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import cn.hutool.json.JSONUtil;
@@ -67,7 +67,7 @@ public class SetMealServiceImpl extends ServiceImpl<SetMealMapper, SetMeal>
 	@Autowired
 	private DishService dishService;
 	@Autowired
-	private StringRedisTemplate stringRedisTemplate;
+	private CacheClient cacheClient;
 	
 	@Override
 	public Result<Page<SetMealVO>> getSetMealByPage(SetmealPageQueryDTO dto) {
@@ -141,6 +141,8 @@ public class SetMealServiceImpl extends ServiceImpl<SetMealMapper, SetMeal>
 				.id(setmealId)
 				.build();
 		updateById(setMeal);
+		// 清理缓存
+		cleanCache(SETMEAL_CACHE_KEY + "*");
 		return Result.success();
 	}
 	
@@ -167,6 +169,8 @@ public class SetMealServiceImpl extends ServiceImpl<SetMealMapper, SetMeal>
 		});
 		// 5.根据 id 批量新增 set_meal_dish 表
 		setMealDishService.saveBatch(setMealDishes);
+		// 清理缓存
+		cleanCache(SETMEAL_CACHE_KEY + "*");
 		// 6.返回
 		return Result.success();
 	}
@@ -232,6 +236,8 @@ public class SetMealServiceImpl extends ServiceImpl<SetMealMapper, SetMeal>
 			// 为空则删除该套餐关联的菜品
 			setMealDishService.remove(new LambdaQueryWrapper<SetMealDish>().eq(SetMealDish::getSetMealId, setMealId));
 		}
+		// 清理缓存
+		cleanCache(SETMEAL_CACHE_KEY + "*");
 		// 8.返回
 		return Result.success();
 	}
@@ -251,43 +257,50 @@ public class SetMealServiceImpl extends ServiceImpl<SetMealMapper, SetMeal>
 				.in(SetMealDish::getSetMealId, ids));
 		// 3.批量移除套餐
 		removeBatchByIds(ids);
+		// 清理缓存
+		cleanCache(SETMEAL_CACHE_KEY + "*");
 		return Result.success();
+	}
+
+	/**
+	 * 清理缓存
+	 * @param pattern
+	 */
+	private void cleanCache(String pattern) {
+		java.util.Set<String> keys = cacheClient.keys(pattern);
+		cacheClient.delete(keys);
 	}
 	
 	@Override
 	public Result<List<SetMealVO>> getByCategoryId(Long categoryId) {
-		// 1. 构造redis的key
-		String key = SETMEAL_CACHE_KEY + categoryId;
-		
-		// 2. 从redis获取数据
-		String setMealVOJson = stringRedisTemplate.opsForValue().get(key);
-		if (setMealVOJson != null) {
-			List<SetMealVO> setMealVOList = JSONUtil.toList(setMealVOJson, SetMealVO.class);
-			return Result.success(setMealVOList);
-		}
-		
-		// 3. 不存在，查询数据库
-		List<SetMeal> list = list(new LambdaQueryWrapper<SetMeal>()
-				.eq(SetMeal::getCategoryId, categoryId)
-				.eq(SetMeal::getStatus, StatusConstant.ENABLE));
-		
-		if (CollUtil.isEmpty(list)) {
-			return Result.success(null); // 或者返回空列表
-		}
-		
-		// 4. 转换为VO并签名
-		List<SetMealVO> vos = list.stream().map(setMeal -> {
-			SetMealVO vo = BeanUtil.copyProperties(setMeal, SetMealVO.class);
-			String signedUrl = AliOssUtil.getSignedUrl(ossClient, vo.getImage(), ossConfig.getBucketName());
-			vo.setImage(signedUrl);
-			return vo;
-		}).collect(Collectors.toList());
-		
-		// 5. 存入redis
-		stringRedisTemplate.opsForValue().set(key, JSONUtil.toJsonStr(vos), CACHE_SETMEAL_TTL, TimeUnit.MINUTES);
-		
-		// 6. 返回
-		return Result.success(vos);
+		List<SetMealVO> list = cacheClient.queryListWithPassThrough(
+				SETMEAL_CACHE_KEY,
+				categoryId,
+				SetMealVO.class,
+				(id) -> {
+					// 1. 不存在，查询数据库
+					List<SetMeal> setMeals = list(new LambdaQueryWrapper<SetMeal>()
+							.eq(SetMeal::getCategoryId, id)
+							.eq(SetMeal::getStatus, StatusConstant.ENABLE));
+
+					if (CollUtil.isEmpty(setMeals)) {
+						return null; // 或者返回空列表
+					}
+
+					// 2. 转换为VO并签名
+					List<SetMealVO> vos = setMeals.stream().map(setMeal -> {
+						SetMealVO vo = BeanUtil.copyProperties(setMeal, SetMealVO.class);
+						String signedUrl = AliOssUtil.getSignedUrl(ossClient, vo.getImage(), ossConfig.getBucketName());
+						vo.setImage(signedUrl);
+						return vo;
+					}).collect(Collectors.toList());
+					return vos;
+				},
+				CACHE_SETMEAL_TTL,
+				TimeUnit.MINUTES
+		);
+
+		return Result.success(list);
 	}
 	
 	/**

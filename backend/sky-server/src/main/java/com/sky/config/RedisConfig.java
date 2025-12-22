@@ -3,12 +3,19 @@ package com.sky.config;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.cache.CacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.cache.RedisCacheConfiguration;
+import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
+import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
+
+import java.time.Duration;
 
 /**
  * @author Gengetsu
@@ -50,5 +57,26 @@ public class RedisConfig {
 		
 		template.afterPropertiesSet();
 		return template;
+	}
+
+	/**
+	 * 配置Spring Cache的CacheManager，使用JSON序列化
+	 */
+	@Bean
+	public CacheManager cacheManager(RedisConnectionFactory factory) {
+		// 1. 配置序列化器
+		GenericJackson2JsonRedisSerializer genericJackson2JsonRedisSerializer = new GenericJackson2JsonRedisSerializer();
+		StringRedisSerializer stringRedisSerializer = new StringRedisSerializer();
+
+		// 2. 配置缓存默认规则
+		RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
+				.entryTtl(Duration.ofMinutes(30)) // 默认过期时间30分钟
+				.serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(stringRedisSerializer)) // key序列化
+				.serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(genericJackson2JsonRedisSerializer)); // value序列化
+
+		// 3. 构建CacheManager
+		return RedisCacheManager.builder(factory)
+				.cacheDefaults(config)
+				.build();
 	}
 }
