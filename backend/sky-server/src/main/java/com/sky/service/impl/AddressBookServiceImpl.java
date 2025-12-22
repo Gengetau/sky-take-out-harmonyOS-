@@ -83,7 +83,7 @@ public class AddressBookServiceImpl extends ServiceImpl<AddressBookMapper, Addre
 		addressBook.setIsDefault(0); // 新增地址强制设为非默认，由专门接口控制默认设置
 		save(addressBook);
 	}
-
+	
 	/**
 	 * 设置默认地址
 	 *
@@ -108,6 +108,47 @@ public class AddressBookServiceImpl extends ServiceImpl<AddressBookMapper, Addre
 		updateById(addressBook);
 
 		// 3. 清理 Redis 缓存
+		String key = RedisConstants.USER_DEFAULT_ADDRESS_KEY + userId;
+		stringRedisTemplate.delete(key);
+	}
+
+	/**
+	 * 根据id查询地址
+	 *
+	 * @param id
+	 * @return
+	 */
+	@Override
+	public AddressBook getById(Long id) {
+		return super.getById(id);
+	}
+
+	/**
+	 * 根据id修改地址
+	 *
+	 * @param addressBook
+	 */
+	@Override
+	@Transactional(rollbackFor = Exception.class)
+	public void update(AddressBook addressBook) {
+		updateById(addressBook);
+		// 清理缓存（防止修改的是默认地址）
+		Long userId = UserHolder.getUser().getId();
+		String key = RedisConstants.USER_DEFAULT_ADDRESS_KEY + userId;
+		stringRedisTemplate.delete(key);
+	}
+
+	/**
+	 * 根据id删除地址
+	 *
+	 * @param id
+	 */
+	@Override
+	@Transactional(rollbackFor = Exception.class)
+	public void deleteById(Long id) {
+		removeById(id);
+		// 清理缓存（防止删除的是默认地址）
+		Long userId = UserHolder.getUser().getId();
 		String key = RedisConstants.USER_DEFAULT_ADDRESS_KEY + userId;
 		stringRedisTemplate.delete(key);
 	}
