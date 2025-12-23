@@ -7,6 +7,7 @@ import { Login } from './Login';
 import { ConfirmOrderView } from './main/ConfirmOrderPage';
 import { MainTabs } from './MainTabs';
 import { ShopPage } from './shop/ShopPage';
+import { RemarkPage } from './main/RemarkPage';
 
 
 @Entry
@@ -29,6 +30,8 @@ struct Index {
       AddressEditPage()
     } else if ( name === 'AddressMapPage' ) {
       AddressMapPage()
+    } else if ( name === 'RemarkPage' ) {
+      RemarkPage()
     }
   }
 

@@ -72,16 +72,6 @@ export class OrderService {
    * @param submitDTO 订单提交信息
    */
   static async submitOrder(submitDTO: OrderSubmitDTO): Promise<OrderSubmitVO> {
-    // TODO: 暂时 Mock 提交成功 喵！
-    // 真实调用: return HttpUtil.post<OrderSubmitVO>('/client/order/submit', submitDTO);
-    
-    await new Promise<void>(resolve => setTimeout(resolve, 1000));
-
-    return {
-      id: 123456789,
-      orderTime: new Date().toLocaleString(),
-      orderAmount: submitDTO.amount,
-      orderNumber: 'ORDER_' + Date.now()
-    };
+    return HttpUtil.post<OrderSubmitVO>('/client/order/submit', submitDTO);
   }
 }

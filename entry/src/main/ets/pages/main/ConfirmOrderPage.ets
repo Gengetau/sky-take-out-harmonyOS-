@@ -1,19 +1,21 @@
-import { OrderSubmitDTO } from '../../model/api/OrderModel';
+import { DateGroup, TimeGenerator } from '../../common/utils/TimeGenerator';
+import { CartItemDTO, OrderSubmitDTO } from '../../model/api/OrderModel';
 import { AddressBook } from '../../model/entity/AddressBook';
 import { CartItem } from '../../model/entity/ShopModel';
 import { CartService } from '../../service/CartService';
 import { OrderService } from '../../service/OrderService';
 import { AddressEditPage } from '../address/AddressEditPage';
 import { AddressListView } from '../address/components/AddressListView';
-import { DateGroup, TimeGenerator } from '../../common/utils/TimeGenerator';
+import { RemarkPage } from './RemarkPage';
 
 /**
  * 确认订单弹窗组件
  */
 @Component
 export struct ConfirmOrderView {
-  pageStack: NavPathStack = new NavPathStack();
-  onClose: () => void = () => {};
+  @Consume('pageStack') pageStack: NavPathStack;
+  onClose: () => void = () => {
+  };
   @State cartService: CartService = CartService.getInstance();
   @StorageProp('CartUpdateSignal') @Watch('onCartUpdate') cartSignal: number = 0;
   @State currentTotalPrice: number = 0;
@@ -21,18 +23,20 @@ export struct ConfirmOrderView {
   @State defaultAddress: AddressBook | null = null;
   @State remark: string = '';
   @State isLoading: boolean = false;
-  
+  // ✨ 新增状态
+  @State payMethod: number = 1; // 1:微信, 2:支付宝
+  @State tablewareNumber: number = 0; // 餐具数量
+  @State tablewareStatus: number = 1; // 1:按餐量提供, 0:具体数量
   // ✨ 弹窗控制
   @State showAddressList: boolean = false;
   @State isEditingAddress: boolean = false;
+  @State isAddingRemark: boolean = false; // ✨ 新增备注页控制
   @State editingAddressId: number = 0;
-  
   // ✨ 时间选择相关
   @State showTimeSheet: boolean = false;
   @State timeGroups: DateGroup[] = [];
   @State selectedDateIndex: number = 0;
-  @State deliveryTimeText: string = '立即送出 (约12:30送达)';
-
+  @State deliveryTimeText: string = TimeGenerator.getImmediateDeliveryTime();
   private packAmount: number = 2; // 模拟打包费
   private deliveryPrice: number = 6; // 模拟配送费
 
@@ -52,59 +56,115 @@ export struct ConfirmOrderView {
   }
 
   formatPrice(price: number | undefined | null): string {
-    if (price === undefined || price === null || Number.isNaN(price)) {
+    if ( price === undefined || price === null || Number.isNaN(price) ) {
       return '0.00';
     }
     try {
       return price.toFixed(2);
-    } catch (e) {
+    } catch ( e ) {
       return '0.00';
     }
   }
 
   async onSubmitOrder() {
-    if (!this.defaultAddress) {
+    if (!this.defaultAddress ) {
       console.warn('喵！请选择地址！');
       return;
     }
     this.isLoading = true;
     try {
+      // 1. 解析时间
+      const isImmediate = this.deliveryTimeText.startsWith('立即送出');
+      const estimatedTime = this.parseEstimatedTime(this.deliveryTimeText);
+
+      // 2. 转换购物车数据
+      const cartItemsDTO: CartItemDTO[] = this.cartService.cartItems.map((item: CartItem): CartItemDTO => {
+        return {
+          dishId: item.dishId,
+          setmealId: item.setmealId,
+          dishFlavor: item.flavors,
+          number: item.count,
+          amount: item.price,
+          name: item.name,
+          image: item.image
+        } as CartItemDTO;
+      });
+
       const submitDTO: OrderSubmitDTO = {
         addressBookId: this.defaultAddress.id,
-        payMethod: 1, // 默认微信
+        payMethod: this.payMethod,
         remark: this.remark,
-        estimatedDeliveryTime: this.deliveryTimeText === '立即送出 (约12:30送达)' ? '立即送出' : this.deliveryTimeText,
-        deliveryStatus: 1,
+        estimatedDeliveryTime: estimatedTime,
+        deliveryStatus: isImmediate ? 1 : 0,
         packAmount: this.packAmount,
-        tablewareNumber: 2, // Mock
-        tablewareStatus: 1,
-        amount: this.subTotalAmount
+        tablewareNumber: this.tablewareNumber,
+        tablewareStatus: this.tablewareStatus,
+        amount: this.subTotalAmount,
+        cartItems: cartItemsDTO
       };
       const result = await OrderService.submitOrder(submitDTO);
       this.showPaymentDialog(result.orderAmount);
-    } catch (err) {
+    } catch ( err ) {
       console.error('下单失败喵', err);
     } finally {
       this.isLoading = false;
     }
   }
 
+  /**
+   * 解析配送时间文本为 yyyy-MM-dd HH:mm:ss 格式
+   */
+  parseEstimatedTime(text: string): string {
+    const now = new Date();
+    let targetTime = new Date();
+
+    if ( text.startsWith('立即送出') ) {
+      targetTime.setHours(now.getHours() + 1);
+    } else {
+      const parts = text.split(' ');
+      if ( parts.length >= 2 ) {
+        const dayStr = parts[0];
+                const timeRange = parts[1]; 
+                const startTime = timeRange.split('-')[0];
+                const timeParts = startTime.split(':');
+                const hour = Number(timeParts[0]);
+                const minute = Number(timeParts[1]);
+        
+                if (dayStr === '明天') {
+          targetTime.setDate(targetTime.getDate() + 1);
+        }
+        targetTime.setHours(hour, minute, 0, 0);
+      }
+    }
+    const y = targetTime.getFullYear();
+    const m = (targetTime.getMonth() + 1).toString().padStart(2, '0');
+    const d = targetTime.getDate().toString().padStart(2, '0');
+    const h = targetTime.getHours().toString().padStart(2, '0');
+    const min = targetTime.getMinutes().toString().padStart(2, '0');
+    const s = targetTime.getSeconds().toString().padStart(2, '0');
+    return `${ y }-${ m }-${ d } ${ h }:${ min }:${ s }`;
+  }
+
   showPaymentDialog(amount: number) {
     AlertDialog.show({
       title: '正在支付...',
-      message: `需支付 ¥${amount.toFixed(2)}
+      message: `需支付 ¥${ amount.toFixed(2) }
 (模拟支付环境)`,
       autoCancel: false,
       alignment: DialogAlignment.Center,
       primaryButton: {
         value: '放弃支付',
-        action: () => { console.info('放弃支付喵'); }
+        action: () => {
+          console.info('放弃支付喵');
+        }
       },
       secondaryButton: {
         value: '支付成功',
         action: () => {
           this.cartService.clearCart();
-          if (this.onClose) { this.onClose(); }
+          if ( this.onClose ) {
+            this.onClose();
+          }
           console.info('支付成功喵！');
         }
       }
@@ -148,19 +208,19 @@ export struct ConfirmOrderView {
 
         // --- 右侧：时间段列表 ---
         List() {
-          if (this.timeGroups.length > 0 && this.timeGroups[this.selectedDateIndex]) {
-             ForEach(this.timeGroups[this.selectedDateIndex].times, (timeStr: string) => {
+          if ( this.timeGroups.length > 0 && this.timeGroups[this.selectedDateIndex] ) {
+            ForEach(this.timeGroups[this.selectedDateIndex].times, (timeStr: string) => {
               ListItem() {
                 Row() {
                   Text(timeStr)
                     .fontSize(14)
                     .fontColor('#333')
                     .layoutWeight(1)
-                  
-                  if (this.deliveryTimeText.includes(timeStr)) {
+
+                  if ( this.deliveryTimeText.includes(timeStr) ) {
                     SymbolGlyph($r('sys.symbol.checkmark'))
                       .fontSize(16)
-                      .fontColor(['#FFCC00'])
+                      .fontColor([ '#FFCC00' ])
                   }
                 }
                 .width('100%')
@@ -169,10 +229,10 @@ export struct ConfirmOrderView {
                 .backgroundColor(Color.White)
                 .onClick(() => {
                   const dateStr = this.timeGroups[this.selectedDateIndex].date;
-                  if (timeStr === '立即送出') {
-                    this.deliveryTimeText = '立即送出 (约12:30送达)';
+                  if ( timeStr === '立即送出' ) {
+                    this.deliveryTimeText = TimeGenerator.getImmediateDeliveryTime();
                   } else {
-                    this.deliveryTimeText = `${dateStr} ${timeStr}`;
+                    this.deliveryTimeText = `${ dateStr } ${ timeStr }`;
                   }
                   this.showTimeSheet = false;
                 })
@@ -215,65 +275,85 @@ export struct ConfirmOrderView {
   }
 
   build() {
-    Stack() {
-      if (this.isEditingAddress) {
-        AddressEditPage({
-          editId: this.editingAddressId,
-          onClose: () => {
-            this.isEditingAddress = false;
-            this.showAddressList = true;
-          },
-          onSaveSuccess: () => {
-            this.isEditingAddress = false;
-            this.showAddressList = true;
-          }
-        })
-      } else {
-        Column() {
-          Row() {
-            Text('确认订单')
-              .fontSize(18).fontWeight(FontWeight.Bold)
-              .layoutWeight(1).textAlign(TextAlign.Center)
-          }
-          .width('100%').height(50).padding({ left: 16, right: 16 }).backgroundColor('#F1F3F5')
-
-          Scroll() {
-            Column({ space: 12 }) {
-              this.AddressSection()
-              this.DeliveryTimeSection()
-              this.OrderDetailSection()
-              this.RemarkSection()
-              Blank().height(80)
+    NavDestination() {
+      Stack() {
+        if ( this.isEditingAddress ) {
+          AddressEditPage({
+            editId: this.editingAddressId,
+            onClose: () => {
+              this.isEditingAddress = false;
+              this.showAddressList = true;
+            },
+            onSaveSuccess: () => {
+              this.isEditingAddress = false;
+              this.showAddressList = true;
             }
-            .padding(12).width('100%')
-          }
-          .layoutWeight(1).backgroundColor('#F1F3F5')
+          })
+        } else if ( this.isAddingRemark ) {
+          RemarkPage({
+            remarkText: this.remark,
+            onSave: (val: string) => {
+              this.remark = val;
+            },
+            onClose: () => {
+              this.isAddingRemark = false;
+            }
+          })
+        } else {
+          Column() {
+            Row() {
+              Text('确认订单')
+                .fontSize(18).fontWeight(FontWeight.Bold)
+                .layoutWeight(1).textAlign(TextAlign.Center)
+            }
+            .width('100%').height(50).padding({ left: 16, right: 16 }).backgroundColor('#F1F3F5')
 
-          this.BottomBar()
+            Scroll() {
+              Column({ space: 12 }) {
+                this.AddressSection()
+                this.DeliveryTimeSection()
+                this.PayMethodSection()
+                this.OrderDetailSection()
+                this.TablewareSection()
+                this.RemarkSection()
+                Blank().height(80)
+              }
+              .padding(12).width('100%')
+            }
+            .layoutWeight(1).backgroundColor('#F1F3F5')
+
+            this.BottomBar()
+          }
+          .width('100%')
+          .height('100%')
+          .backgroundColor('#F1F3F5')
+          .bindSheet(this.showAddressList, this.AddressListBuilder(), {
+            height: SheetSize.MEDIUM,
+            dragBar: true,
+            backgroundColor: '#F1F3F5',
+            onDisappear: () => {
+              this.showAddressList = false;
+            }
+          })
+          .bindSheet(this.showTimeSheet, this.TimeSheetBuilder(), {
+            height: 400,
+            dragBar: true,
+            backgroundColor: Color.White,
+            onDisappear: () => {
+              this.showTimeSheet = false;
+            }
+          })
         }
-        .width('100%').height('100%').backgroundColor('#F1F3F5')
-        .bindSheet(this.showAddressList, this.AddressListBuilder(), {
-          height: SheetSize.MEDIUM, 
-          dragBar: true,
-          backgroundColor: '#F1F3F5',
-          onDisappear: () => { this.showAddressList = false; }
-        })
-        .bindSheet(this.showTimeSheet, this.TimeSheetBuilder(), {
-          height: 400,
-          dragBar: true,
-          backgroundColor: Color.White,
-          onDisappear: () => { this.showTimeSheet = false; }
-        })
       }
-    }
-    .width('100%').height('100%')
+      .width('100%').height('100%')
+    }.hideTitleBar(true)
   }
 
   @Builder
   AddressSection() {
     Column() {
-      if (this.defaultAddress) {
-        Text(`${this.defaultAddress.provinceName} ${this.defaultAddress.cityName} ${this.defaultAddress.districtName}`)
+      if ( this.defaultAddress ) {
+        Text(`${ this.defaultAddress.provinceName } ${ this.defaultAddress.cityName } ${ this.defaultAddress.districtName }`)
           .fontSize(12).fontColor('#666666')
         Text(this.defaultAddress.detail)
           .fontSize(18).fontWeight(FontWeight.Bold).margin({ top: 4, bottom: 4 })
@@ -285,7 +365,11 @@ export struct ConfirmOrderView {
         Text('请选择收货地址 +').fontSize(16).fontWeight(FontWeight.Bold).fontColor('#FFCC00')
       }
     }
-    .width('100%').padding(16).backgroundColor(Color.White).borderRadius(8).alignItems(HorizontalAlign.Start)
+    .width('100%')
+    .padding(16)
+    .backgroundColor(Color.White)
+    .borderRadius(8)
+    .alignItems(HorizontalAlign.Start)
     .onClick(() => {
       this.showAddressList = true;
     })
@@ -298,10 +382,13 @@ export struct ConfirmOrderView {
       Blank()
       Row() {
         Text(this.deliveryTimeText).fontSize(14).fontColor('#0099FF').margin({ right: 5 })
-        SymbolGlyph($r('sys.symbol.chevron_right')).fontSize(16).fontColor(['#999'])
+        SymbolGlyph($r('sys.symbol.chevron_right')).fontSize(16).fontColor([ '#999' ])
       }
     }
-    .width('100%').padding(16).backgroundColor(Color.White).borderRadius(8)
+    .width('100%')
+    .padding(16)
+    .backgroundColor(Color.White)
+    .borderRadius(8)
     .onClick(() => {
       this.showTimeSheet = true;
     })
@@ -313,23 +400,148 @@ export struct ConfirmOrderView {
       Text('苍穹外卖').fontSize(14).fontWeight(FontWeight.Bold).margin({ bottom: 10 })
       ForEach(this.cartService.cartItems, (item: CartItem) => {
         Row() {
-          Image(item.image).width(50).height(50).borderRadius(4).objectFit(ImageFit.Cover).backgroundColor('#f0f0f0')
+          Image(item.image)
+            .width(50)
+            .height(50)
+            .borderRadius(4)
+            .objectFit(ImageFit.Cover)
+            .backgroundColor('#f0f0f0')
           Column() {
             Text(item.name).fontSize(14).maxLines(1).textOverflow({ overflow: TextOverflow.Ellipsis })
             Text(item.flavors ? item.flavors : '').fontSize(10).fontColor('#999').margin({ top: 2 })
           }.layoutWeight(1).padding({ left: 10 }).alignItems(HorizontalAlign.Start)
+
           Column() {
-            Text(`¥${item.price}`).fontSize(14).fontWeight(FontWeight.Bold)
-            Text(`x${item.count}`).fontSize(12).fontColor('#999')
+            Text(`¥${ item.price }`).fontSize(14).fontWeight(FontWeight.Bold)
+            Text(`x${ item.count }`).fontSize(12).fontColor('#999')
           }.alignItems(HorizontalAlign.End)
         }.width('100%').margin({ bottom: 12 })
       })
       Divider().color('#f5f5f5').margin({ top: 5, bottom: 5 })
-      Row() { Text('打包费').fontSize(14); Blank(); Text(`¥${this.packAmount}`).fontSize(14).fontWeight(FontWeight.Bold) }.width('100%').margin({ top: 8 })
-      Row() { Text('配送费').fontSize(14); Blank(); Text(`¥${this.deliveryPrice}`).fontSize(14).fontWeight(FontWeight.Bold) }.width('100%').margin({ top: 8 })
+      Row() {
+        Text('打包费').fontSize(14);
+        Blank();
+        Text(`¥${ this.packAmount }`).fontSize(14).fontWeight(FontWeight.Bold)
+      }.width('100%').margin({ top: 8 })
+
+      Row() {
+        Text('配送费').fontSize(14);
+        Blank();
+        Text(`¥${ this.deliveryPrice }`).fontSize(14).fontWeight(FontWeight.Bold)
+      }.width('100%').margin({ top: 8 })
+
       Divider().color('#f5f5f5').margin({ top: 10, bottom: 10 })
-      Row() { Text('小计').fontSize(12).fontColor('#666'); Blank(); Text(`¥${this.formatPrice(this.subTotalAmount)}`).fontSize(18).fontWeight(FontWeight.Bold) }.width('100%')
-    }.width('100%').padding(16).backgroundColor(Color.White).borderRadius(8).alignItems(HorizontalAlign.Start)
+      Row() {
+        Text('小计').fontSize(12).fontColor('#666');
+        Blank();
+        Text(`¥${ this.formatPrice(this.subTotalAmount) }`).fontSize(18).fontWeight(FontWeight.Bold)
+      }.width('100%')
+    }
+    .width('100%')
+    .padding(16)
+    .backgroundColor(Color.White)
+    .borderRadius(8)
+    .alignItems(HorizontalAlign.Start)
+  }
+
+  @Builder
+  PayMethodSection() {
+    Column() {
+      Row() {
+        Text('支付方式').fontSize(14).fontWeight(FontWeight.Bold)
+      }.width('100%').margin({ bottom: 10 })
+
+      Row() {
+        Image($r('app.media.wechat')).width(24).height(24).margin({ right: 10 })
+        Text('微信支付').fontSize(14).layoutWeight(1)
+        Radio({ value: '1', group: 'pay' })
+          .checked(this.payMethod === 1)
+          .onChange((isChecked: boolean) => {
+            if ( isChecked ) {
+              this.payMethod = 1;
+            }
+          })
+      }.width('100%').padding({ top: 10, bottom: 10 })
+      .onClick(() => {
+        this.payMethod = 1
+      })
+
+      Row() {
+        Image($r('app.media.alipay')).width(24).height(24).margin({ right: 10 })
+        Text('支付宝').fontSize(14).layoutWeight(1)
+        Radio({ value: '2', group: 'pay' })
+          .checked(this.payMethod === 2)
+          .onChange((isChecked: boolean) => {
+            if ( isChecked ) {
+              this.payMethod = 2;
+            }
+          })
+      }.width('100%').padding({ top: 10, bottom: 10 })
+      .onClick(() => {
+        this.payMethod = 2
+      })
+
+    }.width('100%').padding(16).backgroundColor(Color.White).borderRadius(8)
+  }
+
+  @Builder
+  TablewareSection() {
+
+    Row() {
+
+      Text('餐具数量').fontSize(14).fontWeight(FontWeight.Bold)
+
+      Blank()
+
+      Row() {
+
+        Text(this.tablewareStatus === 1 ? '依据餐量提供' : `${ this.tablewareNumber } 份`)
+          .fontSize(14)
+          .fontColor('#333')
+          .margin({ right: 5 })
+
+        SymbolGlyph($r('sys.symbol.chevron_right')).fontSize(16).fontColor([ '#999' ])
+
+      }
+
+    }
+    .width('100%')
+    .padding(16)
+    .backgroundColor(Color.White)
+    .borderRadius(8)
+
+    .onClick(() => {
+
+      const ranges = [ '依据餐量提供', '1份', '2份', '3份', '4份', '5份', '6份', '7份', '8份', '9份', '10份' ];
+
+      TextPickerDialog.show({
+
+        range: ranges,
+
+        selected: this.tablewareStatus === 1 ? 0 : this.tablewareNumber,
+
+        onAccept: (value: TextPickerResult) => {
+
+          if ( value.index === 0 ) {
+
+            this.tablewareStatus = 1;
+
+            this.tablewareNumber = 0;
+
+          } else {
+
+            this.tablewareStatus = 0;
+
+            this.tablewareNumber = Number(value.index);
+
+          }
+
+        }
+
+      })
+
+    })
+
   }
 
   @Builder
@@ -337,21 +549,45 @@ export struct ConfirmOrderView {
     Row() {
       Text('备注').fontSize(14).fontWeight(FontWeight.Bold)
       Blank()
-      TextInput({ placeholder: '口味、偏好等要求', text: this.remark })
-        .textAlign(TextAlign.End).backgroundColor(Color.Transparent)
-        .onChange((val) => { this.remark = val; }).width('60%')
-    }.width('100%').padding({ left: 16, right: 16, top: 10, bottom: 10 }).backgroundColor(Color.White).borderRadius(8)
+      Row() {
+        Text(this.remark ? this.remark : '口味、偏好等要求')
+          .fontSize(14)
+          .fontColor(this.remark ? '#333' : '#999')
+          .maxLines(1)
+          .textOverflow({ overflow: TextOverflow.Ellipsis })
+          .width('60%')
+          .textAlign(TextAlign.End)
+          .margin({ right: 5 })
+        SymbolGlyph($r('sys.symbol.chevron_right')).fontSize(16).fontColor([ '#999' ])
+      }
+    }
+    .width('100%')
+    .padding(16)
+    .backgroundColor(Color.White)
+    .borderRadius(8)
+    .onClick(() => {
+      this.isAddingRemark = true;
+    })
   }
 
   @Builder
   BottomBar() {
     Row() {
       Column() {
-        Text(`¥${this.formatPrice(this.subTotalAmount)}`).fontSize(20).fontWeight(FontWeight.Bold).fontColor(Color.White)
+        Text(`¥${ this.formatPrice(this.subTotalAmount) }`)
+          .fontSize(20)
+          .fontWeight(FontWeight.Bold)
+          .fontColor(Color.White)
         Text('已优惠 ¥0').fontSize(10).fontColor('#cccccc')
       }.alignItems(HorizontalAlign.Start)
+
       Blank()
-      Button(this.isLoading ? '提交中...' : '去支付').backgroundColor('#FFCC00').fontColor('#333333').height(40).width(100).enabled(!this.isLoading)
+      Button(this.isLoading ? '提交中...' : '去支付')
+        .backgroundColor('#FFCC00')
+        .fontColor('#333333')
+        .height(40)
+        .width(100)
+        .enabled(!this.isLoading)
         .onClick(() => this.onSubmitOrder())
     }.width('100%').height(60).backgroundColor('#222222').padding({ left: 20, right: 20 })
   }

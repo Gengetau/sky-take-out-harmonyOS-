@@ -126,15 +126,17 @@ export class SetMealVO {
 // 监听装饰器
 @Observed
 export class CartItem {
-  dishId: number;
+  dishId?: number; // 菜品ID (可选)
+  setmealId?: number; // 套餐ID (可选)
   name: string;
   image: string;
   price: number;
   count: number;
   flavors: string; // 已选口味字符串，如 "微辣, 加葱"
 
-  constructor(dishId: number, name: string, image: string, price: number, count: number, flavors: string) {
+  constructor(dishId: number | undefined, setmealId: number | undefined, name: string, image: string, price: number, count: number, flavors: string) {
     this.dishId = dishId;
+    this.setmealId = setmealId;
     this.name = name;
     this.image = image;
     this.price = price;
@@ -144,6 +146,6 @@ export class CartItem {
 
   // 用于判断是否是同一个规格的菜
   get uniqueKey(): string {
-    return `${ this.dishId }_${ this.flavors }`;
+    return `${ this.dishId ?? 'null' }_${ this.setmealId ?? 'null' }_${ this.flavors }`;
   }
 }

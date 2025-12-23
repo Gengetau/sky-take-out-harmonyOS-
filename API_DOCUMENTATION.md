@@ -168,7 +168,7 @@
         - `image` 字段是一个临时的 **阿里云 OSS 预签名 URL**，**有效期为 2 小时**。 │
         - 此接口在后端有 60 分钟缓存，客户端**不应**对返回的 `image` URL 进行长期缓存。
 
---- 
+---
 
 ## 6. 地址簿相关 (`/client/addressBook`)
 
@@ -273,3 +273,125 @@
   ```
 - **备注**:
     - 如果当前用户没有设置默认地址，`data` 将为 `null`，且返回状态码为 `0` (Error) 喵。
+
+### 6.3 设置默认地址
+
+- **接口地址**: `PUT /client/addressBook/default/{id}`
+- **功能描述**: 设置当前登录用户的默认收货地址。
+- **请求参数**:
+  - `id` (路径参数): 地址ID
+- **请求示例**: 无 (参数在URL中)
+- **返回数据**: `Result<String>`
+- **备注**:
+    - 此操作具有排他性：设置某个地址为默认地址后，该用户原有的其他默认地址会自动取消默认状态喵。
+    - 后端会自动同步更新 Redis 缓存，保证数据实时性喵。
+
+### 6.4 根据ID查询地址
+
+- **接口地址**: `GET /client/addressBook/{id}`
+- **功能描述**: 根据地址ID获取详细的地址信息，用于编辑页面的数据回显喵。
+- **请求参数**:
+  - `id` (路径参数): 地址ID
+- **返回数据**: `Result<AddressBook>`
+
+### 6.5 修改地址
+
+- **接口地址**: `PUT /client/addressBook`
+- **功能描述**: 根据地址ID修改详细的地址信息喵。
+- **请求参数 (JSON)**:
+  - `id`: 地址ID (必填)
+  - `consignee`: 收货人
+  - `sex`: 性别 (0 女, 1 男)
+  - `phone`: 手机号
+  - `provinceName`: 省级名称
+  - `cityName`: 市级名称
+  - `districtName`: 区级名称
+  - `detail`: 详细地址
+  - `label`: 标签
+- **返回数据**: `Result<String>`
+- **备注**:
+    - 修改操作后，后端会自动清理默认地址缓存喵。
+
+### 6.6 根据ID删除地址
+
+- **接口地址**: `DELETE /client/addressBook`
+- **功能描述**: 根据地址ID删除该地址信息喵。
+- **请求参数 (Query)**:
+  - `id`: 地址ID
+- **请求示例**: `/client/addressBook?id=1`
+- **返回数据**: `Result<String>`
+- **备注**:
+    - 删除操作后，后端会自动清理默认地址缓存喵。
+
+---
+
+## 7. 订单相关 (`/client/order`)
+
+### 7.1 用户下单
+
+- **接口地址**: `POST /client/order/submit`
+- **功能描述**: 用户提交订单，包含地址、支付方式、配送信息以及购物车中的商品明细。
+- **请求参数 (JSON)**:
+  - `addressBookId` (Long): 地址簿id
+  - `payMethod` (Integer): 付款方式 (1:微信, 2:支付宝)
+  - `remark` (String): 备注
+  - `estimatedDeliveryTime` (String): 预计送达时间 (格式: yyyy-MM-dd HH:mm:ss)
+  - `deliveryStatus` (Integer): 配送状态 (1:立即送出, 0:选择具体时间)
+  - `tablewareNumber` (Integer): 餐具数量
+  - `tablewareStatus` (Integer): 餐具数量状态 (1:按餐量提供, 0:选择具体数量)
+  - `packAmount` (Integer): 打包费
+  - `amount` (BigDecimal): 订单总金额
+  - `cartItems` (List<CartItem>): 购物车明细列表
+    - `dishId` (Long): 菜品id (如果是套餐则为null)
+    - `setmealId` (Long): 套餐id (如果是菜品则为null)
+    - `dishFlavor` (String): 口味 (如: "不辣")
+    - `number` (Integer): 数量
+    - `amount` (BigDecimal): 单价或总价
+    - `name` (String): 商品名称
+    - `image` (String): 商品图片
+- **请求示例**:
+  ```json
+  {
+    "addressBookId": 1,
+    "payMethod": 1,
+    "remark": "不要香菜",
+    "estimatedDeliveryTime": "2025-12-23 12:00:00",
+    "deliveryStatus": 1,
+    "tablewareNumber": 2,
+    "tablewareStatus": 0,
+    "packAmount": 2,
+    "amount": 108.00,
+    "cartItems": [
+      {
+        "dishId": 51,
+        "dishFlavor": "微辣",
+        "number": 1,
+        "amount": 56.00,
+        "name": "老坛酸菜鱼"
+      },
+      {
+        "setmealId": 32,
+        "number": 1,
+        "amount": 39.90,
+        "name": "健康搭配套餐A"
+      }
+    ]
+  }
+  ```
+- **返回数据**: `Result<OrderSubmitVO>`
+- **响应示例**:
+  ```json
+  {
+    "code": 1,
+    "msg": null,
+    "data": {
+      "id": 1001,
+      "orderNumber": "17349264000001001",
+      "orderAmount": 108.00,
+      "orderTime": "2025-12-23 11:30:00"
+    }
+  }
+  ```
+- **备注**:
+    - 接口会自动校验地址簿和购物车数据是否为空。
+    - 成功下单后，会返回订单号 `orderNumber` 用于后续支付。

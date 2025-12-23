@@ -1,4 +1,4 @@
-import { CartItem, DishVO } from '../model/entity/ShopModel';
+import { CartItem, DishVO, SetMealVO } from '../model/entity/ShopModel';
 
 // 使用 @Observed 装饰器，让这个类的数据变化可以被UI感知到喵
 @Observed
@@ -37,7 +37,7 @@ export class CartService {
    * @param flavors 选择的口味，如果没有则为空字符串喵
    */
   addItem(dish: DishVO, flavors: string): void {
-    const newItem = new CartItem(dish.id, dish.name, dish.image, dish.price, 1, flavors);
+    const newItem = new CartItem(dish.id, undefined, dish.name, dish.image, dish.price, 1, flavors);
     const existingItem = this.cartItems.find(item => item.uniqueKey === newItem.uniqueKey);
 
     if ( existingItem ) {
@@ -51,6 +51,24 @@ export class CartService {
     }
     // ArkUI 是响应式的，数组的变化会自动触发UI更新，妮娅在控制台打印一下方便主人调试喵
     console.info(`喵！购物车更新: ${ JSON.stringify(this.cartItems) }`);
+    this.notifyUpdate();
+  }
+
+  /**
+   * 添加套餐到购物车喵
+   * @param setmeal 要添加的套餐
+   */
+  addSetmeal(setmeal: SetMealVO): void {
+    const newItem = new CartItem(undefined, setmeal.id, setmeal.name, setmeal.image, setmeal.price, 1, '');
+    const existingItem = this.cartItems.find(item => item.uniqueKey === newItem.uniqueKey);
+
+    if ( existingItem ) {
+      existingItem.count++;
+      this.cartItems = [ ...this.cartItems ];
+    } else {
+      this.cartItems = [ ...this.cartItems, newItem ];
+    }
+    console.info(`喵！购物车更新(套餐): ${ JSON.stringify(this.cartItems) }`);
     this.notifyUpdate();
   }
 
@@ -122,7 +140,7 @@ export class CartService {
    * 根据菜品ID和口味减少一项商品喵
    */
   decreaseItemByDish(dishId: number, flavors: string): void {
-    const uniqueKey = `${ dishId }_${ flavors }`;
+    const uniqueKey = `${ dishId }_null_${ flavors }`;
     const existingItem = this.cartItems.find(item => item.uniqueKey === uniqueKey);
     if ( existingItem ) {
       this.decreaseItem(existingItem); // 复用已有的 decreaseItem 逻辑喵
@@ -133,7 +151,7 @@ export class CartService {
    * 获取指定规格菜品在购物车中的数量喵
    */
   getDishQuantity(dishId: number, flavors: string): number {
-    const uniqueKey = `${ dishId }_${ flavors }`;
+    const uniqueKey = `${ dishId }_null_${ flavors }`;
     const existingItem = this.cartItems.find(item => item.uniqueKey === uniqueKey);
     return existingItem ? existingItem.count : 0;
   }

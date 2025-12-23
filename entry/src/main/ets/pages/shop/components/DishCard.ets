@@ -1,5 +1,5 @@
 import { promptAction } from '@kit.ArkUI';
-import { DishVO } from '../../../model/entity/ShopModel';
+import { DishVO, SetMealVO } from '../../../model/entity/ShopModel';
 import { CartService } from '../../../service/CartService';
 
 /**
@@ -9,6 +9,7 @@ import { CartService } from '../../../service/CartService';
 export struct DishCard {
   dish: DishVO | undefined;
   @Prop isShopOpen: boolean; // 新增：接收店铺营业状态
+  @Prop isSetmeal: boolean = false; // ✨ 新增：是否为套餐
   public onOpenFlavorDialog: (dish: DishVO) => void = () => {
   };
   // 📡 监听广播：只要 AppStorage 里的 'CartUpdateSignal' 变了，就执行 onUpdate
@@ -127,7 +128,7 @@ export struct DishCard {
                   .backgroundColor('#FFCC00')
                   .enabled(this.isShopOpen) // Disable if shop is closed
                   .onClick(() => {
-                    this.cartService.addItem(this.dish!, '');
+                    this.addToCart();
                   })
                 }
                 .alignItems(VerticalAlign.Center)
@@ -141,7 +142,7 @@ export struct DishCard {
                 .backgroundColor('#FFCC00')
                 .enabled(this.isShopOpen) // Disable if shop is closed
                 .onClick(() => {
-                  this.cartService.addItem(this.dish!, '');
+                  this.addToCart();
                   promptAction.showToast({ message: '加购成功' }); // 可选：要不要提示看体验
                 })
               }
@@ -155,6 +156,24 @@ export struct DishCard {
       }
       .width('100%')
       .padding(10)
+    }
+  }
+  addToCart() {
+    if (!this.dish) return;
+    if (this.isSetmeal) {
+      // 构造 SetMealVO (虽然有点笨拙，但类型安全)
+      const setmeal = new SetMealVO(
+        this.dish.id, 
+        this.dish.categoryId, 
+        this.dish.name, 
+        this.dish.price, 
+        this.dish.status, 
+        this.dish.description, 
+        this.dish.image
+      );
+      this.cartService.addSetmeal(setmeal);
+    } else {
+      this.cartService.addItem(this.dish, '');
     }
   }
 }

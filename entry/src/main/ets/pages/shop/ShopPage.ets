@@ -137,6 +137,7 @@ export struct ShopPage {
                       DishCard({
                         dish: dish,
                         isShopOpen: this.isShopOpen, // 传递营业状态
+                        isSetmeal: group.category.type === 2, // ✨ 传递是否为套餐
                         // ✨ 正确的父子通讯方式：父组件把一个函数（能力）传给子组件
                         onOpenFlavorDialog: (dishToOpen: DishVO) => {
                           this.currentDish = dishToOpen;
