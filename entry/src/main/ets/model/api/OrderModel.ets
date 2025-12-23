@@ -41,12 +41,16 @@ export interface OrderSubmitVO {
 }
 
 /**
+ * 支付提交 DTO
+ */
+export interface OrderPaymentDTO {
+  orderNumber: string;
+  payMethod: number;
+}
+
+/**
  * 支付返回结果 VO
  */
 export interface OrderPaymentVO {
-  nonceStr: string;
-  paySign: string;
-  timeStamp: string;
-  signType: string;
-  packageStr: string;
+  qrCode: string; // 支付宝支付二维码链接
 }

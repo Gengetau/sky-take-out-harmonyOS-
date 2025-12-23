@@ -16,6 +16,7 @@ export class PreferencesUtil {
   private static readonly STORE_NAME: string = 'SkyTakeout_Pref';
   // 定义 Token 的 Key
   private static readonly KEY_TOKEN: string = 'user_token';
+  private static readonly KEY_USER_ID: string = 'user_id';
 
   /**
    * 🚀 初始化方法 (必须在 EntryAbility 里调用一次)
@@ -37,9 +38,7 @@ export class PreferencesUtil {
   static async saveToken(token: string) {
     if (!PreferencesUtil.pref) return;
     try {
-      // 1. 写入内存
       await PreferencesUtil.pref.put(PreferencesUtil.KEY_TOKEN, token);
-      // 2. 刷入磁盘 (这一步千万不能忘！否则杀后台就丢了)
       await PreferencesUtil.pref.flush();
       console.info('[PreferencesUtil] Token 保存成功喵！');
     } catch (err) {
@@ -48,13 +47,25 @@ export class PreferencesUtil {
   }
 
   /**
+   * 💾 保存用户ID
+   */
+  static async saveUserId(userId: number) {
+    if (!PreferencesUtil.pref) return;
+    try {
+      await PreferencesUtil.pref.put(PreferencesUtil.KEY_USER_ID, userId);
+      await PreferencesUtil.pref.flush();
+      console.info('[PreferencesUtil] UserId 保存成功喵！');
+    } catch (err) {
+      console.error('[PreferencesUtil] 保存 UserId 失败喵');
+    }
+  }
+
+  /**
    * 🔍 获取 Token
-   * @returns token 字符串，如果没有则返回空字符串 ''
    */
   static async getToken(): Promise<string> {
     if (!PreferencesUtil.pref) return '';
     try {
-      // get 的第二个参数是默认值
       const token = await PreferencesUtil.pref.get(PreferencesUtil.KEY_TOKEN, '');
       return token as string;
     } catch (err) {
@@ -63,16 +74,30 @@ export class PreferencesUtil {
   }
 
   /**
-   * 🗑️ 删除 Token (退出登录用)
+   * 🔍 获取用户ID
+   */
+  static async getUserId(): Promise<number> {
+    if (!PreferencesUtil.pref) return 0;
+    try {
+      const userId = await PreferencesUtil.pref.get(PreferencesUtil.KEY_USER_ID, 0);
+      return userId as number;
+    } catch (err) {
+      return 0;
+    }
+  }
+
+  /**
+   * 🗑️ 删除 Token 和 UserID
    */
   static async deleteToken() {
     if (!PreferencesUtil.pref) return;
     try {
       await PreferencesUtil.pref.delete(PreferencesUtil.KEY_TOKEN);
-      await PreferencesUtil.pref.flush(); // 删除也要 flush 哦
-      console.info('[PreferencesUtil] Token 已销毁喵！');
+      await PreferencesUtil.pref.delete(PreferencesUtil.KEY_USER_ID);
+      await PreferencesUtil.pref.flush();
+      console.info('[PreferencesUtil] 登录数据已销毁喵！');
     } catch (err) {
-      console.error('[PreferencesUtil] 删除 Token 失败喵');
+      console.error('[PreferencesUtil] 删除数据失败喵');
     }
   }
 }

@@ -7,6 +7,8 @@ import { OrderService } from '../../service/OrderService';
 import { AddressEditPage } from '../address/AddressEditPage';
 import { AddressListView } from '../address/components/AddressListView';
 import { RemarkPage } from './RemarkPage';
+import { PaymentPageParams } from './PaymentPage';
+import { promptAction } from '@kit.ArkUI';
 
 /**
  * 确认订单弹窗组件
@@ -14,6 +16,7 @@ import { RemarkPage } from './RemarkPage';
 @Component
 export struct ConfirmOrderView {
   @Consume('pageStack') pageStack: NavPathStack;
+  // 外部传入的关闭回调，用于关闭 bindSheet
   onClose: () => void = () => {
   };
   @State cartService: CartService = CartService.getInstance();
@@ -24,7 +27,7 @@ export struct ConfirmOrderView {
   @State remark: string = '';
   @State isLoading: boolean = false;
   // ✨ 新增状态
-  @State payMethod: number = 1; // 1:微信, 2:支付宝
+  @State payMethod: number = 2; // ✨ 默认改为 2 (支付宝)，因为微信暂时不可用
   @State tablewareNumber: number = 0; // 餐具数量
   @State tablewareStatus: number = 1; // 1:按餐量提供, 0:具体数量
   // ✨ 弹窗控制
@@ -67,8 +70,10 @@ export struct ConfirmOrderView {
   }
 
   async onSubmitOrder() {
+    console.info('喵！开始提交订单...');
     if (!this.defaultAddress ) {
-      console.warn('喵！请选择地址！');
+      console.warn('喵！未选择地址，终止提交');
+      promptAction.showToast({ message: '请选择收货地址喵' });
       return;
     }
     this.isLoading = true;
@@ -76,6 +81,7 @@ export struct ConfirmOrderView {
       // 1. 解析时间
       const isImmediate = this.deliveryTimeText.startsWith('立即送出');
       const estimatedTime = this.parseEstimatedTime(this.deliveryTimeText);
+      console.info(`喵！解析预计时间: ${estimatedTime}, 是否立即: ${isImmediate}`);
 
       // 2. 转换购物车数据
       const cartItemsDTO: CartItemDTO[] = this.cartService.cartItems.map((item: CartItem): CartItemDTO => {
@@ -89,6 +95,7 @@ export struct ConfirmOrderView {
           image: item.image
         } as CartItemDTO;
       });
+      console.info(`喵！购物车项数: ${cartItemsDTO.length}`);
 
       const submitDTO: OrderSubmitDTO = {
         addressBookId: this.defaultAddress.id,
@@ -102,10 +109,31 @@ export struct ConfirmOrderView {
         amount: this.subTotalAmount,
         cartItems: cartItemsDTO
       };
+
+      console.info('喵！正在调用 OrderService.submitOrder...');
       const result = await OrderService.submitOrder(submitDTO);
-      this.showPaymentDialog(result.orderAmount);
+      console.info('喵！订单提交成功！返回结果:', JSON.stringify(result));
+
+      // ✨ 跳转到支付页面
+      const params: PaymentPageParams = {
+        orderNumber: result.orderNumber,
+        payMethod: this.payMethod,
+        totalAmount: result.orderAmount
+      };
+
+      // 🚀 关键修改：先跳转，然后立刻关闭当前的 bindSheet 弹窗！
+      this.pageStack.pushPath({ name: 'PaymentPage', param: params });
+
+      if (this.onClose) {
+        this.onClose(); // 这行代码会让 ShopPage 里的 showConfirmOrder = false，从而关闭弹窗
+      }
+
+      // 清空购物车
+      this.cartService.clearCart();
+
     } catch ( err ) {
-      console.error('下单失败喵', err);
+      console.error('喵！！！下单失败，错误信息:', err);
+      promptAction.showToast({ message: '下单失败，请检查网络喵' });
     } finally {
       this.isLoading = false;
     }
@@ -124,13 +152,13 @@ export struct ConfirmOrderView {
       const parts = text.split(' ');
       if ( parts.length >= 2 ) {
         const dayStr = parts[0];
-                const timeRange = parts[1]; 
-                const startTime = timeRange.split('-')[0];
-                const timeParts = startTime.split(':');
-                const hour = Number(timeParts[0]);
-                const minute = Number(timeParts[1]);
-        
-                if (dayStr === '明天') {
+        const timeRange = parts[1];
+        const startTime = timeRange.split('-')[0];
+        const timeParts = startTime.split(':');
+        const hour = Number(timeParts[0]);
+        const minute = Number(timeParts[1]);
+
+        if ( dayStr === '明天' ) {
           targetTime.setDate(targetTime.getDate() + 1);
         }
         targetTime.setHours(hour, minute, 0, 0);
@@ -143,32 +171,6 @@ export struct ConfirmOrderView {
     const min = targetTime.getMinutes().toString().padStart(2, '0');
     const s = targetTime.getSeconds().toString().padStart(2, '0');
     return `${ y }-${ m }-${ d } ${ h }:${ min }:${ s }`;
-  }
-
-  showPaymentDialog(amount: number) {
-    AlertDialog.show({
-      title: '正在支付...',
-      message: `需支付 ¥${ amount.toFixed(2) }
-(模拟支付环境)`,
-      autoCancel: false,
-      alignment: DialogAlignment.Center,
-      primaryButton: {
-        value: '放弃支付',
-        action: () => {
-          console.info('放弃支付喵');
-        }
-      },
-      secondaryButton: {
-        value: '支付成功',
-        action: () => {
-          this.cartService.clearCart();
-          if ( this.onClose ) {
-            this.onClose();
-          }
-          console.info('支付成功喵！');
-        }
-      }
-    });
   }
 
   @Builder
@@ -451,21 +453,36 @@ export struct ConfirmOrderView {
         Text('支付方式').fontSize(14).fontWeight(FontWeight.Bold)
       }.width('100%').margin({ bottom: 10 })
 
+      // ✨ 微信支付 - 禁用状态
       Row() {
-        Image($r('app.media.wechat')).width(24).height(24).margin({ right: 10 })
-        Text('微信支付').fontSize(14).layoutWeight(1)
+        Image($r('app.media.wechat'))
+          .width(24)
+          .height(24)
+          .margin({ right: 10 })
+          .grayscale(1) // 变灰
+          .opacity(0.5) // 半透明
+
+        Text('微信支付')
+          .fontSize(14)
+          .layoutWeight(1)
+          .fontColor('#999') // 文字变灰
+
+        Text('(维护中)')
+          .fontSize(12)
+          .fontColor('#999')
+          .margin({ right: 10 })
+
         Radio({ value: '1', group: 'pay' })
           .checked(this.payMethod === 1)
-          .onChange((isChecked: boolean) => {
-            if ( isChecked ) {
-              this.payMethod = 1;
-            }
-          })
-      }.width('100%').padding({ top: 10, bottom: 10 })
+          .enabled(false) // 禁用单选框
+      }
+      .width('100%')
+      .padding({ top: 10, bottom: 10 })
       .onClick(() => {
-        this.payMethod = 1
+        promptAction.showToast({ message: '微信支付暂不可用，请使用支付宝喵' });
       })
 
+      // ✨ 支付宝 - 正常状态 (默认选中)
       Row() {
         Image($r('app.media.alipay')).width(24).height(24).margin({ right: 10 })
         Text('支付宝').fontSize(14).layoutWeight(1)
@@ -486,24 +503,17 @@ export struct ConfirmOrderView {
 
   @Builder
   TablewareSection() {
-
     Row() {
-
       Text('餐具数量').fontSize(14).fontWeight(FontWeight.Bold)
-
       Blank()
-
       Row() {
-
         Text(this.tablewareStatus === 1 ? '依据餐量提供' : `${ this.tablewareNumber } 份`)
           .fontSize(14)
           .fontColor('#333')
           .margin({ right: 5 })
 
         SymbolGlyph($r('sys.symbol.chevron_right')).fontSize(16).fontColor([ '#999' ])
-
       }
-
     }
     .width('100%')
     .padding(16)
@@ -511,37 +521,21 @@ export struct ConfirmOrderView {
     .borderRadius(8)
 
     .onClick(() => {
-
       const ranges = [ '依据餐量提供', '1份', '2份', '3份', '4份', '5份', '6份', '7份', '8份', '9份', '10份' ];
-
       TextPickerDialog.show({
-
         range: ranges,
-
         selected: this.tablewareStatus === 1 ? 0 : this.tablewareNumber,
-
         onAccept: (value: TextPickerResult) => {
-
           if ( value.index === 0 ) {
-
             this.tablewareStatus = 1;
-
             this.tablewareNumber = 0;
-
           } else {
-
             this.tablewareStatus = 0;
-
             this.tablewareNumber = Number(value.index);
-
           }
-
         }
-
       })
-
     })
-
   }
 
   @Builder

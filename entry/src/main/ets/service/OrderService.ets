@@ -1,5 +1,5 @@
 import { AddressBook } from '../model/entity/AddressBook';
-import { OrderSubmitDTO, OrderSubmitVO } from '../model/api/OrderModel';
+import { OrderSubmitDTO, OrderSubmitVO, OrderPaymentDTO, OrderPaymentVO } from '../model/api/OrderModel';
 import { HttpUtil } from '../common/utils/HttpUtil';
 
 /**
@@ -73,5 +73,13 @@ export class OrderService {
    */
   static async submitOrder(submitDTO: OrderSubmitDTO): Promise<OrderSubmitVO> {
     return HttpUtil.post<OrderSubmitVO>('/client/order/submit', submitDTO);
+  }
+
+  /**
+   * 订单支付 (获取二维码)
+   * @param paymentDTO 支付信息
+   */
+  static async payment(paymentDTO: OrderPaymentDTO): Promise<OrderPaymentVO> {
+    return HttpUtil.put<OrderPaymentVO>('/client/order/payment', paymentDTO);
   }
 }

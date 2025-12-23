@@ -8,6 +8,8 @@ import { ConfirmOrderView } from './main/ConfirmOrderPage';
 import { MainTabs } from './MainTabs';
 import { ShopPage } from './shop/ShopPage';
 import { RemarkPage } from './main/RemarkPage';
+import { PaymentPage } from './main/PaymentPage';
+import { WebSocketService } from '../service/WebSocketService';
 
 
 @Entry
@@ -19,11 +21,11 @@ struct Index {
   @Builder
   PagesMap(name: string) {
     if ( name === 'Login' ) {
-      Login() // 直接调用！不要中间商赚差价！
+      Login()
     } else if ( name === 'MainTabs' ) {
       MainTabs();
-    } else if ( name === 'ShopPage' ) { // 👈 新增这一行！
-      ShopPage() // 直接调用组件，不需要 Builder 包装函数
+    } else if ( name === 'ShopPage' ) {
+      ShopPage()
     } else if ( name === 'ConfirmOrderPage' ) {
       ConfirmOrderView()
     } else if ( name === 'AddressEditPage' ) {
@@ -32,6 +34,8 @@ struct Index {
       AddressMapPage()
     } else if ( name === 'RemarkPage' ) {
       RemarkPage()
+    } else if ( name === 'PaymentPage' ) {
+      PaymentPage()
     }
   }
 
@@ -39,85 +43,80 @@ struct Index {
    * 应用初始化
    */
   async initializeApp() {
-    // 1. 获取并设置UI上下文
+    console.info('喵！[Index] 开始初始化应用...');
     const uiContext = this.getUIContext();
     HttpUtil.setContext(uiContext);
 
-    // 2. 初始化持久化存储工具 (必须等待它完成)
     const context = uiContext.getHostContext() as common.UIAbilityContext;
     await PreferencesUtil.loadPreference(context);
 
-    // 3. 核心：从持久化存储加载Token到内存(AppStorage)，实现状态恢复
+    // 从持久化存储加载 Token 和 UserId
     const persistentToken = await PreferencesUtil.getToken();
+    const persistentUserId = await PreferencesUtil.getUserId();
+
+    console.info(`喵！[Index] 读取持久化数据: Token=${persistentToken ? 'Yes' : 'No'}, UserId=${persistentUserId}`);
+
     if ( persistentToken && persistentToken.length > 0 ) {
       AppStorage.setOrCreate('token', persistentToken);
-      console.info('喵！[Index] 已从首选项加载持久化Token到AppStorage。');
-    } else {
-      console.info('喵！[Index] 首选项中没有找到Token。');
-    }
+      AppStorage.setOrCreate('userId', persistentUserId);
+    } 
 
-    // 4. 在所有初始化完成后，再检查登录并跳转
     this.checkLoginAndJump();
   }
 
   async checkLoginAndJump() {
-    // 模拟启动屏展示时间
     await new Promise<void>((r) => {
       setTimeout(r, 1000);
     });
 
-    // HttpUtil的拦截器会自动携带AppStorage中的token
-    const token = AppStorage.get<string>('token'); // 直接从 AppStorage 读
-    let targetName = 'Login'; // 默认去登录页
+    const token = AppStorage.get<string>('token');
+    let targetName = 'Login';
 
     if ( token && token.length > 0 ) {
-      console.info('喵！[Index] 检测到内存中存在Token，正在通过 HttpUtil 验证有效性...');
+      console.info('喵！[Index] 正在验证 Token 有效性...');
       try {
-        // HttpUtil.get 会自动处理 base_url 和 token 拦截器
         await HttpUtil.get<string>('/client/type/list');
-        console.info('喵！[Index] Token有效，准备去 MainTabs');
-        targetName = 'MainTabs';
+        
+        const userId = AppStorage.get<number>('userId') || 0;
+        console.info(`喵！[Index] Token有效，UserId=${userId}`);
+        
+        if (userId > 0) {
+          // ✅ 数据完整，连接 WS 并进入主页
+          // 使用 192.168.0.210 以匹配您的真机/局域网环境
+          WebSocketService.getInstance().connect(userId, '192.168.0.210:8080');
+          targetName = 'MainTabs';
+        } else {
+          // ⚠️ 关键修复：如果是旧版本升级上来的数据（有Token无ID），必须重登
+          console.warn('喵！！！[Index] 发现脏数据：有Token但UserId为0。正在清除数据...');
+          await this.clearLoginData();
+          targetName = 'Login';
+        }
+        
       } catch ( error ) {
-        // 捕获到错误，说明 token 失效 (NOT_LOGIN) 或网络异常
-        console.error('喵！[Index] Token验证失败或网络异常，准备去 Login。错误:', error);
+        console.error('喵！[Index] Token失效或网络请求失败，准备去 Login:', error);
+        await this.clearLoginData();
         targetName = 'Login';
-        // 清理一下 AppStorage 和持久化存储中已失效的 token
-        AppStorage.delete('token');
-        await PreferencesUtil.deleteToken();
-        console.info('喵！[Index] 已清除所有失效的Token');
       }
     } else {
-      console.info('喵！[Index] AppStorage 中没有Token，准备去 Login');
-      targetName = 'Login';
+      console.info('喵！[Index] 没有Token，直接去 Login');
     }
 
-
-    // 🚀 执行跳转
+    console.info(`喵！[Index] 最终跳转目标: ${targetName}`);
     this.pageStack.pushPath({ name: targetName }, false);
-
-    // 🕵️‍♀️ 探针日志：看看栈里到底有没有东西？
-    setTimeout(() => {
-      const size = this.pageStack.size();
-      console.info(`喵！[Index] 跳转指令已发出。当前路由栈大小: ${ size }`);
-      console.info(`喵！[Index] 栈顶页面名字: ${ JSON.stringify(this.pageStack.getAllPathName()) }`);
-
-      // 如果 size 还是 0，说明 router_map 配置绝对有错！
-      if ( size === 0 ) {
-        console.error('喵！！！跳转失败了！系统找不到名为 ' + targetName + ' 的路由配置！请检查 router_map.json！');
-      }
-    }, 100);
-
-    // 关掉启动屏（可选，如果 pushPath 没动画，这步其实会被新页面覆盖）
     this.isShowSplash = false;
+  }
+
+  async clearLoginData() {
+    AppStorage.delete('token');
+    AppStorage.delete('userId');
+    await PreferencesUtil.deleteToken();
   }
 
   build() {
     Navigation(this.pageStack) {
-
-      // --- 启动屏 UI (Splash) ---
       Stack() {
         Column() {
-          Image($r('app.media.logo')) // 您的 Logo
+          Image($r('app.media.logo'))
             .width(100)
             .height(100)
             .objectFit(ImageFit.Contain)
@@ -140,7 +139,7 @@ struct Index {
       }
       .backgroundColor('#FFFFFF')
       .onAppear(() => {
-        // 在页面出现时，开始执行初始化流程
+        // 确保 initializeApp 只被调用一次
         this.initializeApp();
       })
     }

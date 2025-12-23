@@ -395,3 +395,61 @@
 - **备注**:
     - 接口会自动校验地址簿和购物车数据是否为空。
     - 成功下单后，会返回订单号 `orderNumber` 用于后续支付。
+
+### 7.2 订单支付 (支付宝当面付)
+
+- **接口地址**: `PUT /client/order/payment`
+- **功能描述**: 为指定的订单号生成支付宝扫码支付的二维码。
+- **请求参数 (JSON)**:
+  - `orderNumber` (String): 订单号
+  - `payMethod` (Integer): 付款方式 (1:微信, 2:支付宝)
+- **请求示例**:
+  ```json
+  {
+    "orderNumber": "17349264000001001",
+    "payMethod": 2
+  }
+  ```
+- **返回数据**: `Result<OrderPaymentVO>`
+- **响应示例**:
+  ```json
+  {
+    "code": 1,
+    "msg": null,
+    "data": {
+      "qrCode": "https://qr.alipay.com/bax02450xxxxxx"
+    }
+  }
+  ```
+- **备注**:
+    - `qrCode` 即为支付二维码链接，前端可利用工具将其转换为二维码图片展示喵。
+    - 支付成功后，后端会自动通过异步回调更新订单状态喵。
+
+---
+
+## 8. 实时通知 (WebSocket)
+
+### 8.1 建立 WebSocket 连接
+
+- **连接地址**: `ws://{host}:{port}/ws/{userId}`
+- **功能描述**: 用于接收后端的实时推送消息（如支付成功通知）。
+- **参数说明**:
+    - `userId` (Long): 当前登录用户的ID。
+- **示例**: `ws://localhost:8080/ws/1`
+
+### 8.2 消息格式 (后端推送)
+
+当支付成功或有其他状态变更时，后端会主动推送 JSON 格式的消息：
+
+- **消息示例**:
+  ```json
+  {
+    "type": 1,
+    "orderId": 1001,
+    "content": "订单支付成功"
+  }
+  ```
+- **字段说明**:
+    - `type` (Integer): 消息类型 (1: 支付成功, 2: 待接单/接单提醒等)
+    - `orderId` (Long): 关联的订单ID
+    - `content` (String): 提示文本喵
