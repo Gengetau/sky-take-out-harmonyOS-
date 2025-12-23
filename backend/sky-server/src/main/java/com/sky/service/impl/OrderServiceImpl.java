@@ -2,6 +2,7 @@ package com.sky.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.json.JSONUtil;
 import com.alipay.api.AlipayClient;
 import com.alipay.api.domain.AlipayTradePrecreateModel;
 import com.alipay.api.request.AlipayTradePrecreateRequest;
@@ -52,24 +53,24 @@ import static com.sky.entity.Orders.*;
 public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implements OrderService {
 	@Autowired
 	private OrderDetailService orderDetailService;
-
+	
 	@Autowired
 	private AddressBookMapper addressBookMapper;
-
+	
 	@Autowired
 	private UserService userService;
-
+	
 	@Autowired
 	private AlipayClient alipayClient;
-
+	
 	@Autowired
 	private AliPayProperties aliPayProperties;
-
+	
 	@Autowired
 	private WebSocketServer webSocketServer;
 	
 	@Override
-	public Result<Page<OrderVO>> getOrdersByPage(OrdersPageQueryDTO dto) {		// 1.获取分页数据
+	public Result<Page<OrderVO>> getOrdersByPage(OrdersPageQueryDTO dto) {        // 1.获取分页数据
 		int currentPage = dto.getPage();
 		int pageSize = dto.getPageSize();
 		// 2.构建分页模型
@@ -324,14 +325,14 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
 			order.setCheckoutTime(LocalDateTime.now());
 			this.updateById(order);
 			log.info("订单 {} 支付成功，状态已更新喵！", outTradeNo);
-
+			
 			// 通过WebSocket推送消息给客户端
 			Map<String, Object> map = new HashMap<>();
 			map.put("type", 1); // 1表示支付成功，2表示商家接单/拒单等（将来扩展用）
 			map.put("orderId", order.getId());
 			map.put("content", "订单支付成功");
-
-			String json = com.alibaba.fastjson.JSON.toJSONString(map);
+			
+			String json = JSONUtil.toJsonStr(map);
 			webSocketServer.sendToClient(order.getUserId().toString(), json);
 		}
 	}
