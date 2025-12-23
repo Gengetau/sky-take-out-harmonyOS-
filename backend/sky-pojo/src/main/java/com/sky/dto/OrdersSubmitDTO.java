@@ -28,4 +28,18 @@ public class OrdersSubmitDTO implements Serializable {
     private Integer packAmount;
     //总金额
     private BigDecimal amount;
+
+    // 购物车明细列表
+    private java.util.List<CartItem> cartItems;
+
+    @Data
+    public static class CartItem implements Serializable {
+        private Long dishId;
+        private Long setmealId;
+        private String dishFlavor;
+        private Integer number;
+        private BigDecimal amount; // 单价或总价，后端校验时可重新计算
+        private String name;
+        private String image;
+    }
 }

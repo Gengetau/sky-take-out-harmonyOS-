@@ -5,22 +5,27 @@ import cn.hutool.core.collection.CollUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.sky.dto.OrdersCancelDTO;
-import com.sky.dto.OrdersConfirmDTO;
-import com.sky.dto.OrdersPageQueryDTO;
-import com.sky.dto.OrdersRejectionDTO;
+import com.sky.dto.*;
+import com.sky.entity.AddressBook;
 import com.sky.entity.OrderDetail;
 import com.sky.entity.Orders;
+import com.sky.entity.User;
+import com.sky.exception.AddressBookBusinessException;
 import com.sky.exception.OrderBusinessException;
+import com.sky.mapper.AddressBookMapper;
 import com.sky.mapper.OrderMapper;
 import com.sky.result.Result;
 import com.sky.service.OrderDetailService;
 import com.sky.service.OrderService;
+import com.sky.service.UserService;
 import com.sky.vo.OrderStatisticsVO;
+import com.sky.vo.OrderSubmitVO;
 import com.sky.vo.OrderVO;
+import com.sky.vo.UserHolder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -28,8 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static com.sky.constant.MessageConstant.ORDER_NOT_FOUND;
-import static com.sky.constant.MessageConstant.ORDER_STATUS_ERROR;
+import static com.sky.constant.MessageConstant.*;
 import static com.sky.entity.Orders.*;
 
 /**
@@ -44,6 +48,12 @@ import static com.sky.entity.Orders.*;
 public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implements OrderService {
 	@Autowired
 	private OrderDetailService orderDetailService;
+	
+	@Autowired
+	private AddressBookMapper addressBookMapper;
+	
+	@Autowired
+	private UserService userService;
 	
 	@Override
 	public Result<Page<OrderVO>> getOrdersByPage(OrdersPageQueryDTO dto) {
@@ -130,7 +140,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
 		orderVO.setOrderDetailList(orderDetails);
 		return Result.success(orderVO);
 	}
-
+	
 	@Override
 	public Result<String> cancel(OrdersCancelDTO dto) {
 		// 1.根据id查询订单
@@ -150,7 +160,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
 		updateById(orders);
 		return Result.success();
 	}
-
+	
 	@Override
 	public Result<String> confirm(OrdersConfirmDTO dto) {
 		Orders orders = getById(dto.getId());
@@ -161,7 +171,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
 		updateById(orders);
 		return Result.success();
 	}
-
+	
 	@Override
 	public Result<String> rejection(OrdersRejectionDTO dto) {
 		Orders orders = getById(dto.getId());
@@ -169,7 +179,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
 			throw new OrderBusinessException(ORDER_STATUS_ERROR);
 		}
 		if (orders.getPayStatus().equals(PAID)) {
-			//TODO 用户已付款,需要退款
+			// TODO 用户已付款,需要退款
 		}
 		orders.setStatus(CANCELLED);
 		orders.setRejectionReason(dto.getRejectionReason());
@@ -177,7 +187,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
 		updateById(orders);
 		return Result.success();
 	}
-
+	
 	@Override
 	public Result<String> complete(Long id) {
 		Orders orders = getById(id);
@@ -188,7 +198,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
 		updateById(orders);
 		return Result.success();
 	}
-
+	
 	@Override
 	public Result<String> delivery(Long id) {
 		Orders orders = getById(id);
@@ -198,5 +208,59 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
 		orders.setStatus(DELIVERY_IN_PROGRESS);
 		updateById(orders);
 		return Result.success();
+	}
+	
+	@Override
+	@Transactional(rollbackFor = Exception.class)
+	public Result<OrderSubmitVO> submit(OrdersSubmitDTO ordersSubmitDTO) {
+		// 1. 业务异常处理（地址簿为空、购物车为空）
+		AddressBook addressBook = addressBookMapper.selectById(ordersSubmitDTO.getAddressBookId());
+		if (addressBook == null) {
+			throw new AddressBookBusinessException(ADDRESS_BOOK_IS_NULL);
+		}
+		
+		List<OrdersSubmitDTO.CartItem> cartItems = ordersSubmitDTO.getCartItems();
+		if (cartItems == null || cartItems.isEmpty()) {
+			throw new OrderBusinessException(SHOPPING_CART_IS_NULL);
+		}
+		
+		Long userId = UserHolder.getUser().getId();
+		User user = userService.getById(userId);
+		
+		// 2. 向订单表插入1条数据
+		Orders orders = new Orders();
+		BeanUtil.copyProperties(ordersSubmitDTO, orders);
+		orders.setOrderTime(LocalDateTime.now());
+		orders.setPayStatus(Orders.UN_PAID);
+		orders.setStatus(Orders.PENDING_PAYMENT);
+		orders.setNumber(String.valueOf(System.currentTimeMillis()) + userId);
+		orders.setPhone(addressBook.getPhone());
+		orders.setConsignee(addressBook.getConsignee());
+		orders.setUserId(userId);
+		orders.setUserName(user.getName());
+		orders.setAddress(addressBook.getProvinceName() + addressBook.getCityName() + addressBook.getDistrictName() + addressBook.getDetail());
+		
+		this.save(orders);
+		
+		// 3. 向订单明细表插入n条数据
+		List<OrderDetail> orderDetailList = new ArrayList<>();
+		for (OrdersSubmitDTO.CartItem cartItem : cartItems) {
+			OrderDetail orderDetail = new OrderDetail();
+			BeanUtil.copyProperties(cartItem, orderDetail);
+			orderDetail.setOrderId(orders.getId());
+			orderDetailList.add(orderDetail);
+		}
+		
+		orderDetailService.saveBatch(orderDetailList);
+		
+		// 4. 封装VO返回结果
+		OrderSubmitVO orderSubmitVO = OrderSubmitVO.builder()
+				.id(orders.getId())
+				.orderTime(orders.getOrderTime())
+				.orderNumber(orders.getNumber())
+				.orderAmount(orders.getAmount())
+				.build();
+		
+		return Result.success(orderSubmitVO);
 	}
 }
