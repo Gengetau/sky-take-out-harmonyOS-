@@ -36,7 +36,9 @@ public class MvcConfig implements WebMvcConfigurer {
 		registry.addInterceptor(new LoginInterceptor())
 				.excludePathPatterns(
 						"/client/user/**",
-						"/admin/**").order(1);
+						"/admin/**",
+						"/notify/**",
+						"/ws/**").order(1);
 		// 添加jwt令牌拦截器
 		registry.addInterceptor(jwtTokenAdminInterceptor)
 				.addPathPatterns("/admin/**")

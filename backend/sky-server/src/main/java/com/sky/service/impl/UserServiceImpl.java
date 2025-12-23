@@ -11,7 +11,11 @@ import com.sky.entity.User;
 import com.sky.mapper.UserMapper;
 import com.sky.result.Result;
 import com.sky.service.UserService;
+import com.aliyun.oss.OSS;
+import com.sky.config.OSSConfig;
+import com.sky.utils.AliOssUtil;
 import com.sky.utils.RegexUtils;
+import com.sky.vo.UserHolder;
 import com.sky.vo.UserLoginVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,6 +42,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 		implements UserService {
 	@Autowired
 	private StringRedisTemplate stringRedisTemplate;
+
+	@Autowired
+	private OSS ossClient;
+
+	@Autowired
+	private OSSConfig ossConfig;
 	
 	@Override
 	public Result<String> sendCode(UserLoginDTO userLoginDTO) {
@@ -99,5 +109,39 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 		stringRedisTemplate.expire(tokenKey, LOGIN_USER_TTL, TimeUnit.MINUTES);
 		// 5.返回结果
 		return Result.success(userVO);
+	}
+
+	@Override
+	public Result<User> getUserInfo() {
+		UserLoginVO userVO = UserHolder.getUser();
+		if (userVO == null) {
+			return Result.error("用户未登录喵！");
+		}
+		User user = getById(userVO.getId());
+
+		// 处理头像签名
+		if (user.getAvatar() != null && !user.getAvatar().isEmpty()) {
+			// 只有当头像是OSS路径时才签名（简单的判断，或者默认全是OSS）
+			try {
+				String signedUrl = AliOssUtil.getSignedUrl(ossClient, user.getAvatar(), ossConfig.getBucketName());
+				user.setAvatar(signedUrl);
+			} catch (Exception e) {
+				log.error("头像签名失败喵", e);
+				// 签名失败可以保留原链接或者设为空，这里暂时保留原链接
+			}
+		}
+
+		return Result.success(user);
+	}
+
+	@Override
+	public Result<String> logout() {
+		UserLoginVO user = UserHolder.getUser();
+		if (user != null) {
+			stringRedisTemplate.delete(LOGIN_USER_KEY + user.getToken());
+			UserHolder.removeUser();
+			return Result.success("退出成功喵！");
+		}
+		return Result.error("用户未登录喵！");
 	}
 }

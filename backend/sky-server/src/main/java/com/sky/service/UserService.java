@@ -17,4 +17,8 @@ public interface UserService extends IService<User> {
 	Result<String> sendCode(UserLoginDTO userLoginDTO);
 	
 	Result<UserLoginVO> login(UserLoginDTO userLoginDTO);
+
+	Result<User> getUserInfo();
+
+	Result<String> logout();
 }
