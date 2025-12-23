@@ -47,4 +47,12 @@ public class UserController {
 		log.info("获取当前登录用户信息喵");
 		return userService.getUserInfo();
 	}
+
+	// 退出登录
+	@PostMapping("/logout")
+	@ApiOperation("退出登录")
+	public Result<String> logout() {
+		log.info("用户退出登录喵");
+		return userService.logout();
+	}
 }

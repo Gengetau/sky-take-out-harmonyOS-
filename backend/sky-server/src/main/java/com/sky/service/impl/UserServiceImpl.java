@@ -133,4 +133,15 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 
 		return Result.success(user);
 	}
+
+	@Override
+	public Result<String> logout() {
+		UserLoginVO user = UserHolder.getUser();
+		if (user != null) {
+			stringRedisTemplate.delete(LOGIN_USER_KEY + user.getToken());
+			UserHolder.removeUser();
+			return Result.success("退出成功喵！");
+		}
+		return Result.error("用户未登录喵！");
+	}
 }
