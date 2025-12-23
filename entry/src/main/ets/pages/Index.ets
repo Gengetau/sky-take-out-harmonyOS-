@@ -9,6 +9,8 @@ import { MainTabs } from './MainTabs';
 import { ShopPage } from './shop/ShopPage';
 import { RemarkPage } from './main/RemarkPage';
 import { PaymentPage } from './main/PaymentPage';
+import { PaySuccessPage } from './main/PaySuccessPage';
+import { SettingsPage } from './main/SettingsPage';
 import { WebSocketService } from '../service/WebSocketService';
 
 
@@ -36,6 +38,10 @@ struct Index {
       RemarkPage()
     } else if ( name === 'PaymentPage' ) {
       PaymentPage()
+    } else if ( name === 'PaySuccessPage' ) {
+      PaySuccessPage()
+    } else if ( name === 'SettingsPage' ) {
+      SettingsPage()
     }
   }
 
@@ -82,11 +88,9 @@ struct Index {
         
         if (userId > 0) {
           // ✅ 数据完整，连接 WS 并进入主页
-          // 使用 192.168.0.210 以匹配您的真机/局域网环境
           WebSocketService.getInstance().connect(userId, '192.168.0.210:8080');
           targetName = 'MainTabs';
         } else {
-          // ⚠️ 关键修复：如果是旧版本升级上来的数据（有Token无ID），必须重登
           console.warn('喵！！！[Index] 发现脏数据：有Token但UserId为0。正在清除数据...');
           await this.clearLoginData();
           targetName = 'Login';
@@ -139,7 +143,6 @@ struct Index {
       }
       .backgroundColor('#FFFFFF')
       .onAppear(() => {
-        // 确保 initializeApp 只被调用一次
         this.initializeApp();
       })
     }

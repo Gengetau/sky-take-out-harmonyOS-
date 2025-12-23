@@ -425,9 +425,57 @@
     - `qrCode` 即为支付二维码链接，前端可利用工具将其转换为二维码图片展示喵。
     - 支付成功后，后端会自动通过异步回调更新订单状态喵。
 
+- **备注**:
+    - 此接口数据在后端有24小时缓存，性能较高。
+
 ---
 
-## 8. 实时通知 (WebSocket)
+## 9. 用户相关 (`/client/user`)
+
+### 9.1 获取个人信息
+
+- **接口地址**: `GET /client/user/info`
+- **功能描述**: 获取当前登录用户的详细个人信息。
+- **请求参数**: 无 (通过请求头中的 Token 识别用户)
+- **返回数据**: `Result<User>`
+- **响应示例**:
+  ```json
+  {
+    "code": 1,
+    "msg": null,
+    "data": {
+      "id": 1,
+      "openid": "wx123456",
+      "name": "妮娅的主人",
+      "phone": "13812345678",
+      "sex": "1",
+      "avatar": "https://<your-bucket>.oss-cn-beijing.aliyuncs.com/avatar.png?OSSAccessKeyId=...",
+      "createTime": "2025-12-23 15:00:00"
+    }
+  }
+  ```
+- **‼️ 重要备注**:
+    - `avatar` 字段是一个临时的 **阿里云 OSS 预签名 URL**，**有效期为 2 小时**。
+    - 客户端**不应**对此 URL 进行长期缓存。每次请求此接口都会返回最新的有效链接。
+
+### 9.2 退出登录
+
+- **接口地址**: `POST /client/user/logout`
+- **功能描述**: 退出当前登录状态，清理服务器端 Session/Token。
+- **请求参数**: 无
+- **返回数据**: `Result<String>`
+- **响应示例**:
+  ```json
+  {
+    "code": 1,
+    "msg": null,
+    "data": "退出成功喵！"
+  }
+  ```
+
+---
+
+## 10. 实时通知 (WebSocket)
 
 ### 8.1 建立 WebSocket 连接
 

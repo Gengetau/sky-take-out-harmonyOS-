@@ -1,7 +1,7 @@
 import { HttpUtil } from '../common/utils/HttpUtil';
 import { PreferencesUtil } from '../common/utils/PreferencesUtil';
 import { WebSocketService } from './WebSocketService';
-import { SendCodeDTO, UserLoginDTO, UserLoginVO } from '../model/entity/LoginModel';
+import { SendCodeDTO, UserLoginDTO, UserLoginVO, UserInfoVO } from '../model/entity/LoginModel';
 
 /**
  * 认证业务
@@ -10,6 +10,8 @@ export class AuthService {
   // 🔗 接口地址常量 (C端接口)
   private static readonly SEND_CODE_URL = '/client/user/code';
   private static readonly LOGIN_URL = '/client/user/login';
+  private static readonly USER_INFO_URL = '/client/user/info';
+  private static readonly LOGOUT_URL = '/client/user/logout';
 
   /**
    * 📨 发送验证码
@@ -42,14 +44,50 @@ export class AuthService {
         AppStorage.setOrCreate('token', data.token);
         AppStorage.setOrCreate('userId', data.id);
 
-        // ✅ 3. 连接 WebSocket (使用宿主机IP)
-        WebSocketService.getInstance().connect(data.id, '10.0.2.2:8080');
+        // ✅ 3. 连接 WebSocket
+        WebSocketService.getInstance().connect(data.id, '192.168.0.210:8080');
 
         return true;
       }
       return false;
     } catch (err) {
       return false;
+    }
+  }
+
+  /**
+   * 👤 获取当前登录用户信息
+   */
+  static async getUserInfo(): Promise<UserInfoVO | null> {
+    try {
+      return await HttpUtil.get<UserInfoVO>(AuthService.USER_INFO_URL);
+    } catch (err) {
+      console.error('获取用户信息失败喵', err);
+      return null;
+    }
+  }
+
+  /**
+   * 🚪 退出登录
+   */
+  static async logout() {
+    try {
+      // 1. 通知后端销毁 Token
+      // ✨ 修正：使用 Record 类型明确空对象的类型，绕过 ArkTS 检查
+      const emptyBody: Record<string, string> = {};
+      await HttpUtil.post<string>(AuthService.LOGOUT_URL, emptyBody);
+      console.info('喵！后端 Session 已销毁');
+    } catch (err) {
+      console.warn('喵！后端退出通知失败，可能 Token 已过期，继续清理本地数据', err);
+    } finally {
+      // 2. 清理本地持久化数据
+      await PreferencesUtil.deleteToken();
+      // 3. 清理内存状态
+      AppStorage.delete('token');
+      AppStorage.delete('userId');
+      // 4. 断开 WebSocket
+      WebSocketService.getInstance().close();
+      console.info('喵！本地登录数据已清理，WS 已断开');
     }
   }
 }
