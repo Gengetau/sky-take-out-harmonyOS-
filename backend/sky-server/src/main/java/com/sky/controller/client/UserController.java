@@ -3,13 +3,16 @@ package com.sky.controller.client;
 import com.sky.dto.UserLoginDTO;
 import com.sky.entity.User;
 import com.sky.result.Result;
+import com.sky.service.FileService;
 import com.sky.service.UserService;
+import com.sky.utils.AliOssUtil;
 import com.sky.vo.UserLoginVO;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * @author Gengetsu
@@ -26,6 +29,9 @@ public class UserController {
 	@Autowired
 	private UserService userService;
 	
+	@Autowired
+	private FileService fileService;
+	
 	// 发送验证码
 	@PostMapping("/code")
 	@ApiOperation("发送手机验证码")
@@ -39,7 +45,7 @@ public class UserController {
 	public Result<UserLoginVO> login(@RequestBody UserLoginDTO userLoginDTO) {
 		return userService.login(userLoginDTO);
 	}
-
+	
 	// 获取个人信息
 	@GetMapping("/info")
 	@ApiOperation("获取当前登录用户信息")
@@ -47,12 +53,39 @@ public class UserController {
 		log.info("获取当前登录用户信息喵");
 		return userService.getUserInfo();
 	}
-
+	
 	// 退出登录
 	@PostMapping("/logout")
 	@ApiOperation("退出登录")
 	public Result<String> logout() {
 		log.info("用户退出登录喵");
 		return userService.logout();
+	}
+	
+	// 上传头像
+	@PostMapping("/uploadAvatar")
+	@ApiOperation("上传头像")
+	public Result<String> uploadAvatar(MultipartFile file, javax.servlet.http.HttpServletRequest request) {
+		log.info("用户上传头像");
+		
+		if (file == null) {
+			log.error("文件参数为空喵！请检查前端 FormData 的 key 是否为 'file'");
+			return Result.error("文件上传失败，文件为空");
+		}
+		
+		// 1. 上传文件得到签名 URL
+		String signedUrl = fileService.upload(file);
+		if (signedUrl == null) {
+			return Result.error("头像上传失败");
+		}
+		
+		// 2. 提取 Key 用于存库
+		String objectKey = AliOssUtil.extractKeyFromUrl(signedUrl);
+		
+		// 3. 更新用户头像字段
+		userService.updateAvatar(objectKey);
+		
+		// 4. 返回前端可用的签名 URL
+		return Result.success(signedUrl);
 	}
 }

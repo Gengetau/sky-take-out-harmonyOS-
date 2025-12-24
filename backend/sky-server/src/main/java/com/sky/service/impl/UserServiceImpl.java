@@ -4,15 +4,15 @@ import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.bean.copier.CopyOptions;
 import cn.hutool.core.lang.UUID;
 import cn.hutool.core.util.RandomUtil;
+import com.aliyun.oss.OSS;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.sky.config.OSSConfig;
 import com.sky.dto.UserLoginDTO;
 import com.sky.entity.User;
 import com.sky.mapper.UserMapper;
 import com.sky.result.Result;
 import com.sky.service.UserService;
-import com.aliyun.oss.OSS;
-import com.sky.config.OSSConfig;
 import com.sky.utils.AliOssUtil;
 import com.sky.utils.RegexUtils;
 import com.sky.vo.UserHolder;
@@ -42,10 +42,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 		implements UserService {
 	@Autowired
 	private StringRedisTemplate stringRedisTemplate;
-
+	
 	@Autowired
 	private OSS ossClient;
-
+	
 	@Autowired
 	private OSSConfig ossConfig;
 	
@@ -90,6 +90,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 			User newUser = new User();
 			newUser.setName("用户" + RandomUtil.randomNumbers(6));
 			newUser.setPhone(phone);
+			newUser.setMeowId("meow" + System.currentTimeMillis());
 			save(newUser);
 			user = newUser;
 		}
@@ -110,7 +111,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 		// 5.返回结果
 		return Result.success(userVO);
 	}
-
+	
 	@Override
 	public Result<User> getUserInfo() {
 		UserLoginVO userVO = UserHolder.getUser();
@@ -118,7 +119,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 			return Result.error("用户未登录喵！");
 		}
 		User user = getById(userVO.getId());
-
+		
 		// 处理头像签名
 		if (user.getAvatar() != null && !user.getAvatar().isEmpty()) {
 			// 只有当头像是OSS路径时才签名（简单的判断，或者默认全是OSS）
@@ -130,10 +131,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 				// 签名失败可以保留原链接或者设为空，这里暂时保留原链接
 			}
 		}
-
+		
 		return Result.success(user);
 	}
-
+	
 	@Override
 	public Result<String> logout() {
 		UserLoginVO user = UserHolder.getUser();
@@ -143,5 +144,25 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 			return Result.success("退出成功喵！");
 		}
 		return Result.error("用户未登录喵！");
+	}
+	
+	@Override
+	@Transactional(rollbackFor = Exception.class)
+	public Result<String> updateAvatar(String avatar) {
+		UserLoginVO user = UserHolder.getUser();
+		if (user == null) {
+			return Result.error("用户未登录喵！");
+		}
+		
+		boolean success = lambdaUpdate()
+				.eq(User::getId, user.getId())
+				.set(User::getAvatar, avatar)
+				.update();
+		
+		if (success) {
+			return Result.success("头像更新成功喵！");
+		} else {
+			return Result.error("头像更新失败喵！");
+		}
 	}
 }
