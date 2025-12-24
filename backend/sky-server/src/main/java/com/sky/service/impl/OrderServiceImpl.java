@@ -261,6 +261,9 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
 			OrderDetail orderDetail = new OrderDetail();
 			BeanUtil.copyProperties(cartItem, orderDetail);
 			orderDetail.setOrderId(orders.getId());
+			// 处理图像链接
+			String keyFromUrl = AliOssUtil.extractKeyFromUrl(orderDetail.getImage());
+			orderDetail.setImage(keyFromUrl);
 			orderDetailList.add(orderDetail);
 		}
 		
