@@ -24,6 +24,7 @@ import com.sky.result.Result;
 import com.sky.service.OrderDetailService;
 import com.sky.service.OrderService;
 import com.sky.service.UserService;
+import com.sky.utils.AliOssUtil;
 import com.sky.vo.*;
 import com.sky.websocket.WebSocketServer;
 import lombok.extern.slf4j.Slf4j;
@@ -261,6 +262,9 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
 			OrderDetail orderDetail = new OrderDetail();
 			BeanUtil.copyProperties(cartItem, orderDetail);
 			orderDetail.setOrderId(orders.getId());
+			// 处理图像链接
+			String keyFromUrl = AliOssUtil.extractKeyFromUrl(orderDetail.getImage());
+			orderDetail.setImage(keyFromUrl);
 			orderDetailList.add(orderDetail);
 		}
 		

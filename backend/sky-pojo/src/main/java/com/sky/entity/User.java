@@ -24,6 +24,9 @@ public class User implements Serializable {
 	// 微信用户唯一标识
 	private String openid;
 	
+	// Meow外卖APP用户唯一标识
+	private String meowId;
+	
 	// 姓名
 	private String name;
 	
@@ -38,6 +41,9 @@ public class User implements Serializable {
 	
 	// 头像
 	private String avatar;
+	
+	// 自我简介
+	private String profile;
 	
 	// 注册时间
 	@TableField(fill = FieldFill.INSERT)
