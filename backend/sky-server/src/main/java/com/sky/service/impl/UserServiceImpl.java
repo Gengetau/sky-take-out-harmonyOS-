@@ -6,8 +6,10 @@ import cn.hutool.core.lang.UUID;
 import cn.hutool.core.util.RandomUtil;
 import com.aliyun.oss.OSS;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.sky.config.OSSConfig;
+import com.sky.dto.UserEditDTO;
 import com.sky.dto.UserLoginDTO;
 import com.sky.entity.User;
 import com.sky.mapper.UserMapper;
@@ -163,6 +165,65 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 			return Result.success("头像更新成功喵！");
 		} else {
 			return Result.error("头像更新失败喵！");
+		}
+	}
+	
+	@Override
+	@Transactional(rollbackFor = Exception.class)
+	public Result<String> editUserInfo(UserEditDTO userEditDTO) {
+		UserLoginVO user = UserHolder.getUser();
+		if (user == null) {
+			return Result.error("用户未登录喵！");
+		}
+		
+		String code = userEditDTO.getCode();
+		String value = userEditDTO.getValue();
+		
+		if (code == null || code.trim().isEmpty()) {
+			return Result.error("参数错误：字段名不能为空喵！");
+		}
+		
+		LambdaUpdateWrapper<User> updateWrapper = new LambdaUpdateWrapper<>();
+		updateWrapper.eq(User::getId, user.getId());
+		
+		boolean validField = true;
+		
+		switch (code) {
+			case "name": // 昵称
+				updateWrapper.set(User::getName, value);
+				break;
+			case "sex": // 性别
+				if (!"0".equals(value) && !"1".equals(value)) {
+					return Result.error("性别参数错误，只能是 0(女) 或 1(男) 喵！");
+				}
+				updateWrapper.set(User::getSex, value);
+				break;
+			case "profile": // 简介
+				updateWrapper.set(User::getProfile, value);
+				break;
+			case "idNumber": // 身份证号
+				updateWrapper.set(User::getIdNumber, value);
+				break;
+			case "phone": // 手机号
+				if (RegexUtils.isPhoneInvalid(value)) {
+					return Result.error("手机号格式错误喵！");
+				}
+				updateWrapper.set(User::getPhone, value);
+				break;
+			default:
+				validField = false;
+				break;
+		}
+		
+		if (!validField) {
+			return Result.error("不支持修改该字段：" + code);
+		}
+		
+		boolean success = update(updateWrapper);
+		if (success) {
+			return Result.success("信息修改成功！");
+		} else {
+			return Result.error("信息修改失败，请稍后重试！");
 		}
 	}
 }

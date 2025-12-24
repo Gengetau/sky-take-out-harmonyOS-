@@ -6,6 +6,8 @@ import com.sky.entity.User;
 import com.sky.result.Result;
 import com.sky.vo.UserLoginVO;
 
+import com.sky.dto.UserEditDTO;
+
 /**
  * @author Gengetsu
  * @version v1.0
@@ -23,4 +25,6 @@ public interface UserService extends IService<User> {
 	Result<String> logout();
 	
 	Result<String> updateAvatar(String avatar);
+
+	Result<String> editUserInfo(UserEditDTO userEditDTO);
 }
