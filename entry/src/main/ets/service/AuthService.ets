@@ -1,7 +1,7 @@
 import { HttpUtil } from '../common/utils/HttpUtil';
 import { PreferencesUtil } from '../common/utils/PreferencesUtil';
 import { WebSocketService } from './WebSocketService';
-import { SendCodeDTO, UserLoginDTO, UserLoginVO, UserInfoVO } from '../model/entity/LoginModel';
+import { SendCodeDTO, UserLoginDTO, UserLoginVO, UserInfoVO, UserEditDTO } from '../model/entity/LoginModel';
 
 /**
  * 认证业务
@@ -12,59 +12,65 @@ export class AuthService {
   private static readonly LOGIN_URL = '/client/user/login';
   private static readonly USER_INFO_URL = '/client/user/info';
   private static readonly LOGOUT_URL = '/client/user/logout';
+  private static readonly EDIT_INFO_URL = '/client/user/edit';
 
   /**
    * 📨 发送验证码
    */
   static async sendVerifyCode(phone: string): Promise<string | null> {
-    try {
-      const dto = new SendCodeDTO(phone);
-      const code = await HttpUtil.post<string>(AuthService.SEND_CODE_URL, dto);
-      console.info(`后端返回的验证码是: ${code}`);
-      return code;
-    } catch (err) {
-      console.error('发送验证码失败');
-      return null;
-    }
+    const dto = new SendCodeDTO(phone);
+    const code = await HttpUtil.post<string>(AuthService.SEND_CODE_URL, dto);
+    console.info(`后端返回的验证码是: ${code}`);
+    return code;
   }
 
   /**
    * 🔐 用户登录
    */
   static async login(dto: UserLoginDTO): Promise<boolean> {
-    try {
-      const data = await HttpUtil.post<UserLoginVO>(AuthService.LOGIN_URL, dto);
+    const data = await HttpUtil.post<UserLoginVO>(AuthService.LOGIN_URL, dto);
 
-      if (data && data.token) {
-        // ✅ 1. 持久化保存 Token 和 UserID
-        await PreferencesUtil.saveToken(data.token);
-        await PreferencesUtil.saveUserId(data.id);
+    if (data && data.token) {
+      // ✅ 1. 持久化保存 Token 和 UserID
+      await PreferencesUtil.saveToken(data.token);
+      await PreferencesUtil.saveUserId(data.id);
 
-        // ✅ 2. 更新内存 Token
-        AppStorage.setOrCreate('token', data.token);
-        AppStorage.setOrCreate('userId', data.id);
+      // ✅ 2. 更新内存 Token
+      AppStorage.setOrCreate('token', data.token);
+      AppStorage.setOrCreate('userId', data.id);
 
-        // ✅ 3. 连接 WebSocket
-        WebSocketService.getInstance().connect(data.id, '192.168.0.210:8080');
+      // ✅ 3. 连接 WebSocket
+      WebSocketService.getInstance().connect(data.id, '192.168.0.210:8080');
 
-        return true;
-      }
-      return false;
-    } catch (err) {
-      return false;
+      return true;
     }
+    return false;
   }
 
   /**
    * 👤 获取当前登录用户信息
    */
   static async getUserInfo(): Promise<UserInfoVO | null> {
-    try {
-      return await HttpUtil.get<UserInfoVO>(AuthService.USER_INFO_URL);
-    } catch (err) {
-      console.error('获取用户信息失败喵', err);
-      return null;
-    }
+    // 加上时间戳防止缓存
+    return await HttpUtil.get<UserInfoVO>(`${AuthService.USER_INFO_URL}?t=${Date.now()}`);
+  }
+
+  /**
+   * ✏️ 修改单项用户信息 (API 9.4)
+   * @param code 字段标识 (name, sex, profile 等)
+   * @param value 新值
+   */
+  static async updateUserSingleInfo(code: string, value: string): Promise<string> {
+    const dto = new UserEditDTO(code, value);
+    return await HttpUtil.put<string>(AuthService.EDIT_INFO_URL, dto);
+  }
+
+  /**
+   * 📸 上传头像
+   * @param fileUri 图片文件的本地 URI
+   */
+  static async uploadAvatar(fileUri: string): Promise<string> {
+    return HttpUtil.upload<string>('/client/user/uploadAvatar', fileUri);
   }
 
   /**
@@ -73,7 +79,6 @@ export class AuthService {
   static async logout() {
     try {
       // 1. 通知后端销毁 Token
-      // ✨ 修正：使用 Record 类型明确空对象的类型，绕过 ArkTS 检查
       const emptyBody: Record<string, string> = {};
       await HttpUtil.post<string>(AuthService.LOGOUT_URL, emptyBody);
       console.info('喵！后端 Session 已销毁');

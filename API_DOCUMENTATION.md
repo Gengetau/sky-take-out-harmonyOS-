@@ -473,6 +473,57 @@
   }
   ```
 
+### 9.3 上传头像
+
+- **接口地址**: `POST /client/user/uploadAvatar`
+- **功能描述**: 用户上传个人头像并更新。
+- **请求参数 (FormData)**:
+  - `file`: MultipartFile (头像文件)
+- **返回数据**: `Result<String>` (返回上传成功后的签名 URL)
+- **响应示例**:
+  ```json
+  {
+    "code": 1,
+    "msg": null,
+    "data": "https://<your-bucket>.oss-cn-beijing.aliyuncs.com/xxx.png?OSSAccessKeyId=..."
+  }
+  ```
+- **‼️ 重要备注**:
+  - 此接口会同步更新数据库中的用户头像路径喵。
+  - 返回的 `data` 是一个临时的 **预签名 URL**，有效期为 2 小时喵。
+
+### 9.4 修改用户信息
+
+- **接口地址**: `PUT /client/user/edit`
+- **功能描述**: 修改当前登录用户的单一个人信息。
+- **请求参数 (JSON)**:
+  - `code`: 要修改的字段标识 (字符串)
+    - `name`: 修改昵称
+    - `sex`: 修改性别 (传入 "0" 或 "1")
+    - `profile`: 修改个人简介
+    - `idNumber`: 修改身份证号
+    - `phone`: 修改手机号
+  - `value`: 修改后的新值 (字符串)
+- **请求示例**:
+  ```json
+  {
+    "code": "name",
+    "value": "妮娅的新名字"
+  }
+  ```
+- **返回数据**: `Result<String>`
+- **响应示例**:
+  ```json
+  {
+    "code": 1,
+    "msg": null,
+    "data": "信息修改成功喵！"
+  }
+  ```
+- **备注**:
+  - 此接口采用通用字段映射机制，一次仅支持修改一个字段喵。
+  - 后端会对手机号格式进行校验喵。
+
 ---
 
 ## 10. 实时通知 (WebSocket)

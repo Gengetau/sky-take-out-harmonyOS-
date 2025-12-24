@@ -210,7 +210,8 @@ export struct AddressEditPage {
       // 拼接完整详情地址 (如果是编辑，currentAddressDesc 可能是回显的含门牌号的地址，这里可能重复拼接，需要注意)
       // 简单处理：如果 currentAddressDesc 已经包含了 houseNumber 的内容，就不拼了？难判断
       // 还是按标准：currentAddressDesc 是定位点/POI名，houseNumber 是补充
-      const detailAddr = this.currentAddressDesc + ( this.houseNumber ? ' ' + this.houseNumber : '' );
+      // const detailAddr = this.currentAddressDesc + ( this.houseNumber ? ' ' + this.houseNumber : '' );
+      const detailAddr = this.currentAddressDesc; // 暂时去掉门牌号拼接
 
       const addressData: AddressBook = {
         id: this.editId || 0, // 如果是新增则为 0
@@ -337,6 +338,7 @@ export struct AddressEditPage {
 
         // 表单区（移动时会被遮挡或收起，这里通过高度控制可见性）
         List() {
+          /*
           ListItem() {
             Row() {
               Text('门牌号').width(70).fontSize(14)
@@ -345,6 +347,7 @@ export struct AddressEditPage {
                 .onChange((val) => this.houseNumber = val)
             }.padding({ left: 20, right: 20 }).height(50)
           }
+          */
 
           ListItem() {
             Row() {

@@ -48,7 +48,9 @@ export struct SettingsPage {
 
         List() {
           ListItemGroup() {
-            this.SettingItem('个人资料', () => promptAction.showToast({ message: '正在开发中喵~' }))
+            this.SettingItem('个人资料', () => {
+              this.pageStack.pushPath({ name: 'UserProfilePage' });
+            })
             this.SettingItem('账号与安全', () => promptAction.showToast({ message: '正在开发中喵~' }))
           }
           .backgroundColor(Color.White)

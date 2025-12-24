@@ -12,6 +12,9 @@ import { PaymentPage } from './main/PaymentPage';
 import { PaySuccessPage } from './main/PaySuccessPage';
 import { SettingsPage } from './main/SettingsPage';
 import { WebSocketService } from '../service/WebSocketService';
+import { AddressBookPage } from './address/AddressBookPage';
+import { AddressEditRoutePage } from './address/AddressEditRoutePage';
+import { UserProfilePage } from './main/UserProfilePage';
 
 
 @Entry
@@ -42,6 +45,12 @@ struct Index {
       PaySuccessPage()
     } else if ( name === 'SettingsPage' ) {
       SettingsPage()
+    } else if ( name === 'AddressBookPage' ) {
+      AddressBookPage()
+    } else if ( name === 'AddressEditRoutePage' ) {
+      AddressEditRoutePage()
+    } else if ( name === 'UserProfilePage' ) {
+      UserProfilePage()
     }
   }
 

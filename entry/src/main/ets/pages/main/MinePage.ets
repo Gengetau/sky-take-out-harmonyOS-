@@ -8,7 +8,7 @@ import { AuthService } from '../../service/AuthService';
 @Component
 export struct MinePage {
   @Consume('pageStack') pageStack: NavPathStack;
-  @State userInfo: UserInfoVO | null = null;
+  @StorageLink('currentUserInfo') userInfo: UserInfoVO | null = null;
   @State isLoading: boolean = true;
 
   async aboutToAppear() {
@@ -17,11 +17,17 @@ export struct MinePage {
 
   async loadUserInfo() {
     this.isLoading = true;
-    const info = await AuthService.getUserInfo();
-    if ( info ) {
-      this.userInfo = info;
+    try {
+      const info = await AuthService.getUserInfo();
+      if ( info ) {
+        // 更新全局状态，这会自动同步到 UserProfilePage
+        AppStorage.setOrCreate('currentUserInfo', info);
+      }
+    } catch (err) {
+      console.error('加载用户信息失败', err);
+    } finally {
+      this.isLoading = false;
     }
-    this.isLoading = false;
   }
 
   build() {
@@ -100,6 +106,9 @@ export struct MinePage {
               }
               .width('100%')
               .padding({ left: 24, top: 15 })
+              .onClick(() => {
+                this.pageStack.pushPath({ name: 'UserProfilePage' });
+              })
             }
             .width('100%')
           }
@@ -166,7 +175,7 @@ export struct MinePage {
 
           ListItem() {
             this.FuncItem($r('sys.symbol.map_badge_local'), '我的地址', '', () => {
-              promptAction.showToast({ message: '请在确认订单页管理地址喵' })
+              this.pageStack.pushPath({ name: 'AddressBookPage' });
             })
           }
         }
