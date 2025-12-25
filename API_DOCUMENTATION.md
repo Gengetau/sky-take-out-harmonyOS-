@@ -1,6 +1,6 @@
 # 后端接口文档 (客户端)
 
-> **版本**: 1.3
+> **版本**: 1.4
 > **日期**: 2025-12-25
 > **作者**: 妮娅 (Nia)
 
@@ -69,7 +69,7 @@
 ### 1.3 根据ID查询店铺详情
 
 - **接口地址**: `GET /client/shop/{id}`
-- **功能描述**: 获取指定店铺的详细个人信息，包含评分、公告、配送费等详细 VO 结构喵。
+- **功能描述**: 获取指定店铺的详细信息，包含评分、公告、配送费等。
 - **请求参数**:
   - `id` (路径参数): 店铺ID
 - **返回数据**: `Result<ShopVO>`
@@ -94,8 +94,6 @@
     }
   }
   ```
-- **备注**:
-  - 此接口主要用于进入店铺详情页时展示顶部的商家信息喵。
 
 ---
 
@@ -130,7 +128,7 @@
   ```
 - **‼️ 重要备注**:
     - `icon` 字段是一个临时的 **阿里云 OSS 预签名 URL**，**有效期为 24 小时**。
-    - 客户端**严禁**对此 URL 进行长期缓存 (如 `localStorage`)。每次启动应用时建议重新获取，以确保链接始终有效。后端已做缓存优化，性能无忧。
+    - 客户端**严禁**对此 URL 进行长期缓存 (如 `localStorage`)。每次启动应用时建议重新获取，以确保链接始终有效。
 
 ---
 
@@ -167,17 +165,18 @@
   ```
 - **‼️ 重要备注**:
     - `image` 字段是一个临时的 **阿里云 OSS 预签名 URL**，**有效期为 2 小时**。
-    - 客户端**不应**对此 URL 进行缓存。每次请求此接口都会返回最新的有效链接。
+    - 客户端**不应**对此 URL 进行缓存。
 
 ---
 
 ## 4. 菜品分类 (`/client/category`)
 
-### 4.1 获取所有菜品分类
+### 4.1 获取指定店铺的所有分类
 
-- **接口地址**: `GET /client/category/all`
-- **功能描述**: 获取所有已启用的菜品和套餐分类，用于分类展示。
-- **请求参数**: 无
+- **接口地址**: `GET /client/category/all/{shopId}`
+- **功能描述**: 获取指定店铺下所有已启用的菜品和套餐分类，用于该商家的菜单展示。
+- **请求参数**:
+    - `shopId` (Long, 路径参数): 店铺ID。
 - **返回数据**: `Result<List<CategoryVO>>`
 - **响应示例**:
   ```json
@@ -186,22 +185,14 @@
     "msg": null,
     "data": [
       {
-        "id": 11,
+        "id": 100,
         "type": 1,
-        "name": "酒水饮料",
-        "sort": 10
-      },
-      {
-        "id": 12,
-        "type": 1,
-        "name": "传统主食",
-        "sort": 9
+        "name": "人气汉堡",
+        "sort": 1
       }
     ]
   }
   ```
-- **备注**:
-    - 此接口数据在后端有24小时缓存，性能较高。
 
 ---
 
@@ -227,14 +218,11 @@
         "price": 39.90,
         "status": 1,
         "description": "包含米饭和清炒小油菜，健康美味喵！",
-        "image": "https://<your-bucket>.oss-cn-beijing.aliyuncs.com/setmeal_healthy_a.png?OSSAccessKeyId=..."
+        "image": "https://<your-bucket>.oss-cn-beijing.aliyuncs.com/xxx.png?..."
       }
     ]
   }
   ```
-    - **‼️ 重要备注**:
-        - `image` 字段是一个临时的 **阿里云 OSS 预签名 URL**，**有效期为 2 小时**。
-        - 此接口在后端有 60 分钟缓存，客户端**不应**对返回的 `image` URL 进行长期缓存。
 
 ---
 
@@ -248,11 +236,8 @@
   - `consignee`: 收货人
   - `sex`: 性别 (0 女, 1 男)
   - `phone`: 手机号
-  - `provinceCode`: 省级区划编号
   - `provinceName`: 省级名称
-  - `cityCode`: 市级区划编号
   - `cityName`: 市级名称
-  - `districtCode`: 区级区划编号
   - `districtName`: 区级名称
   - `detail`: 详细地址
   - `label`: 标签 (家, 公司, 学校)
@@ -274,8 +259,6 @@
 ### 6.2 查询当前登录用户的所有地址信息
 
 - **接口地址**: `GET /client/addressBook/list`
-- **功能描述**: 查询当前登录用户的所有收货地址信息。
-- **请求参数**: 无
 - **返回数据**: `Result<List<AddressBook>>`
 - **响应示例**:
   ```json
@@ -303,12 +286,8 @@
 ### 6.3 设置默认地址
 
 - **接口地址**: `PUT /client/addressBook/default/{id}`
-- **功能描述**: 设置当前登录用户的默认收货地址。
-- **请求参数**:
-  - `id` (路径参数): 地址ID
+- **功能描述**: 设置当前登录用户的默认收货地址喵。
 - **返回数据**: `Result<String>`
-- **备注**:
-    - 此操作具有排他性：设置某个地址为默认地址后，该用户原有的其他默认地址会自动取消默认状态喵。
 
 ---
 
@@ -319,6 +298,7 @@
 - **接口地址**: `POST /client/order/submit`
 - **功能描述**: 用户提交订单，包含地址、支付方式、配送信息以及购物车中的商品明细。
 - **请求参数 (JSON)**:
+  - `shopId` (Long): 店铺ID (‼️ 必填)
   - `addressBookId` (Long): 地址簿id
   - `payMethod` (Integer): 付款方式 (1:微信, 2:支付宝)
   - `remark` (String): 备注
@@ -329,7 +309,6 @@
   - `packAmount` (Integer): 打包费
   - `amount` (BigDecimal): 订单总金额
   - `cartItems` (List<CartItem>): 购物车明细列表
-- **返回数据**: `Result<OrderSubmitVO>`
 - **响应示例**:
   ```json
   {
@@ -358,7 +337,7 @@
     "code": 1,
     "msg": null,
     "data": {
-      "qrCode": "https://qr.alipay.com/bax02450xxxxxx"
+      "qrCode": "https://qr.alipay.com/..."
     }
   }
   ```
@@ -366,7 +345,7 @@
 ### 7.3 历史订单查询
 
 - **接口地址**: `GET /client/order/historyOrders`
-- **功能描述**: 分页查询当前登录用户的历史订单，支持按状态过滤。返回结果为标准的 MyBatis-Plus 分页对象结构喵。
+- **功能描述**: 分页查询当前登录用户的历史订单，支持按状态过滤。返回结果为标准的 MyBatis-Plus 分页对象结构。
 - **请求参数 (Query)**:
   - `page` (int): 页码
   - `pageSize` (int): 每页记录数
@@ -383,6 +362,7 @@
         {
           "id": 100,
           "number": "1734926400000",
+          "shopId": 1,
           "status": 5,
           "amount": 108.00,
           "orderTime": "2025-12-25 10:00:00",
@@ -397,9 +377,6 @@
     }
   }
   ```
-- **备注**:
-    - `records` 中包含了订单详情 `orderDetailList`，且详情图片已包含 OSS 签名喵。
-    - 订单按下单时间倒序排列喵。
 
 ---
 
@@ -428,29 +405,26 @@
 ### 9.2 退出登录
 
 - **接口地址**: `POST /client/user/logout`
-- **功能描述**: 退出当前登录状态，清理 Token 喵。
+- **功能描述**: 退出当前登录状态，清理服务器端 Token 喵。
 - **返回数据**: `Result<String>`
 
 ### 9.3 上传头像
 
 - **接口地址**: `POST /client/user/uploadAvatar`
 - **功能描述**: 用户上传个人头像并同步更新数据库喵。
-- **请求参数 (FormData)**: `file` (MultipartFile)
-- **返回数据**: `Result<String>` (返回上传成功后的预签名 URL)
+- **返回数据**: `Result<String>` (预签名 URL)
 
 ### 9.4 修改用户信息
 
 - **接口地址**: `PUT /client/user/edit`
-- **功能描述**: 修改当前登录用户的单个人信息。
-- **请求参数 (JSON)**:
-  - `code`: 字段标识 (`name`, `sex`, `profile`, `idNumber`, `phone`)
-  - `value`: 新值
+- **功能描述**: 修改当前登录用户的单一个人信息。
+- **参数**: `code` (字段名: name, sex, profile, idNumber, phone), `value` (新值)
 - **返回数据**: `Result<String>`
 
 ### 9.5 注销账号
 
 - **接口地址**: `POST /client/user/cancel`
-- **功能描述**: 注销当前登录用户的账号。
+- **功能描述**: 注销当前登录用户的账号喵。
 - **‼️ 重要备注**:
   - 此操作不可逆喵！
   - 执行注销后，用户的个人信息和地址簿信息会被脱敏处理。
@@ -463,7 +437,6 @@
 ### 10.1 建立 WebSocket 连接
 
 - **连接地址**: `ws://{host}:{port}/ws/{userId}`
-- **功能描述**: 用于接收后端的实时推送消息。
 
 ### 10.2 消息格式 (后端推送)
 

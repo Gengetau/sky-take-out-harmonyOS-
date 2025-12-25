@@ -63,13 +63,19 @@ export struct ShopPage {
   }
 
   async loadData() {
+    if (this.shopId <= 0) {
+      promptAction.showToast({ message: '商家信息异常喵' });
+      return;
+    }
+    
     this.isLoading = true;
 
     try {
+      // 🚀 核心改动：拉取数据时带上 shopId，确保分类是该商家的喵！
       const results = await Promise.all([
         ShopService.getShopStatus(),
-        ShopService.getShopData(),
-        this.shopId > 0 ? ShopService.getShopDetail(this.shopId) : Promise.resolve(null)
+        ShopService.getShopData(this.shopId), // 传递 shopId
+        ShopService.getShopDetail(this.shopId)
       ]);
 
       this.isShopOpen = results[0] === 1;
@@ -91,7 +97,6 @@ export struct ShopPage {
     }
   }
 
-  // ✨ 关键重构：将 shopId 和 shopInfo 注入确认页
   @Builder
   ConfirmOrderBuilder() {
     ConfirmOrderView({
@@ -106,7 +111,6 @@ export struct ShopPage {
   build() {
     NavDestination() {
       Column() {
-        // 🏠 动态店招牌喵
         ShopHeader({ 
           isShopOpen: this.isShopOpen,
           shopInfo: this.shopInfo
@@ -119,9 +123,7 @@ export struct ShopPage {
           }
           .width('100%').layoutWeight(1).justifyContent(FlexAlign.Center)
         } else {
-          // 联动列表
           Row() {
-            // 左侧：分类列表
             List({ initialIndex: 0 }) {
               ForEach(this.categoryList, (item: CategoryWithItems, index: number) => {
                 ListItem() {
@@ -144,7 +146,6 @@ export struct ShopPage {
             .backgroundColor('#F8F8F8')
             .scrollBar(BarState.Off) 
 
-            // 右侧：菜品列表
             List({ scroller: this.rightScroller }) {
               ForEach(this.categoryList, (group: CategoryWithItems, groupIndex: number) => {
                 ListItemGroup({ header: this.RightGroupHeader(group.category.name) }) {
@@ -182,7 +183,6 @@ export struct ShopPage {
           .alignItems(VerticalAlign.Top)
         }
 
-        // 底部购物车
         CartBar({
           isShopOpen: this.isShopOpen,
           onCheckout: () => {
