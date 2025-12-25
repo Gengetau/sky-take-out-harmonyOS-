@@ -45,7 +45,9 @@ public class RedisConstants {
 	
 	public static final String CATEGORY_ALL_KEY = "cache:category:all";
 	
-	// 单位：小时
+	public static final String CACHE_CATEGORY_SHOP_KEY = "cache:category:shop:";
+	
+	// 鍗曚綅锛氬皬鏃
 	public static final Long CACHE_CATEGORY_TTL = 24L;
 	
 	public static final String SETMEAL_CACHE_KEY = "cache:setmeal:";

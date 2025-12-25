@@ -33,7 +33,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static com.sky.constant.RedisConstants.CACHE_CATEGORY_TTL;
-import static com.sky.constant.RedisConstants.CATEGORY_ALL_KEY;
+import static com.sky.constant.RedisConstants.CACHE_CATEGORY_SHOP_KEY;
 
 /**
  * @author Gengetsu
@@ -57,30 +57,33 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category>
 	// =============== client 用户端方法 ===================
 	// ==================================================
 	@Override
-	public Result<List<CategoryVO>> queryAllEnabledCategories() {
-		// 1.从redis获取数据
-		String categoryAllJson = stringRedisTemplate.opsForValue().get(CATEGORY_ALL_KEY);
+	public Result<List<CategoryVO>> queryAllEnabledCategories(Long shopId) {
+		// 1.从redis获取数据 (按 shopId 隔离缓存喵)
+		String key = CACHE_CATEGORY_SHOP_KEY + shopId;
+		String categoryJson = stringRedisTemplate.opsForValue().get(key);
 		
 		// 2.存在，返回
-		if (categoryAllJson != null) {
-			List<CategoryVO> categoryVOList = JSONUtil.toList(categoryAllJson, CategoryVO.class);
+		if (categoryJson != null) {
+			List<CategoryVO> categoryVOList = JSONUtil.toList(categoryJson, CategoryVO.class);
 			return Result.success(categoryVOList);
 		}
 		
-		// 3.不存在，查询数据库（查询所有已启用的分类，并按sort排序）
+		// 3.不存在，查询数据库（查询指定店铺且已启用的分类，并按sort排序）
 		List<Category> list = list(new LambdaQueryWrapper<Category>()
+				.eq(Category::getShopId, shopId) // 增加 shopId 过滤喵！
 				.eq(Category::getStatus, StatusConstant.ENABLE)
 				.orderByAsc(Category::getSort));
 		
 		if (CollUtil.isEmpty(list)) {
-			return Result.error("菜品分类查询失败");
+			// 如果该店铺没有任何分类，直接返回空列表而不是报错
+			return Result.success(CollUtil.newArrayList());
 		}
 		
 		// 4.复制属性
 		List<CategoryVO> vos = BeanUtil.copyToList(list, CategoryVO.class);
 		
 		// 5.存入redis
-		stringRedisTemplate.opsForValue().set(CATEGORY_ALL_KEY, JSONUtil.toJsonStr(vos), CACHE_CATEGORY_TTL, TimeUnit.HOURS);
+		stringRedisTemplate.opsForValue().set(key, JSONUtil.toJsonStr(vos), CACHE_CATEGORY_TTL, TimeUnit.HOURS);
 		
 		// 6.返回
 		return Result.success(vos);

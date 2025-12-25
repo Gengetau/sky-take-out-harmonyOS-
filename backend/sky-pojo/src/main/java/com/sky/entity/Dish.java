@@ -54,5 +54,8 @@ public class Dish implements Serializable {
 	
 	@TableField(fill = FieldFill.INSERT_UPDATE)
 	private Long updateUser;
+
+	// 店铺ID
+	private Long shopId;
 	
 }

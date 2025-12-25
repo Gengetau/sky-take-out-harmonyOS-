@@ -43,6 +43,7 @@ public class MvcConfig implements WebMvcConfigurer {
 		registry.addInterceptor(jwtTokenAdminInterceptor)
 				.addPathPatterns("/admin/**")
 				.excludePathPatterns("/admin/employee/login",
-						"/admin/shop/preheat");
+						"/admin/shop/preheat",
+						"/admin/common/batchUpload");
 	}
 }
