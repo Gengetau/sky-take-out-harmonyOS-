@@ -1,6 +1,6 @@
 # 后端接口文档 (客户端)
 
-> **版本**: 1.2
+> **版本**: 1.3
 > **日期**: 2025-12-25
 > **作者**: 妮娅 (Nia)
 
@@ -10,7 +10,7 @@
 
 ## 1. 店铺相关 (`/client/shop`)
 
-### 1.1 获取店铺营业状态
+### 1.1 获取店铺营业状态 (全局)
 
 - **接口地址**: `GET /client/shop/status`
 - **功能描述**: 用于获取店铺当前的营业状态，以便在客户端展示“营业中”或“休息中”。
@@ -28,6 +28,74 @@
     - `data` 值为 `1` 表示 **营业中**。
     - `data` 值为 `0` 表示 **休息中** (已打烊)。
     - 如果 Redis 未设置状态，接口会默认返回 `0`。
+
+### 1.2 查询商家列表 (支持地理位置排序)
+
+- **接口地址**: `GET /client/shop/list/{typeId}`
+- **功能描述**: 根据分类ID查询商家列表。如果传入坐标，则按距离由近到远排序喵。
+- **请求参数 (路径参数)**:
+  - `typeId` (Long): 店铺类型ID (如 4 代表美食)
+- **请求参数 (Query)**:
+  - `longitude` (Double): 用户当前经度
+  - `latitude` (Double): 用户当前纬度
+  - `page` (int, 默认1): 分页页码
+- **返回数据**: `Result<List<ShopVO>>`
+- **响应示例**:
+  ```json
+  {
+    "code": 1,
+    "msg": null,
+    "data": [
+      {
+        "id": 1,
+        "name": "苍穹外卖总店",
+        "avatar": "https://<your-bucket>.oss-cn-beijing.aliyuncs.com/shop_logo_1.png?OSSAccessKeyId=...",
+        "score": 5.0,
+        "monthlySales": 1200,
+        "deliveryPrice": 20.00,
+        "shippingFee": 5.00,
+        "averageDeliveryTime": 35,
+        "distance": "1.2km",
+        "status": 1
+      }
+    ]
+  }
+  ```
+- **‼️ 重要备注**:
+  - `distance` 字段在传入坐标时才会有值喵。
+  - `avatar` 字段是一个临时的 **阿里云 OSS 预签名 URL**，**有效期为 24 小时**喵。
+  - 客户端**不应**对此 URL 进行长期缓存喵。
+
+### 1.3 根据ID查询店铺详情
+
+- **接口地址**: `GET /client/shop/{id}`
+- **功能描述**: 获取指定店铺的详细个人信息，包含评分、公告、配送费等详细 VO 结构喵。
+- **请求参数**:
+  - `id` (路径参数): 店铺ID
+- **返回数据**: `Result<ShopVO>`
+- **响应示例**:
+  ```json
+  {
+    "code": 1,
+    "msg": null,
+    "data": {
+      "id": 1,
+      "name": "苍穹外卖总店",
+      "avatar": "https://<your-bucket>.oss-cn-beijing.aliyuncs.com/shop_logo_1.png?OSSAccessKeyId=...",
+      "score": 5.0,
+      "monthlySales": 1200,
+      "deliveryPrice": 20.00,
+      "shippingFee": 5.00,
+      "averageDeliveryTime": 35,
+      "description": "官方直营，品质保证喵！",
+      "address": "北京市海淀区中关村",
+      "distance": null,
+      "status": 1
+    }
+  }
+  ```
+- **备注**:
+  - 此接口主要用于进入店铺详情页时展示顶部的商家信息喵。
 
 ---
 
@@ -227,101 +295,20 @@
         "detail": "中关村大街1号",
         "label": "公司",
         "isDefault": 1
-      },
-      {
-        "id": 2,
-        "userId": 1,
-        "consignee": "李四",
-        "sex": "0",
-        "phone": "13900000000",
-        "provinceName": "北京市",
-        "cityName": "北京市",
-        "districtName": "朝阳区",
-        "detail": "建国路88号",
-        "label": "家",
-        "isDefault": 0
       }
     ]
   }
   ```
 
-### 6.3 查询默认地址
-
-- **接口地址**: `GET /client/addressBook/default`
-- **功能描述**: 查询当前登录用户的默认收货地址。
-- **请求参数**: 无
-- **返回数据**: `Result<AddressBook>`
-- **响应示例**:
-  ```json
-  {
-    "code": 1,
-    "msg": null,
-    "data": {
-      "id": 1,
-      "userId": 1,
-      "consignee": "张三",
-      "sex": "1",
-      "phone": "13812312312",
-      "provinceName": "北京市",
-      "cityName": "北京市",
-      "districtName": "海淀区",
-      "detail": "中关村大街1号",
-      "label": "公司",
-      "isDefault": 1
-    }
-  }
-  ```
-- **备注**:
-    - 如果当前用户没有设置默认地址，`data` 将为 `null`，且返回状态码为 `0` (Error) 喵。
-
-### 6.4 设置默认地址
+### 6.3 设置默认地址
 
 - **接口地址**: `PUT /client/addressBook/default/{id}`
 - **功能描述**: 设置当前登录用户的默认收货地址。
 - **请求参数**:
   - `id` (路径参数): 地址ID
-- **请求示例**: 无 (参数在URL中)
 - **返回数据**: `Result<String>`
 - **备注**:
     - 此操作具有排他性：设置某个地址为默认地址后，该用户原有的其他默认地址会自动取消默认状态喵。
-    - 后端会自动同步更新 Redis 缓存，保证数据实时性喵。
-
-### 6.5 根据ID查询地址
-
-- **接口地址**: `GET /client/addressBook/{id}`
-- **功能描述**: 根据地址ID获取详细的地址信息，用于编辑页面的数据回显喵。
-- **请求参数**:
-  - `id` (路径参数): 地址ID
-- **返回数据**: `Result<AddressBook>`
-
-### 6.6 修改地址
-
-- **接口地址**: `PUT /client/addressBook`
-- **功能描述**: 根据地址ID修改详细的地址信息喵。
-- **请求参数 (JSON)**:
-  - `id`: 地址ID (必填)
-  - `consignee`: 收货人
-  - `sex`: 性别 (0 女, 1 男)
-  - `phone`: 手机号
-  - `provinceName`: 省级名称
-  - `cityName`: 市级名称
-  - `districtName`: 区级名称
-  - `detail`: 详细地址
-  - `label`: 标签
-- **返回数据**: `Result<String>`
-- **备注**:
-    - 修改操作后，后端会自动清理默认地址缓存喵。
-
-### 6.7 根据ID删除地址
-
-- **接口地址**: `DELETE /client/addressBook`
-- **功能描述**: 根据地址ID删除该地址信息喵。
-- **请求参数 (Query)**:
-  - `id`: 地址ID
-- **请求示例**: `/client/addressBook?id=1`
-- **返回数据**: `Result<String>`
-- **备注**:
-    - 删除操作后，后端会自动清理默认地址缓存喵。
 
 ---
 
@@ -342,14 +329,20 @@
   - `packAmount` (Integer): 打包费
   - `amount` (BigDecimal): 订单总金额
   - `cartItems` (List<CartItem>): 购物车明细列表
-    - `dishId` (Long): 菜品id (如果是套餐则为null)
-    - `setmealId` (Long): 套餐id (如果是菜品则为null)
-    - `dishFlavor` (String): 口味 (如: "不辣")
-    - `number` (Integer): 数量
-    - `amount` (BigDecimal): 单价或总价
-    - `name` (String): 商品名称
-    - `image` (String): 商品图片
 - **返回数据**: `Result<OrderSubmitVO>`
+- **响应示例**:
+  ```json
+  {
+    "code": 1,
+    "msg": null,
+    "data": {
+      "id": 1001,
+      "orderNumber": "17349264000001001",
+      "orderAmount": 108.00,
+      "orderTime": "2025-12-23 11:30:00"
+    }
+  }
+  ```
 
 ### 7.2 订单支付 (支付宝当面付)
 
@@ -359,16 +352,26 @@
   - `orderNumber` (String): 订单号
   - `payMethod` (Integer): 付款方式 (1:微信, 2:支付宝)
 - **返回数据**: `Result<OrderPaymentVO>`
+- **响应示例**:
+  ```json
+  {
+    "code": 1,
+    "msg": null,
+    "data": {
+      "qrCode": "https://qr.alipay.com/bax02450xxxxxx"
+    }
+  }
+  ```
 
 ### 7.3 历史订单查询
 
 - **接口地址**: `GET /client/order/historyOrders`
-- **功能描述**: 分页查询当前登录用户的历史订单，支持按状态过滤喵。
+- **功能描述**: 分页查询当前登录用户的历史订单，支持按状态过滤。返回结果为标准的 MyBatis-Plus 分页对象结构喵。
 - **请求参数 (Query)**:
   - `page` (int): 页码
   - `pageSize` (int): 每页记录数
   - `status` (Integer, 可选): 订单状态 (1:待付款, 2:待接单, 3:已接单, 4:派送中, 5:已完成, 6:已取消)
-- **返回数据**: `Result<PageResult<OrderVO>>`
+- **返回数据**: `Result<Page<OrderVO>>`
 - **响应示例**:
   ```json
   {
@@ -384,17 +387,19 @@
           "amount": 108.00,
           "orderTime": "2025-12-25 10:00:00",
           "orderDetailList": [
-             { "name": "老坛酸菜鱼", "number": 1, "amount": 56.00 },
-             { "name": "米饭", "number": 2, "amount": 4.00 }
+             { "name": "老坛酸菜鱼", "image": "https://...", "number": 1, "amount": 56.00 }
           ]
         }
-      ]
+      ],
+      "size": 10,
+      "current": 1,
+      "pages": 1
     }
   }
   ```
 - **备注**:
-  - `records` 中包含了订单详情 `orderDetailList` 喵。
-  - 订单按时间倒序排列喵。
+    - `records` 中包含了订单详情 `orderDetailList`，且详情图片已包含 OSS 签名喵。
+    - 订单按下单时间倒序排列喵。
 
 ---
 
@@ -404,7 +409,6 @@
 
 - **接口地址**: `GET /client/user/info`
 - **功能描述**: 获取当前登录用户的详细个人信息。
-- **请求参数**: 无 (通过请求头中的 Token 识别用户)
 - **返回数据**: `Result<User>`
 - **响应示例**:
   ```json
@@ -416,9 +420,7 @@
       "openid": "wx123456",
       "name": "妮娅的主人",
       "phone": "13812345678",
-      "sex": "1",
-      "avatar": "https://<your-bucket>.oss-cn-beijing.aliyuncs.com/avatar.png?OSSAccessKeyId=...",
-      "createTime": "2025-12-23 15:00:00"
+      "avatar": "https://<your-bucket>.oss-cn-beijing.aliyuncs.com/avatar.png?..."
     }
   }
   ```
@@ -426,37 +428,29 @@
 ### 9.2 退出登录
 
 - **接口地址**: `POST /client/user/logout`
-- **功能描述**: 退出当前登录状态。
+- **功能描述**: 退出当前登录状态，清理 Token 喵。
 - **返回数据**: `Result<String>`
 
 ### 9.3 上传头像
 
 - **接口地址**: `POST /client/user/uploadAvatar`
-- **功能描述**: 用户上传个人头像并更新喵。
-- **请求参数 (FormData)**: `file`
-- **返回数据**: `Result<String>`
+- **功能描述**: 用户上传个人头像并同步更新数据库喵。
+- **请求参数 (FormData)**: `file` (MultipartFile)
+- **返回数据**: `Result<String>` (返回上传成功后的预签名 URL)
 
 ### 9.4 修改用户信息
 
 - **接口地址**: `PUT /client/user/edit`
-- **功能描述**: 修改当前登录用户的单 অপমান信息喵。
-- **请求参数 (JSON)**: `code`, `value`
+- **功能描述**: 修改当前登录用户的单个人信息。
+- **请求参数 (JSON)**:
+  - `code`: 字段标识 (`name`, `sex`, `profile`, `idNumber`, `phone`)
+  - `value`: 新值
 - **返回数据**: `Result<String>`
 
 ### 9.5 注销账号
 
 - **接口地址**: `POST /client/user/cancel`
 - **功能描述**: 注销当前登录用户的账号。
-- **请求参数**: 无
-- **返回数据**: `Result<String>`
-- **响应示例**:
-  ```json
-  {
-    "code": 1,
-    "msg": null,
-    "data": "账号已注销，江湖再见喵！"
-  }
-  ```
 - **‼️ 重要备注**:
   - 此操作不可逆喵！
   - 执行注销后，用户的个人信息和地址簿信息会被脱敏处理。
@@ -466,16 +460,12 @@
 
 ## 10. 实时通知 (WebSocket)
 
-### 8.1 建立 WebSocket 连接
+### 10.1 建立 WebSocket 连接
 
 - **连接地址**: `ws://{host}:{port}/ws/{userId}`
-- **功能描述**: 用于接收后端的实时推送消息（如支付成功通知）。
-- **参数说明**:
-    - `userId` (Long): 当前登录用户的ID。
+- **功能描述**: 用于接收后端的实时推送消息。
 
-### 8.2 消息格式 (后端推送)
-
-当支付成功或有其他状态变更时，后端会主动推送 JSON 格式的消息：
+### 10.2 消息格式 (后端推送)
 
 - **消息示例**:
   ```json

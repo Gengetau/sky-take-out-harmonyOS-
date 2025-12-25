@@ -1,3 +1,4 @@
+
 /**
  * 购物车明细 DTO
  */
@@ -13,8 +14,10 @@ export interface CartItemDTO {
 
 /**
  * 订单提交参数 DTO
+ * 喵！现在支持多商店了，必须带上 shopId 哦！
  */
 export interface OrderSubmitDTO {
+  shopId: number; // 🏢 所属商家ID (新增)
   addressBookId: number;
   payMethod: number; // 1微信 2支付宝
   remark: string;

@@ -4,7 +4,7 @@
 import { HttpUtil } from '../common/utils/HttpUtil';
 // 复用我们之前定义的聚合类
 import { CategoryWithItems } from '../model/entity/MockData';
-import { CategoryVO, DishVO, SetMealVO } from '../model/entity/ShopModel';
+import { CategoryVO, DishVO, SetMealVO, ShopVO } from '../model/entity/ShopModel';
 
 export class ShopService {
   // 🔗 接口地址
@@ -12,9 +12,11 @@ export class ShopService {
   private static readonly DISH_URL = '/client/dish';
   private static readonly SETMEAL_URL = '/client/setmeal';
   private static readonly SHOP_STATUS_URL = '/client/shop/status';
+  private static readonly SHOP_LIST_URL = '/client/shop/list'; // 商家列表
+  private static readonly SHOP_DETAIL_URL = '/client/shop'; // 商家详情
 
   /**
-   * 0️⃣ 获取店铺营业状态
+   * 0️⃣ 获取店铺营业状态 (全局)
    */
   static async getShopStatus(): Promise<number> {
     try {
@@ -23,6 +25,40 @@ export class ShopService {
     } catch ( e ) {
       console.error('获取店铺状态失败喵', JSON.stringify(e));
       return 0; // 默认返回休息中
+    }
+  }
+
+  /**
+   * 🌟 0.1️⃣ 获取商家列表 (API 1.2)
+   * @param typeId 分类ID
+   * @param longitude 经度
+   * @param latitude 纬度
+   * @param page 页码
+   */
+  static async getShopList(typeId: number, longitude?: number, latitude?: number, page: number = 1): Promise<ShopVO[]> {
+    let url = `${ ShopService.SHOP_LIST_URL }/${ typeId }?page=${ page }`;
+    if ( longitude !== undefined && latitude !== undefined ) {
+      url += `&longitude=${ longitude }&latitude=${ latitude }`;
+    }
+    try {
+      const list = await HttpUtil.get<ShopVO[]>(url);
+      return list || [];
+    } catch ( e ) {
+      console.error('获取商家列表失败喵', e);
+      return [];
+    }
+  }
+
+  /**
+   * 🌟 0.2️⃣ 获取商家详情 (API 1.3)
+   * @param id 商家ID
+   */
+  static async getShopDetail(id: number): Promise<ShopVO | null> {
+    try {
+      return await HttpUtil.get<ShopVO>(`${ ShopService.SHOP_DETAIL_URL }/${ id }`);
+    } catch ( e ) {
+      console.error(`获取商家 ${ id } 详情失败喵`, e);
+      return null;
     }
   }
 
@@ -113,4 +149,3 @@ export class ShopService {
     return result;
   }
 }
-  
