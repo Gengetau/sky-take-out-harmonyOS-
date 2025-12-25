@@ -1,22 +1,23 @@
 import { common } from '@kit.AbilityKit';
 import { HttpUtil } from '../common/utils/HttpUtil';
 import { PreferencesUtil } from '../common/utils/PreferencesUtil';
-import { AddressEditPage } from './address/AddressEditPage';
-import { AddressMapPage } from './address/AddressMapPage';
-import { Login } from './Login';
-import { ConfirmOrderView } from './main/ConfirmOrderPage';
-import { MainTabs } from './MainTabs';
-import { ShopPage } from './shop/ShopPage';
-import { RemarkPage } from './main/RemarkPage';
-import { PaymentPage } from './main/PaymentPage';
-import { PaySuccessPage } from './main/PaySuccessPage';
-import { SettingsPage } from './main/SettingsPage';
+import { CartService } from '../service/CartService';
 import { WebSocketService } from '../service/WebSocketService';
 import { AddressBookPage } from './address/AddressBookPage';
+import { AddressEditPage } from './address/AddressEditPage';
 import { AddressEditRoutePage } from './address/AddressEditRoutePage';
-import { UserProfilePage } from './main/UserProfilePage';
+import { AddressMapPage } from './address/AddressMapPage';
+import { Login } from './Login';
 import { AccountSecurityPage } from './main/AccountSecurityPage';
+import { ConfirmOrderView } from './main/ConfirmOrderPage';
 import { OrderHistoryPage } from './main/OrderHistoryPage';
+import { PaymentPage } from './main/PaymentPage';
+import { PaySuccessPage } from './main/PaySuccessPage';
+import { RemarkPage } from './main/RemarkPage';
+import { SettingsPage } from './main/SettingsPage';
+import { UserProfilePage } from './main/UserProfilePage';
+import { MainTabs } from './MainTabs';
+import { ShopPage } from './shop/ShopPage';
 
 
 @Entry
@@ -71,16 +72,20 @@ struct Index {
     const context = uiContext.getHostContext() as common.UIAbilityContext;
     await PreferencesUtil.loadPreference(context);
 
+    // 🛒 初始化购物车数据库喵
+    const cartService: CartService = CartService.getInstance();
+    await cartService.initRdb(context);
+
     // 从持久化存储加载 Token 和 UserId
     const persistentToken = await PreferencesUtil.getToken();
     const persistentUserId = await PreferencesUtil.getUserId();
 
-    console.info(`喵！[Index] 读取持久化数据: Token=${persistentToken ? 'Yes' : 'No'}, UserId=${persistentUserId}`);
+    console.info(`喵！[Index] 读取持久化数据: Token=${ persistentToken ? 'Yes' : 'No' }, UserId=${ persistentUserId }`);
 
     if ( persistentToken && persistentToken.length > 0 ) {
       AppStorage.setOrCreate('token', persistentToken);
       AppStorage.setOrCreate('userId', persistentUserId);
-    } 
+    }
 
     this.checkLoginAndJump();
   }
@@ -97,11 +102,11 @@ struct Index {
       console.info('喵！[Index] 正在验证 Token 有效性...');
       try {
         await HttpUtil.get<string>('/client/type/list');
-        
+
         const userId = AppStorage.get<number>('userId') || 0;
-        console.info(`喵！[Index] Token有效，UserId=${userId}`);
-        
-        if (userId > 0) {
+        console.info(`喵！[Index] Token有效，UserId=${ userId }`);
+
+        if ( userId > 0 ) {
           // ✅ 数据完整，连接 WS 并进入主页
           WebSocketService.getInstance().connect(userId, '192.168.0.210:8080');
           targetName = 'MainTabs';
@@ -110,7 +115,7 @@ struct Index {
           await this.clearLoginData();
           targetName = 'Login';
         }
-        
+
       } catch ( error ) {
         console.error('喵！[Index] Token失效或网络请求失败，准备去 Login:', error);
         await this.clearLoginData();
@@ -120,7 +125,7 @@ struct Index {
       console.info('喵！[Index] 没有Token，直接去 Login');
     }
 
-    console.info(`喵！[Index] 最终跳转目标: ${targetName}`);
+    console.info(`喵！[Index] 最终跳转目标: ${ targetName }`);
     this.pageStack.pushPath({ name: targetName }, false);
     this.isShowSplash = false;
   }

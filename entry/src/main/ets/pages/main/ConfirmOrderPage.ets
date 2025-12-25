@@ -17,7 +17,6 @@ import { promptAction } from '@kit.ArkUI';
 export struct ConfirmOrderView {
   @Consume('pageStack') pageStack: NavPathStack;
   
-  // 🏢 接收店铺信息
   @Prop shopId: number;
   @Prop shopInfo: ShopVO | null;
 
@@ -57,7 +56,6 @@ export struct ConfirmOrderView {
     this.currentTotalPrice = this.cartService.totalPrice;
     const price = this.currentTotalPrice || 0;
     const pack = this.packAmount || 0;
-    // 🚚 使用商家的真实配送费喵
     const delivery = this.shopInfo?.shippingFee || 0;
     const total = price + pack + delivery;
     this.subTotalAmount = isNaN(total) ? 0 : total;
@@ -96,7 +94,6 @@ export struct ConfirmOrderView {
         } as CartItemDTO;
       });
 
-      // 🚀 带上 shopId 提交订单喵！
       const submitDTO: OrderSubmitDTO = {
         shopId: this.shopId,
         addressBookId: this.defaultAddress.id,
@@ -268,6 +265,7 @@ export struct ConfirmOrderView {
 
   build() {
     NavDestination() {
+      // ✨ 修复关键：bindSheet 必须挂在最外层容器上喵！
       Stack() {
         if ( this.isEditingAddress ) {
           AddressEditPage({
@@ -319,25 +317,26 @@ export struct ConfirmOrderView {
           .width('100%')
           .height('100%')
           .backgroundColor('#F1F3F5')
-          .bindSheet(this.showAddressList, this.AddressListBuilder(), {
-            height: SheetSize.MEDIUM,
-            dragBar: true,
-            backgroundColor: '#F1F3F5',
-            onDisappear: () => {
-              this.showAddressList = false;
-            }
-          })
-          .bindSheet(this.showTimeSheet, this.TimeSheetBuilder(), {
-            height: 400,
-            dragBar: true,
-            backgroundColor: Color.White,
-            onDisappear: () => {
-              this.showTimeSheet = false;
-            }
-          })
         }
       }
       .width('100%').height('100%')
+      // ✨ 绑定移动到这里喵！
+      .bindSheet($$this.showAddressList, this.AddressListBuilder(), {
+        height: SheetSize.MEDIUM,
+        dragBar: true,
+        backgroundColor: '#F1F3F5',
+        onDisappear: () => {
+          this.showAddressList = false;
+        }
+      })
+      .bindSheet($$this.showTimeSheet, this.TimeSheetBuilder(), {
+        height: 400,
+        dragBar: true,
+        backgroundColor: Color.White,
+        onDisappear: () => {
+          this.showTimeSheet = false;
+        }
+      })
     }.hideTitleBar(true)
   }
 

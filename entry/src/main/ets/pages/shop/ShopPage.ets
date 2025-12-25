@@ -57,6 +57,9 @@ export struct ShopPage {
     const params = this.pageStack.getParamByName('ShopPage') as number[];
     if (params && params.length > 0) {
       this.shopId = params[params.length - 1]; 
+      
+      // 🛒 切换购物车到当前店铺喵！
+      this.cartService.switchShop(this.shopId);
     }
     
     this.loadData();

@@ -1,19 +1,35 @@
+import { common } from '@kit.AbilityKit';
+import { CartRdb } from '../common/utils/CartRdb';
 import { CartItem, DishVO, SetMealVO } from '../model/entity/ShopModel';
 
-// 使用 @Observed 装饰器，让这个类的数据变化可以被UI感知到喵
+/**
+ * 🛒 购物车聚合信息接口 (用于多店展示喵)
+ */
+export interface ShopCartGroup {
+  shopId: number;
+  count: number;
+  amount: number;
+  items: CartItem[];
+}
+
+/**
+ * 购物车服务 (RDB 持久化版 🛡️)
+ */
 @Observed
 export class CartService {
-  // 购物车中的所有商品喵
+  // 👁️ 当前店铺的购物车视图
   public cartItems: CartItem[] = [];
+  
+  // 当前正在操作的 shopId
+  private currentShopId: number = 0;
+  
+  // RDB 是否已就绪
+  private isRdbReady: boolean = false;
 
-  // 私有构造函数，保证这是个单例，不能随便 new 喵
   private constructor() {
   }
 
-  // 获取单例实例的唯一方法喵
   public static getInstance(): CartService {
-    // 从 AppStorage 中获取或创建一个单例实例喵
-    // 这样可以保证在应用的整个生命周期中，只有一个 CartService 实例存在喵
     let instance = AppStorage.get<CartService>('CartService');
     if (!instance ) {
       instance = new CartService();
@@ -23,142 +39,201 @@ export class CartService {
   }
 
   /**
-   * 发送更新信号
+   * 🌟 初始化 RDB
    */
-  private notifyUpdate() {
-    // 写入一个当前时间戳，保证每次值都不一样，强制触发 UI 更新
-    AppStorage.setOrCreate('CartUpdateSignal', Date.now());
-    console.info(`喵！购物车发生变动，广播已发出！当前总数: ${ this.totalCount }`);
+  async initRdb(context: common.UIAbilityContext) {
+    if (this.isRdbReady) return;
+    await CartRdb.init(context);
+    this.isRdbReady = true;
+    console.info('喵！CartService RDB 已连接');
   }
 
   /**
-   * 添加商品到购物车喵
-   * @param dish 要添加的菜品
-   * @param flavors 选择的口味，如果没有则为空字符串喵
+   * 🚀 切换当前店铺
    */
-  addItem(dish: DishVO, flavors: string): void {
+  async switchShop(shopId: number) {
+    if (shopId <= 0) return;
+    
+    this.currentShopId = shopId;
+    this.cartItems = []; 
+
+    if (this.isRdbReady) {
+      try {
+        const items = await CartRdb.getCartByShopId(shopId);
+        this.cartItems = items;
+        console.info(`喵！已从RDB加载店铺 ${shopId} 的购物车，共 ${items.length} 项`);
+      } catch (e) {
+        console.error('加载店铺购物车失败', e);
+      }
+    }
+    this.notifyUpdate();
+  }
+
+  private notifyUpdate() {
+    AppStorage.setOrCreate('CartUpdateSignal', Date.now());
+  }
+
+  /**
+   * 添加商品
+   */
+  async addItem(dish: DishVO, flavors: string) {
+    if (this.currentShopId <= 0) {
+      console.warn('喵！未指定店铺，无法添加购物车');
+      return;
+    }
+
     const newItem = new CartItem(dish.id, undefined, dish.name, dish.image, dish.price, 1, flavors);
     const existingItem = this.cartItems.find(item => item.uniqueKey === newItem.uniqueKey);
 
     if ( existingItem ) {
-      // 如果购物车里已经有这个规格的菜了，数量+1就好喵
       existingItem.count++;
-      // 关键改动：创建一个新数组副本，强制触发UI更新！
       this.cartItems = [ ...this.cartItems ];
+      if (this.isRdbReady) {
+        await CartRdb.saveItem(this.currentShopId, existingItem);
+      }
     } else {
-      // 关键改动：使用扩展运算符创建一个新数组，而不是用 a.push(b)
       this.cartItems = [ ...this.cartItems, newItem ];
+      if (this.isRdbReady) {
+        await CartRdb.saveItem(this.currentShopId, newItem);
+      }
     }
-    // ArkUI 是响应式的，数组的变化会自动触发UI更新，妮娅在控制台打印一下方便主人调试喵
-    console.info(`喵！购物车更新: ${ JSON.stringify(this.cartItems) }`);
+    
     this.notifyUpdate();
   }
 
   /**
-   * 添加套餐到购物车喵
-   * @param setmeal 要添加的套餐
+   * 添加套餐
    */
-  addSetmeal(setmeal: SetMealVO): void {
+  async addSetmeal(setmeal: SetMealVO) {
+    if (this.currentShopId <= 0) return;
+
     const newItem = new CartItem(undefined, setmeal.id, setmeal.name, setmeal.image, setmeal.price, 1, '');
     const existingItem = this.cartItems.find(item => item.uniqueKey === newItem.uniqueKey);
 
     if ( existingItem ) {
       existingItem.count++;
       this.cartItems = [ ...this.cartItems ];
+      if (this.isRdbReady) {
+        await CartRdb.saveItem(this.currentShopId, existingItem);
+      }
     } else {
       this.cartItems = [ ...this.cartItems, newItem ];
+      if (this.isRdbReady) {
+        await CartRdb.saveItem(this.currentShopId, newItem);
+      }
     }
-    console.info(`喵！购物车更新(套餐): ${ JSON.stringify(this.cartItems) }`);
+    
     this.notifyUpdate();
   }
 
   /**
-   * 从购物车减少一个商品数量喵
-   * @param itemToDecrease 要减少数量的购物车项
+   * 减少商品
    */
-  decreaseItem(itemToDecrease: CartItem): void {
+  async decreaseItem(itemToDecrease: CartItem) {
     const existingItem = this.cartItems.find(item => item.uniqueKey === itemToDecrease.uniqueKey);
     if ( existingItem ) {
       if ( existingItem.count <= 1 ) {
-        // 如果数量只有1了，就直接移除它喵
-        this.removeItem(itemToDecrease);
+        await this.removeItem(itemToDecrease);
       } else {
         existingItem.count--;
-        // 关键改动：创建一个新数组副本，强制触发UI更新！
+        if (this.isRdbReady) {
+          await CartRdb.saveItem(this.currentShopId, existingItem);
+        }
         this.notifyUpdate();
       }
     }
-    console.info(`喵！购物车更新: ${ JSON.stringify(this.cartItems) }`);
   }
 
-  /**
-   * 妮娅的新方法：从购物车增加一个商品数量喵
-   * @param itemToIncrease 要增加数量的购物车项
-   */
-  increaseItem(itemToIncrease: CartItem): void {
+  async increaseItem(itemToIncrease: CartItem) {
     const existingItem = this.cartItems.find(item => item.uniqueKey === itemToIncrease.uniqueKey);
     if (existingItem) {
       existingItem.count++;
+      if (this.isRdbReady) {
+        await CartRdb.saveItem(this.currentShopId, existingItem);
+      }
       this.notifyUpdate();
     }
-    console.info(`喵！购物车更新: ${ JSON.stringify(this.cartItems) }`);
   }
 
-  /**
-   * 从购物车里完完整整地移除一个条目喵
-   * @param itemToRemove
-   */
-  removeItem(itemToRemove: CartItem): void {
-    // 关键改动：使用 filter() 返回一个全新的数组，保证响应性！
+  async removeItem(itemToRemove: CartItem) {
     this.cartItems = this.cartItems.filter(item => item.uniqueKey !== itemToRemove.uniqueKey);
+    if (this.isRdbReady) {
+      await CartRdb.deleteItem(this.currentShopId, itemToRemove);
+    }
     this.notifyUpdate();
   }
 
-
-  /**
-   * 一键清空购物车喵！
-   */
-  clearCart(): void {
+  async clearCart() {
     this.cartItems = [];
-    console.info('喵~ 购物车已清空！');
+    if (this.isRdbReady && this.currentShopId > 0) {
+      await CartRdb.clearShopCart(this.currentShopId);
+    }
     this.notifyUpdate();
   }
 
-  // 这是个计算属性，自动计算购物车里所有商品的总件数喵
+  async clearAllCarts() {
+    this.cartItems = [];
+    if (this.isRdbReady) {
+      await CartRdb.clearAll();
+    }
+    this.notifyUpdate();
+  }
+
+  // --- 📊 统计属性 ---
+
   get totalCount(): number {
     return this.cartItems.reduce((sum, item) => sum + item.count, 0);
   }
 
-  // 这也是个计算属性，自动计算购物车里所有商品的总价钱喵
   get totalPrice(): number {
     return this.cartItems.reduce((sum, item) => sum + ( item.price * item.count ), 0);
   }
 
-  // --- 妮娅新增的三个工具方法喵 ---
-
   /**
-   * 根据菜品ID和口味减少一项商品喵
+   * 🌍 获取所有店铺的购物车总览 (供 CartPage 使用)
+   * ✅ 修复 ArkTS 语法：使用正式接口返回喵
    */
+  async getAllShopCarts(): Promise<ShopCartGroup[]> {
+    if (!this.isRdbReady) return [];
+    
+    const allCartsMap = await CartRdb.getAllCarts();
+    const result: ShopCartGroup[] = [];
+    
+    // 获取所有键名并遍历喵
+    const keys = Object.keys(allCartsMap);
+    for (let i = 0; i < keys.length; i++) {
+      const shopId = Number(keys[i]);
+      const items = allCartsMap[shopId];
+      if (items && items.length > 0) {
+        const count = items.reduce((sum, item) => sum + item.count, 0);
+        const amount = items.reduce((sum, item) => sum + (item.price * item.count), 0);
+        result.push({ 
+          shopId: shopId, 
+          count: count, 
+          amount: amount, 
+          items: items 
+        });
+      }
+    }
+    return result;
+  }
+
+  // --- 🛠️ 工具方法 ---
+
   decreaseItemByDish(dishId: number, flavors: string): void {
     const uniqueKey = `${ dishId }_null_${ flavors }`;
     const existingItem = this.cartItems.find(item => item.uniqueKey === uniqueKey);
     if ( existingItem ) {
-      this.decreaseItem(existingItem); // 复用已有的 decreaseItem 逻辑喵
+      this.decreaseItem(existingItem);
     }
   }
 
-  /**
-   * 获取指定规格菜品在购物车中的数量喵
-   */
   getDishQuantity(dishId: number, flavors: string): number {
     const uniqueKey = `${ dishId }_null_${ flavors }`;
     const existingItem = this.cartItems.find(item => item.uniqueKey === uniqueKey);
     return existingItem ? existingItem.count : 0;
   }
 
-  /**
-   * 获取指定菜品（不区分规格）在购物车中的总数量喵
-   */
   getTotalQuantityForDish(dishId: number): number {
     return this.cartItems
       .filter(item => item.dishId === dishId)
