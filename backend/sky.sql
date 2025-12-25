@@ -246,7 +246,7 @@ CREATE TABLE `user` (
   `openid` varchar(45) COLLATE utf8_bin DEFAULT NULL COMMENT '微信用户唯一标识',
   `meow_id` varchar(45) COLLATE utf8_bin DEFAULT NULL COMMENT 'Meow外卖APP用户唯一标识',
   `name` varchar(32) COLLATE utf8_bin DEFAULT NULL COMMENT '姓名',
-  `phone` varchar(11) COLLATE utf8_bin DEFAULT NULL COMMENT '手机号',
+  `phone` varchar(11) COLLATE utf8_bin NOT NULL COMMENT '手机号',
   `sex` varchar(2) COLLATE utf8_bin DEFAULT NULL COMMENT '性别',
   `id_number` varchar(18) COLLATE utf8_bin DEFAULT NULL COMMENT '身份证号',
   `avatar` varchar(500) COLLATE utf8_bin DEFAULT NULL COMMENT '头像',
@@ -323,4 +323,14 @@ CREATE TABLE `shop` (
 INSERT INTO `shop` (`id`, `shop_type_id`, `name`, `avatar`, `phone`, `address`, `longitude`, `latitude`, `description`, `score`, `monthly_sales`, `delivery_price`, `shipping_fee`, `average_delivery_time`, `opening_hours`, `status`, `create_time`, `update_time`) VALUES
 (1, 4, '苍穹外卖总店', 'https://sky-itcast.oss-cn-beijing.aliyuncs.com/shop_logo_1.png', '400-123-4567', '北京市海淀区中关村', 116.307629, 39.984154, '官方直营，品质保证喵！', 5.0, 1200, 20.00, 5.00, 35, '09:00-22:00', 1, NOW(), NOW()),
 (2, 4, '肯德基 (宅急送)', 'https://sky-itcast.oss-cn-beijing.aliyuncs.com/kfc_logo.png', '400-8823-823', '上海市徐汇区漕溪北路', 121.437520, 31.192340, '吮指原味鸡，美味每一天喵！', 4.8, 5000, 0.00, 9.00, 30, '07:00-23:00', 1, NOW(), NOW()),
-(3, 4, '老北京炸酱面', 'https://sky-itcast.oss-cn-beijing.aliyuncs.com/noodle_logo.png', '010-88888888', '北京市东城区王府井大街', 116.411310, 39.912653, '正宗老北京口味，酱香浓郁喵！', 4.5, 800, 15.00, 3.50, 40, '10:00-21:30', 1, NOW(), NOW());
+(3, 4, '老北京炸酱面', 'https://sky-itcast.oss-cn-beijing.aliyuncs.com/noodle_logo.png', '010-88888888', '北京市东城区王府井大街', 116.411310, 39.912653, '正宗老北京口味，酱香浓郁喵！', 4.5, 800, 15.00, 3.50, 40, '10:00-21:30', 1, NOW(), NOW()),
+(4, 4, '瑞幸咖啡 (主人测试点1)', 'https://sky-itcast.oss-cn-beijing.aliyuncs.com/luckin.png', '400-100-100', '坐标点附近', 121.301000, 31.141000, '生椰拿铁，YYDS喵！', 4.9, 3000, 0.00, 3.00, 15, '08:00-21:00', 1, NOW(), NOW()),
+(5, 4, '星巴克 (主人测试点2)', 'https://sky-itcast.oss-cn-beijing.aliyuncs.com/starbucks.png', '400-200-200', '坐标点附近', 121.305000, 31.145000, '这一杯，致敬好奇心喵！', 4.7, 2500, 0.00, 4.00, 20, '07:30-22:00', 1, NOW(), NOW()),
+(6, 4, '必胜客 (主人测试点3)', 'https://sky-itcast.oss-cn-beijing.aliyuncs.com/pizzahut.png', '400-300-300', '坐标点附近', 121.295000, 31.135000, '披萨就要必胜客喵！', 4.6, 1500, 30.00, 6.00, 45, '10:00-22:00', 1, NOW(), NOW()),
+(7, 4, '汉堡王 (主人测试点4)', 'https://sky-itcast.oss-cn-beijing.aliyuncs.com/bk.png', '400-400-400', '坐标点附近', 121.310000, 31.150000, '火烤菠萝皇堡喵！', 4.5, 1800, 20.00, 5.00, 30, '09:00-22:00', 1, NOW(), NOW()),
+(8, 4, '喜茶 (主人测试点5)', 'https://sky-itcast.oss-cn-beijing.aliyuncs.com/heytea.png', '400-500-500', '坐标点附近', 121.290000, 31.130000, '灵感之茶，中国制造喵！', 4.8, 4000, 0.00, 2.00, 25, '10:00-22:30', 1, NOW(), NOW()),
+(9, 4, '奈雪的茶 (主人测试点6)', 'https://sky-itcast.oss-cn-beijing.aliyuncs.com/nayuki.png', '400-600-600', '坐标点附近', 121.302000, 31.138000, '一杯好茶，一口软欧包喵！', 4.7, 3200, 0.00, 2.00, 25, '10:00-22:00', 1, NOW(), NOW()),
+(10, 4, '麦当劳 (主人测试点7)', 'https://sky-itcast.oss-cn-beijing.aliyuncs.com/mcd.png', '400-700-700', '坐标点附近', 121.298000, 31.143000, '我就喜欢喵！', 4.8, 6000, 0.00, 9.00, 20, '00:00-23:59', 1, NOW(), NOW()),
+(11, 4, '吉野家 (主人测试点8)', 'https://sky-itcast.oss-cn-beijing.aliyuncs.com/yoshinoya.png', '400-800-800', '坐标点附近', 121.308000, 31.142000, '牛肉饭专家喵！', 4.4, 900, 15.00, 4.00, 35, '10:00-21:00', 1, NOW(), NOW()),
+(12, 4, '赛百味 (主人测试点9)', 'https://sky-itcast.oss-cn-beijing.aliyuncs.com/subway.png', '400-900-900', '坐标点附近', 121.292000, 31.148000, '非油炸，更健康喵！', 4.3, 700, 10.00, 3.00, 30, '09:00-21:00', 1, NOW(), NOW()),
+(13, 4, '味千拉面 (主人测试点10)', 'https://sky-itcast.oss-cn-beijing.aliyuncs.com/ajisen.png', '400-000-000', '坐标点附近', 121.304000, 31.132000, '大骨熬汤，味千拉面喵！', 4.2, 600, 25.00, 5.00, 40, '10:00-22:00', 1, NOW(), NOW());

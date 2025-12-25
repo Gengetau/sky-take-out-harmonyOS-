@@ -42,6 +42,9 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements Sh
     @Autowired
     private StringRedisTemplate stringRedisTemplate;
 
+    @Autowired
+    private ShopMapper shopMapper;
+
     @Override
     public Result<List<ShopVO>> getShopsByType(Long typeId) {
         log.info("根据类型 {} 查询店铺列表喵", typeId);
@@ -49,14 +52,14 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements Sh
         queryWrapper.eq(Shop::getShopTypeId, typeId)
                     .eq(Shop::getStatus, 1);
         
-        List<Shop> list = list(queryWrapper);
+        List<Shop> list = shopMapper.selectList(queryWrapper);
         return Result.success(convertToVOList(list));
     }
 
     @Override
     public Result<ShopVO> getShopById(Long id) {
         log.info("查询店铺 {} 的详情喵", id);
-        Shop shop = getById(id);
+        Shop shop = shopMapper.selectById(id);
         if (shop == null) {
             return Result.error("店铺不存在喵！");
         }
@@ -65,7 +68,6 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements Sh
 
     @Override
     public Result<List<ShopVO>> getNearbyShops(Long typeId, Double longitude, Double latitude, Integer page) {
-        // 1. 基础校验与分页参数
         if (longitude == null || latitude == null) {
             return getShopsByType(typeId);
         }
@@ -73,13 +75,13 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements Sh
         int from = (page - 1) * pageSize;
         int end = page * pageSize;
 
-        // 2. 查询 Redis GEO
         String key = RedisConstants.SHOP_GEO_KEY + typeId;
+        // 妮娅把搜索半径调整为 10 公里啦喵！✨
         GeoResults<RedisGeoCommands.GeoLocation<String>> results = stringRedisTemplate.opsForGeo()
                 .search(
                         key,
                         GeoReference.fromCoordinate(longitude, latitude),
-                        new Distance(5000), // 5km 范围内
+                        new Distance(10000), // 10km 范围
                         RedisGeoCommands.GeoSearchCommandArgs.newGeoSearchArgs()
                                 .includeDistance()
                                 .sortAscending()
@@ -95,7 +97,6 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements Sh
             return Result.success(Collections.emptyList());
         }
 
-        // 3. 收集 ID 和 距离
         List<Long> ids = new ArrayList<>();
         Map<String, Distance> distanceMap = new HashMap<>();
         list.stream().skip(from).forEach(result -> {
@@ -104,16 +105,14 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements Sh
             distanceMap.put(shopIdStr, result.getDistance());
         });
 
-        // 4. 查询数据库详情
         String idStr = CollUtil.join(ids, ",");
         List<Shop> shops = query().in("id", ids).last("ORDER BY FIELD(id," + idStr + ")").list();
 
-        // 5. 封装 VO
         List<ShopVO> voList = shops.stream().map(shop -> {
             ShopVO vo = convertToVO(shop);
             Distance distance = distanceMap.get(shop.getId().toString());
             if (distance != null) {
-                double value = distance.getValue(); // 默认是米
+                double value = distance.getValue();
                 if (value < 1000) {
                     vo.setDistance((int)value + "m");
                 } else {
@@ -129,19 +128,33 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements Sh
     @Override
     public void loadShopGeoDataToRedis() {
         log.info("开始将店铺地理位置数据预热到 Redis 喵！");
-        // 1. 查询所有营业中的店铺
-        List<Shop> shops = list(new LambdaQueryWrapper<Shop>().eq(Shop::getStatus, 1));
-        if (CollUtil.isEmpty(shops)) return;
+        if (shopMapper == null) {
+            log.error("shopMapper 注入失败喵！");
+            return;
+        }
+        
+        LambdaQueryWrapper<Shop> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(Shop::getStatus, 1);
+        List<Shop> shops = shopMapper.selectList(queryWrapper);
+        
+        if (CollUtil.isEmpty(shops)) {
+            log.warn("数据库中没有营业中的店铺喵。");
+            return;
+        }
 
-        // 2. 按类型分组，方便批量写入 Redis
         Map<Long, List<Shop>> group = shops.stream()
-                .filter(s -> s.getLongitude() != null && s.getLatitude() != null)
+                .filter(s -> s.getShopTypeId() != null 
+                        && s.getLongitude() != null 
+                        && s.getLatitude() != null)
                 .collect(Collectors.groupingBy(Shop::getShopTypeId));
 
-        // 3. 写入 Redis
+        if (group.isEmpty()) {
+            log.warn("没有符合坐标预热要求的店铺数据喵！");
+            return;
+        }
+
         group.forEach((typeId, shopList) -> {
             String key = RedisConstants.SHOP_GEO_KEY + typeId;
-            // 清理旧数据（可选，根据需求定）
             stringRedisTemplate.delete(key);
             
             List<RedisGeoCommands.GeoLocation<String>> locations = new ArrayList<>();
@@ -152,16 +165,21 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements Sh
                 ));
             }
             stringRedisTemplate.opsForGeo().add(key, locations);
+            log.info("类型 {} 预热了 {} 家店铺喵", typeId, shopList.size());
         });
-        log.info("预热完成喵！✨");
+        log.info("店铺数据预热任务执行完毕喵！✨");
     }
 
     private ShopVO convertToVO(Shop shop) {
         ShopVO vo = new ShopVO();
         BeanUtil.copyProperties(shop, vo);
         if (vo.getAvatar() != null && !vo.getAvatar().isEmpty()) {
-            String signedUrl = AliOssUtil.getSignedUrl(ossClient, vo.getAvatar(), ossConfig.getBucketName());
-            vo.setAvatar(signedUrl);
+            try {
+                String signedUrl = AliOssUtil.getSignedUrl(ossClient, vo.getAvatar(), ossConfig.getBucketName());
+                vo.setAvatar(signedUrl);
+            } catch (Exception e) {
+                log.error("获取店铺头像签名失败喵", e);
+            }
         }
         return vo;
     }
