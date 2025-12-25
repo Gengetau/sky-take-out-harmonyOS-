@@ -3,6 +3,7 @@ package com.sky.service.impl;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.json.JSONUtil;
+import com.aliyun.oss.OSS;
 import com.alipay.api.AlipayClient;
 import com.alipay.api.domain.AlipayTradePrecreateModel;
 import com.alipay.api.request.AlipayTradePrecreateRequest;
@@ -10,6 +11,7 @@ import com.alipay.api.response.AlipayTradePrecreateResponse;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.sky.config.OSSConfig;
 import com.sky.dto.*;
 import com.sky.entity.AddressBook;
 import com.sky.entity.OrderDetail;
@@ -69,6 +71,12 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
 	
 	@Autowired
 	private WebSocketServer webSocketServer;
+	
+	@Autowired
+	private OSS ossClient;
+	
+	@Autowired
+	private OSSConfig ossConfig;
 	
 	@Override
 	public Result<Page<OrderVO>> getOrdersByPage(OrdersPageQueryDTO dto) {        // 1.获取分页数据
@@ -340,5 +348,58 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
 			webSocketServer.sendToClient(order.getUserId().toString(), json);
 		}
 	}
+	
+	@Override
+	public Result<Page<OrderVO>> pageQuery4User(int page, int pageSize, Integer status) {
+		// 1. 设置分页
+		Page<Orders> pageInfo = new Page<>(page, pageSize);
+		
+		// 2. 构建查询条件
+		LambdaQueryWrapper<Orders> queryWrapper = new LambdaQueryWrapper<>();
+		queryWrapper.eq(Orders::getUserId, UserHolder.getUser().getId()); // 查询当前用户
+		
+		if (status != null) {
+			queryWrapper.eq(Orders::getStatus, status);
+		}
+		
+		// 按下单时间倒序
+		queryWrapper.orderByDesc(Orders::getOrderTime);
+		
+		// 3. 执行查询
+		this.page(pageInfo, queryWrapper);
+		
+		// 4. 查询订单明细并封装VO
+		List<Orders> records = pageInfo.getRecords();
+		List<OrderVO> orderVOList = new ArrayList<>();
+		
+		if (CollUtil.isNotEmpty(records)) {
+			for (Orders orders : records) {
+				OrderVO orderVO = new OrderVO();
+				BeanUtil.copyProperties(orders, orderVO);
+				
+				// 查询订单明细
+				List<OrderDetail> orderDetailList = orderDetailService.list(new LambdaQueryWrapper<OrderDetail>()
+						.eq(OrderDetail::getOrderId, orders.getId()));
+				
+				// 处理每个订单明细的图片链接 (生成签名 URL)
+				if (CollUtil.isNotEmpty(orderDetailList)) {
+					for (OrderDetail orderDetail : orderDetailList) {
+						String signedUrl = AliOssUtil.getSignedUrl(ossClient, orderDetail.getImage(), ossConfig.getBucketName());
+						orderDetail.setImage(signedUrl); // 这里会替换原始 key 为签名 URL，仅用于 VO 展示，不会保存回库
+					}
+				}
+				
+				orderVO.setOrderDetailList(orderDetailList);
+				orderVOList.add(orderVO);
+			}
+		}
+		
+		// 5. 封装 Page<OrderVO> 返回
+		Page<OrderVO> voPage = new Page<>(page, pageSize);
+		voPage.setTotal(pageInfo.getTotal());
+		voPage.setRecords(orderVOList);
+		voPage.setPages(pageInfo.getPages());
+		
+		return Result.success(voPage);
+	}
 }
-

@@ -39,4 +39,6 @@ public interface OrderService extends IService<Orders> {
 	Result<OrderPaymentVO> payment(OrdersPaymentDTO ordersPaymentDTO) throws Exception;
 
 	void paySuccess(String outTradeNo);
+
+	Result<Page<OrderVO>> pageQuery4User(int page, int pageSize, Integer status);
 }
