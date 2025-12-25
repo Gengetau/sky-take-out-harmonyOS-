@@ -52,7 +52,7 @@ struct Login {
       setTimeout(() => {
         promptAction.showDialog({
           title: '📨 新消息',
-          message: `【苍穹外卖】您的验证码是：${ verifyCode }。您正在登录，若非本人操作请忽略。`,
+          message: `【Meow外卖】您的验证码是：${ verifyCode }。您正在登录，若非本人操作请忽略。`,
           buttons: [
             { text: '关闭', color: '#999999' },
             { text: '自动填写', color: '#0D9FFB' }// 贴心的功能

@@ -1,5 +1,5 @@
-import { AuthService } from '../../service/AuthService';
 import { promptAction } from '@kit.ArkUI';
+import { AuthService } from '../../service/AuthService';
 
 /**
  * 设置页面
@@ -12,10 +12,13 @@ export struct SettingsPage {
     AlertDialog.show({
       title: '退出登录',
       message: '主人真的要离开妮娅吗？😿',
-      primaryButton: { value: '取消', action: () => {} },
+      primaryButton: {
+        value: '取消', action: () => {
+        }
+      },
       secondaryButton: {
         value: '确认退出',
-        action: async () => {
+        action: async() => {
           await AuthService.logout();
           this.pageStack.clear();
           this.pageStack.pushPath({ name: 'Login' });
@@ -31,9 +34,9 @@ export struct SettingsPage {
         Row() {
           SymbolGlyph($r('sys.symbol.chevron_left'))
             .fontSize(24)
-            .fontColor(['#333'])
+            .fontColor([ '#333' ])
             .onClick(() => this.pageStack.pop())
-          
+
           Text('设置')
             .fontSize(18)
             .fontWeight(FontWeight.Bold)
@@ -51,11 +54,18 @@ export struct SettingsPage {
             this.SettingItem('个人资料', () => {
               this.pageStack.pushPath({ name: 'UserProfilePage' });
             })
-            this.SettingItem('账号与安全', () => promptAction.showToast({ message: '正在开发中喵~' }))
+            this.SettingItem('账号安全', () => {
+              this.pageStack.pushPath({ name: 'AccountSecurityPage' });
+            })
           }
           .backgroundColor(Color.White)
           .margin({ top: 12 })
-          .divider({ strokeWidth: 0.5, color: '#F0F0F0', startMargin: 16, endMargin: 16 })
+          .divider({
+            strokeWidth: 0.5,
+            color: '#F0F0F0',
+            startMargin: 16,
+            endMargin: 16
+          })
 
           ListItemGroup() {
             this.SettingItem('清理缓存', () => promptAction.showToast({ message: '缓存已清理干净喵！✨' }))
@@ -63,7 +73,12 @@ export struct SettingsPage {
           }
           .backgroundColor(Color.White)
           .margin({ top: 12 })
-          .divider({ strokeWidth: 0.5, color: '#F0F0F0', startMargin: 16, endMargin: 16 })
+          .divider({
+            strokeWidth: 0.5,
+            color: '#F0F0F0',
+            startMargin: 16,
+            endMargin: 16
+          })
 
           // 退出按钮
           ListItem() {
@@ -96,7 +111,7 @@ export struct SettingsPage {
         Text(title).fontSize(16).fontColor('#333').layoutWeight(1)
         SymbolGlyph($r('sys.symbol.chevron_right'))
           .fontSize(16)
-          .fontColor(['#CCC'])
+          .fontColor([ '#CCC' ])
       }
       .width('100%')
       .height(54)

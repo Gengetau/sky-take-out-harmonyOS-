@@ -15,6 +15,7 @@ import { WebSocketService } from '../service/WebSocketService';
 import { AddressBookPage } from './address/AddressBookPage';
 import { AddressEditRoutePage } from './address/AddressEditRoutePage';
 import { UserProfilePage } from './main/UserProfilePage';
+import { AccountSecurityPage } from './main/AccountSecurityPage';
 
 
 @Entry
@@ -51,6 +52,8 @@ struct Index {
       AddressEditRoutePage()
     } else if ( name === 'UserProfilePage' ) {
       UserProfilePage()
+    } else if ( name === 'AccountSecurityPage' ) {
+      AccountSecurityPage()
     }
   }
 
