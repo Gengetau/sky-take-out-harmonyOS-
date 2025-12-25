@@ -92,6 +92,14 @@ public class UserController {
 		// 4. 返回前端可用的签名 URL
 		return Result.success(signedUrl);
 	}
+
+	// 注销账号
+	@PostMapping("/cancel")
+	@ApiOperation("注销账号")
+	public Result<String> cancel() {
+		log.info("用户请求注销账号喵");
+		return userService.cancelAccount();
+	}
 }
 
 

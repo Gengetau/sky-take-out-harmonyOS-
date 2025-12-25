@@ -97,30 +97,30 @@ CREATE TABLE `dish_flavor` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=104 DEFAULT CHARSET=utf8mb3 COLLATE=utf8_bin COMMENT='菜品口味关系表';
 
-INSERT INTO `dish_flavor` VALUES (40,10,'甜味','[\"无糖\",\"少糖\",\"半糖\",\"多糖\",\"全糖\"]');
-INSERT INTO `dish_flavor` VALUES (41,7,'忌口','[\"不要葱\",\"不要蒜\",\"不要香菜\",\"不要辣\"]');
-INSERT INTO `dish_flavor` VALUES (42,7,'温度','[\"热饮\",\"常温\",\"去冰\",\"少冰\",\"多冰\"]');
-INSERT INTO `dish_flavor` VALUES (45,6,'忌口','[\"不要葱\",\"不要蒜\",\"不要香菜\",\"不要辣\"]');
-INSERT INTO `dish_flavor` VALUES (46,6,'辣度','[\"不辣\",\"微辣\",\"中辣\",\"重辣\"]');
-INSERT INTO `dish_flavor` VALUES (47,5,'辣度','[\"不辣\",\"微辣\",\"中辣\",\"重辣\"]');
-INSERT INTO `dish_flavor` VALUES (48,5,'甜味','[\"无糖\",\"少糖\",\"半糖\",\"多糖\",\"全糖\"]');
-INSERT INTO `dish_flavor` VALUES (49,2,'甜味','[\"无糖\",\"少糖\",\"半糖\",\"多糖\",\"全糖\"]');
-INSERT INTO `dish_flavor` VALUES (50,4,'甜味','[\"无糖\",\"少糖\",\"半糖\",\"多糖\",\"全糖\"]');
-INSERT INTO `dish_flavor` VALUES (51,3,'甜味','[\"无糖\",\"少糖\",\"半糖\",\"多糖\",\"全糖\"]');
-INSERT INTO `dish_flavor` VALUES (52,3,'忌口','[\"不要葱\",\"不要蒜\",\"不要香菜\",\"不要辣\"]');
-INSERT INTO `dish_flavor` VALUES (86,52,'忌口','[\"不要葱\",\"不要蒜\",\"不要香菜\",\"不要辣\"]');
-INSERT INTO `dish_flavor` VALUES (87,52,'辣度','[\"不辣\",\"微辣\",\"中辣\",\"重辣\"]');
-INSERT INTO `dish_flavor` VALUES (88,51,'忌口','[\"不要葱\",\"不要蒜\",\"不要香菜\",\"不要辣\"]');
-INSERT INTO `dish_flavor` VALUES (89,51,'辣度','[\"不辣\",\"微辣\",\"中辣\",\"重辣\"]');
-INSERT INTO `dish_flavor` VALUES (92,53,'忌口','[\"不要葱\",\"不要蒜\",\"不要香菜\",\"不要辣\"]');
-INSERT INTO `dish_flavor` VALUES (93,53,'辣度','[\"不辣\",\"微辣\",\"中辣\",\"重辣\"]');
-INSERT INTO `dish_flavor` VALUES (94,54,'忌口','[\"不要葱\",\"不要蒜\",\"不要香菜\"]');
-INSERT INTO `dish_flavor` VALUES (95,56,'忌口','[\"不要葱\",\"不要蒜\",\"不要香菜\",\"不要辣\"]');
-INSERT INTO `dish_flavor` VALUES (96,57,'忌口','[\"不要葱\",\"不要蒜\",\"不要香菜\",\"不要辣\"]');
-INSERT INTO `dish_flavor` VALUES (97,60,'忌口','[\"不要葱\",\"不要蒜\",\"不要香菜\",\"不要辣\"]');
-INSERT INTO `dish_flavor` VALUES (101,66,'辣度','[\"不辣\",\"微辣\",\"中辣\",\"重辣\"]');
-INSERT INTO `dish_flavor` VALUES (102,67,'辣度','[\"不辣\",\"微辣\",\"中辣\",\"重辣\"]');
-INSERT INTO `dish_flavor` VALUES (103,65,'辣度','[\"不辣\",\"微辣\",\"中辣\",\"重辣\"]');
+INSERT INTO `dish_flavor` VALUES (40,10,'甜味','["无糖","少糖","半糖","多糖","全糖"]');
+INSERT INTO `dish_flavor` VALUES (41,7,'忌口','["不要葱","不要蒜","不要香菜","不要辣"]');
+INSERT INTO `dish_flavor` VALUES (42,7,'温度','["热饮","常温","去冰","少冰","多冰"]');
+INSERT INTO `dish_flavor` VALUES (45,6,'忌口','["不要葱","不要蒜","不要香菜","不要辣"]');
+INSERT INTO `dish_flavor` VALUES (46,6,'辣度','["不辣","微辣","中辣","重辣"]');
+INSERT INTO `dish_flavor` VALUES (47,5,'辣度','["不辣","微辣","中辣","重辣"]');
+INSERT INTO `dish_flavor` VALUES (48,5,'甜味','["无糖","少糖","半糖","多糖","全糖"]');
+INSERT INTO `dish_flavor` VALUES (49,2,'甜味','["无糖","少糖","半糖","多糖","全糖"]');
+INSERT INTO `dish_flavor` VALUES (50,4,'甜味','["无糖","少糖","半糖","多糖","全糖"]');
+INSERT INTO `dish_flavor` VALUES (51,3,'甜味','["无糖","少糖","半糖","多糖","全糖"]');
+INSERT INTO `dish_flavor` VALUES (52,3,'忌口','["不要葱","不要蒜","不要香菜","不要辣"]');
+INSERT INTO `dish_flavor` VALUES (86,52,'忌口','["不要葱","不要蒜","不要香菜","不要辣"]');
+INSERT INTO `dish_flavor` VALUES (87,52,'辣度','["不辣","微辣","中辣","重辣"]');
+INSERT INTO `dish_flavor` VALUES (88,51,'忌口','["不要葱","不要蒜","不要香菜","不要辣"]');
+INSERT INTO `dish_flavor` VALUES (89,51,'辣度','["不辣","微辣","中辣","重辣"]');
+INSERT INTO `dish_flavor` VALUES (92,53,'忌口','["不要葱","不要蒜","不要香菜","不要辣"]');
+INSERT INTO `dish_flavor` VALUES (93,53,'辣度','["不辣","微辣","中辣","重辣"]');
+INSERT INTO `dish_flavor` VALUES (94,54,'忌口','["不要葱","不要蒜","不要香菜"]');
+INSERT INTO `dish_flavor` VALUES (95,56,'忌口','["不要葱","不要蒜","不要香菜","不要辣"]');
+INSERT INTO `dish_flavor` VALUES (96,57,'忌口','["不要葱","不要蒜","不要香菜","不要辣"]');
+INSERT INTO `dish_flavor` VALUES (97,60,'忌口','["不要葱","不要蒜","不要香菜","不要辣"]');
+INSERT INTO `dish_flavor` VALUES (101,66,'辣度','["不辣","微辣","中辣","重辣"]');
+INSERT INTO `dish_flavor` VALUES (102,67,'辣度','["不辣","微辣","中辣","重辣"]');
+INSERT INTO `dish_flavor` VALUES (103,65,'辣度','["不辣","微辣","中辣","重辣"]');
 
 DROP TABLE IF EXISTS `employee`;
 CREATE TABLE `employee` (
@@ -233,12 +233,16 @@ DROP TABLE IF EXISTS `user`;
 CREATE TABLE `user` (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键',
   `openid` varchar(45) COLLATE utf8_bin DEFAULT NULL COMMENT '微信用户唯一标识',
+  `meow_id` varchar(45) COLLATE utf8_bin DEFAULT NULL COMMENT 'Meow外卖APP用户唯一标识',
   `name` varchar(32) COLLATE utf8_bin DEFAULT NULL COMMENT '姓名',
   `phone` varchar(11) COLLATE utf8_bin DEFAULT NULL COMMENT '手机号',
   `sex` varchar(2) COLLATE utf8_bin DEFAULT NULL COMMENT '性别',
   `id_number` varchar(18) COLLATE utf8_bin DEFAULT NULL COMMENT '身份证号',
   `avatar` varchar(500) COLLATE utf8_bin DEFAULT NULL COMMENT '头像',
+  `profile` varchar(500) COLLATE utf8_bin DEFAULT NULL COMMENT '自我简介',
   `create_time` datetime DEFAULT NULL,
+  `is_deleted` tinyint(1) NOT NULL DEFAULT '0' COMMENT '是否注销 0:否 1:是',
+  `cancel_time` datetime DEFAULT NULL COMMENT '注销时间',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb3 COLLATE=utf8_bin COMMENT='用户信息';
 
@@ -273,3 +277,7 @@ VALUES
 (5, '王老吉', '4e08407e6f1ed9ab1bf483cf5e96b48d.png', 4, 46, NULL, NULL, 1, 6.00),
 (6, '米饭', '5b267efec3728ad717ae07d5045238a8.png', 4, 49, NULL, NULL, 1, 2.00),
 (7, '经典酸菜鮰鱼', '8ef3eb9dc910acc4f57df6cc1dfecd11.png', 5, 52, NULL, '中辣', 1, 66.00);
+
+ALTER TABLE `user`
+     ADD COLUMN `is_deleted` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否注销 0:否 1:是',
+     ADD COLUMN `cancel_time` DATETIME DEFAULT NULL COMMENT '注销时间';
