@@ -1,10 +1,10 @@
 import { AddressBook } from '../model/entity/AddressBook';
-import { OrderSubmitDTO, OrderSubmitVO, OrderPaymentDTO, OrderPaymentVO } from '../model/api/OrderModel';
+import { OrderSubmitDTO, OrderSubmitVO, OrderPaymentDTO, OrderPaymentVO, OrderVO, PageResult } from '../model/api/OrderModel';
 import { HttpUtil } from '../common/utils/HttpUtil';
 
 /**
  * 订单服务
- * 负责处理下单、支付、地址查询等逻辑 喵！
+ * 负责处理下单、支付、地址查询以及历史订单查询逻辑 喵！
  */
 export class OrderService {
   
@@ -81,5 +81,19 @@ export class OrderService {
    */
   static async payment(paymentDTO: OrderPaymentDTO): Promise<OrderPaymentVO> {
     return HttpUtil.put<OrderPaymentVO>('/client/order/payment', paymentDTO);
+  }
+
+  /**
+   * 📜 分页查询历史订单 (API 7.3)
+   * @param page 页码
+   * @param pageSize 每页记录数
+   * @param status 订单状态 (可选)
+   */
+  static async getHistoryOrders(page: number, pageSize: number, status?: number): Promise<PageResult<OrderVO>> {
+    let url = `/client/order/historyOrders?page=${page}&pageSize=${pageSize}`;
+    if (status !== undefined) {
+      url += `&status=${status}`;
+    }
+    return HttpUtil.get<PageResult<OrderVO>>(url);
   }
 }

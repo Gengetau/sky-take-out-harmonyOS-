@@ -16,6 +16,7 @@ import { AddressBookPage } from './address/AddressBookPage';
 import { AddressEditRoutePage } from './address/AddressEditRoutePage';
 import { UserProfilePage } from './main/UserProfilePage';
 import { AccountSecurityPage } from './main/AccountSecurityPage';
+import { OrderHistoryPage } from './main/OrderHistoryPage';
 
 
 @Entry
@@ -54,6 +55,8 @@ struct Index {
       UserProfilePage()
     } else if ( name === 'AccountSecurityPage' ) {
       AccountSecurityPage()
+    } else if ( name === 'OrderHistoryPage' ) {
+      OrderHistoryPage()
     }
   }
 

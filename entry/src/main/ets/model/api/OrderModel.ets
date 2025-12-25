@@ -1,4 +1,3 @@
-
 /**
  * 购物车明细 DTO
  */
@@ -14,7 +13,6 @@ export interface CartItemDTO {
 
 /**
  * 订单提交参数 DTO
- * 喵！告诉后端我们要点什么好吃的！
  */
 export interface OrderSubmitDTO {
   addressBookId: number;
@@ -31,7 +29,6 @@ export interface OrderSubmitDTO {
 
 /**
  * 订单返回结果 VO
- * 喵！下单成功后后端给我们的回执！
  */
 export interface OrderSubmitVO {
   id: number;
@@ -53,4 +50,33 @@ export interface OrderPaymentDTO {
  */
 export interface OrderPaymentVO {
   qrCode: string; // 支付宝支付二维码链接
+}
+
+/**
+ * 📜 订单详情 VO
+ */
+export interface OrderDetailVO {
+  name: string;
+  number: number;
+  amount: number;
+}
+
+/**
+ * 📦 历史订单 VO (API 7.3)
+ */
+export interface OrderVO {
+  id: number;
+  number: string; // 订单号
+  status: number; // 1:待付款, 2:待接单, 3:已接单, 4:派送中, 5:已完成, 6:已取消
+  amount: number; // 订单金额
+  orderTime: string; // 下单时间
+  orderDetailList: OrderDetailVO[]; // 订单详情明细
+}
+
+/**
+ * 📄 分页查询结果包装类
+ */
+export interface PageResult<T> {
+  total: number;
+  records: T[];
 }

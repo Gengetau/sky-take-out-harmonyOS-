@@ -1,6 +1,6 @@
 # 后端接口文档 (客户端)
 
-> **版本**: 1.1
+> **版本**: 1.2
 > **日期**: 2025-12-25
 > **作者**: 妮娅 (Nia)
 
@@ -164,8 +164,8 @@
     ]
   }
   ```
-    - **‼️ 重要备注**:                                                                                           │
-        - `image` 字段是一个临时的 **阿里云 OSS 预签名 URL**，**有效期为 2 小时**。 │
+    - **‼️ 重要备注**:
+        - `image` 字段是一个临时的 **阿里云 OSS 预签名 URL**，**有效期为 2 小时**。
         - 此接口在后端有 60 分钟缓存，客户端**不应**对返回的 `image` URL 进行长期缓存。
 
 ---
@@ -245,7 +245,7 @@
   }
   ```
 
-### 6.2 查询默认地址
+### 6.3 查询默认地址
 
 - **接口地址**: `GET /client/addressBook/default`
 - **功能描述**: 查询当前登录用户的默认收货地址。
@@ -274,7 +274,7 @@
 - **备注**:
     - 如果当前用户没有设置默认地址，`data` 将为 `null`，且返回状态码为 `0` (Error) 喵。
 
-### 6.3 设置默认地址
+### 6.4 设置默认地址
 
 - **接口地址**: `PUT /client/addressBook/default/{id}`
 - **功能描述**: 设置当前登录用户的默认收货地址。
@@ -286,7 +286,7 @@
     - 此操作具有排他性：设置某个地址为默认地址后，该用户原有的其他默认地址会自动取消默认状态喵。
     - 后端会自动同步更新 Redis 缓存，保证数据实时性喵。
 
-### 6.4 根据ID查询地址
+### 6.5 根据ID查询地址
 
 - **接口地址**: `GET /client/addressBook/{id}`
 - **功能描述**: 根据地址ID获取详细的地址信息，用于编辑页面的数据回显喵。
@@ -294,7 +294,7 @@
   - `id` (路径参数): 地址ID
 - **返回数据**: `Result<AddressBook>`
 
-### 6.5 修改地址
+### 6.6 修改地址
 
 - **接口地址**: `PUT /client/addressBook`
 - **功能描述**: 根据地址ID修改详细的地址信息喵。
@@ -312,7 +312,7 @@
 - **备注**:
     - 修改操作后，后端会自动清理默认地址缓存喵。
 
-### 6.6 根据ID删除地址
+### 6.7 根据ID删除地址
 
 - **接口地址**: `DELETE /client/addressBook`
 - **功能描述**: 根据地址ID删除该地址信息喵。
@@ -349,52 +349,7 @@
     - `amount` (BigDecimal): 单价或总价
     - `name` (String): 商品名称
     - `image` (String): 商品图片
-- **请求示例**:
-  ```json
-  {
-    "addressBookId": 1,
-    "payMethod": 1,
-    "remark": "不要香菜",
-    "estimatedDeliveryTime": "2025-12-23 12:00:00",
-    "deliveryStatus": 1,
-    "tablewareNumber": 2,
-    "tablewareStatus": 0,
-    "packAmount": 2,
-    "amount": 108.00,
-    "cartItems": [
-      {
-        "dishId": 51,
-        "dishFlavor": "微辣",
-        "number": 1,
-        "amount": 56.00,
-        "name": "老坛酸菜鱼"
-      },
-      {
-        "setmealId": 32,
-        "number": 1,
-        "amount": 39.90,
-        "name": "健康搭配套餐A"
-      }
-    ]
-  }
-  ```
 - **返回数据**: `Result<OrderSubmitVO>`
-- **响应示例**:
-  ```json
-  {
-    "code": 1,
-    "msg": null,
-    "data": {
-      "id": 1001,
-      "orderNumber": "17349264000001001",
-      "orderAmount": 108.00,
-      "orderTime": "2025-12-23 11:30:00"
-    }
-  }
-  ```
-- **备注**:
-    - 接口会自动校验地址簿 and 购物车数据是否为空。
-    - 成功下单后，会返回订单号 `orderNumber` 用于后续支付。
 
 ### 7.2 订单支付 (支付宝当面付)
 
@@ -403,27 +358,43 @@
 - **请求参数 (JSON)**:
   - `orderNumber` (String): 订单号
   - `payMethod` (Integer): 付款方式 (1:微信, 2:支付宝)
-- **请求示例**:
-  ```json
-  {
-    "orderNumber": "17349264000001001",
-    "payMethod": 2
-  }
-  ```
 - **返回数据**: `Result<OrderPaymentVO>`
+
+### 7.3 历史订单查询
+
+- **接口地址**: `GET /client/order/historyOrders`
+- **功能描述**: 分页查询当前登录用户的历史订单，支持按状态过滤喵。
+- **请求参数 (Query)**:
+  - `page` (int): 页码
+  - `pageSize` (int): 每页记录数
+  - `status` (Integer, 可选): 订单状态 (1:待付款, 2:待接单, 3:已接单, 4:派送中, 5:已完成, 6:已取消)
+- **返回数据**: `Result<PageResult<OrderVO>>`
 - **响应示例**:
   ```json
   {
     "code": 1,
     "msg": null,
     "data": {
-      "qrCode": "https://qr.alipay.com/bax02450xxxxxx"
+      "total": 10,
+      "records": [
+        {
+          "id": 100,
+          "number": "1734926400000",
+          "status": 5,
+          "amount": 108.00,
+          "orderTime": "2025-12-25 10:00:00",
+          "orderDetailList": [
+             { "name": "老坛酸菜鱼", "number": 1, "amount": 56.00 },
+             { "name": "米饭", "number": 2, "amount": 4.00 }
+          ]
+        }
+      ]
     }
   }
   ```
 - **备注**:
-    - `qrCode` 即为支付二维码链接，前端可利用工具将其转换为二维码图片展示喵。
-    - 支付成功后，后端会自动通过异步回调更新订单状态喵。
+  - `records` 中包含了订单详情 `orderDetailList` 喵。
+  - 订单按时间倒序排列喵。
 
 ---
 
@@ -451,75 +422,26 @@
     }
   }
   ```
-- **‼️ 重要备注**:
-    - `avatar` 字段是一个临时的 **阿里云 OSS 预签名 URL**，**有效期为 2 小时**。
-    - 客户端**不应**对此 URL 进行长期缓存。每次请求此接口都会返回最新的有效链接。
 
 ### 9.2 退出登录
 
 - **接口地址**: `POST /client/user/logout`
-- **功能描述**: 退出当前登录状态，清理服务器端 Session/Token。
-- **请求参数**: 无
+- **功能描述**: 退出当前登录状态。
 - **返回数据**: `Result<String>`
-- **响应示例**:
-  ```json
-  {
-    "code": 1,
-    "msg": null,
-    "data": "退出成功喵！"
-  }
-  ```
 
 ### 9.3 上传头像
 
 - **接口地址**: `POST /client/user/uploadAvatar`
-- **功能描述**: 用户上传个人头像并更新。
-- **请求参数 (FormData)**:
-  - `file`: MultipartFile (头像文件)
-- **返回数据**: `Result<String>` (返回上传成功后的签名 URL)
-- **响应示例**:
-  ```json
-  {
-    "code": 1,
-    "msg": null,
-    "data": "https://<your-bucket>.oss-cn-beijing.aliyuncs.com/xxx.png?OSSAccessKeyId=..."
-  }
-  ```
-- **‼️ 重要备注**:
-  - 此接口会同步更新数据库中的用户头像路径喵。
-  - 返回的 `data` 是一个临时的 **预签名 URL**，有效期为 2 小时喵。
+- **功能描述**: 用户上传个人头像并更新喵。
+- **请求参数 (FormData)**: `file`
+- **返回数据**: `Result<String>`
 
 ### 9.4 修改用户信息
 
 - **接口地址**: `PUT /client/user/edit`
-- **功能描述**: 修改当前登录用户的单一个人信息。
-- **请求参数 (JSON)**:
-  - `code`: 要修改的字段标识 (字符串)
-    - `name`: 修改昵称
-    - `sex`: 修改性别 (传入 "0" 或 "1")
-    - `profile`: 修改个人简介
-    - `idNumber`: 修改身份证号
-    - `phone`: 修改手机号
-  - `value`: 修改后的新值 (字符串)
-- **请求示例**:
-  ```json
-  {
-    "code": "name",
-    "value": "妮娅的新名字"
-  }
-  ```
+- **功能描述**: 修改当前登录用户的单 অপমান信息喵。
+- **请求参数 (JSON)**: `code`, `value`
 - **返回数据**: `Result<String>`
-- **响应示例**:
-  ```json
-  {
-    "code": 1,
-    "msg": null,
-    "data": "信息修改成功喵！"
-  }
-  ```
-- **备注**:
-  - 此接口采用通用字段映射机制，一次仅支持修改一个字段喵。
-  - 后端会对手机号格式进行校验喵。
 
 ### 9.5 注销账号
 
@@ -550,7 +472,6 @@
 - **功能描述**: 用于接收后端的实时推送消息（如支付成功通知）。
 - **参数说明**:
     - `userId` (Long): 当前登录用户的ID。
-- **示例**: `ws://localhost:8080/ws/1`
 
 ### 8.2 消息格式 (后端推送)
 
@@ -564,7 +485,3 @@
     "content": "订单支付成功"
   }
   ```
-- **字段说明**:
-    - `type` (Integer): 消息类型 (1: 支付成功, 2: 待接单/接单提醒等)
-    - `orderId` (Long): 关联的订单ID
-    - `content` (String): 提示文本喵
