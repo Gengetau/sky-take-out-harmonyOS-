@@ -42,6 +42,7 @@ public class MvcConfig implements WebMvcConfigurer {
 		// 添加jwt令牌拦截器
 		registry.addInterceptor(jwtTokenAdminInterceptor)
 				.addPathPatterns("/admin/**")
-				.excludePathPatterns("/admin/employee/login");
+				.excludePathPatterns("/admin/employee/login",
+						"/admin/shop/preheat");
 	}
 }
