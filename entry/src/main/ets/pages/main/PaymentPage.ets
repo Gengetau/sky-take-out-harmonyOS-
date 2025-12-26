@@ -20,6 +20,7 @@ export struct PaymentPage {
   @State payMethod: number = 1;
   @State totalAmount: number = 0;
   @State isLoading: boolean = true;
+  @State isCheckingStatus: boolean = false; // 是否正在主动查询状态
   @State timeLeft: number = 15 * 60; // 倒计时 15分钟
   private timer: number = -1;
   // 监听支付成功信号
@@ -74,15 +75,16 @@ export struct PaymentPage {
 
         Blank()
 
-        // 底部按钮（兜底用，防止 WS 没收到）
-        Button('我已完成支付')
+        // 底部按钮（主动查询状态 喵！）
+        Button(this.isCheckingStatus ? '正在查询支付状态...' : '我已完成支付')
           .width('90%')
           .height(45)
           .backgroundColor('#FFCC00')
           .fontColor('#333')
           .margin({ bottom: 30 })
+          .enabled(!this.isCheckingStatus)
           .onClick(() => {
-            this.onPaySuccess();
+            this.manualCheckStatus();
           })
 
       }
@@ -123,6 +125,30 @@ export struct PaymentPage {
       promptAction.showToast({ message: '获取二维码失败，请重试' });
     } finally {
       this.isLoading = false;
+    }
+  }
+
+  /**
+   * 🔍 主动查询支付状态
+   */
+  async manualCheckStatus() {
+    if ( !this.orderNumber ) return;
+    this.isCheckingStatus = true;
+    try {
+      const status = await OrderService.checkPayStatus(this.orderNumber);
+      if ( status === 'TRADE_SUCCESS' ) {
+        promptAction.showToast({ message: '支付成功喵！' });
+        this.onPaySuccess();
+      } else if ( status === 'WAIT_BUYER_PAY' ) {
+        promptAction.showToast({ message: '订单尚未支付，请扫码支付喵' });
+      } else {
+        promptAction.showToast({ message: `支付状态: ${ status }` });
+      }
+    } catch ( e ) {
+      console.error('喵！查询支付状态失败:', e);
+      promptAction.showToast({ message: '查询支付状态失败，请重试' });
+    } finally {
+      this.isCheckingStatus = false;
     }
   }
 

@@ -84,6 +84,14 @@ export class OrderService {
   }
 
   /**
+   * 🔍 主动查询支付状态 (API 7.4)
+   * @param orderNumber 订单号
+   */
+  static async checkPayStatus(orderNumber: string): Promise<string> {
+    return HttpUtil.get<string>(`/client/order/checkPayStatus/${orderNumber}`);
+  }
+
+  /**
    * 📜 分页查询历史订单 (API 7.3)
    * @param page 页码
    * @param pageSize 每页记录数

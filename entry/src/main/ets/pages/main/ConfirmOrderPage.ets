@@ -241,100 +241,114 @@ export struct ConfirmOrderView {
 
   @Builder
   AddressListBuilder() {
-    AddressListView({
-      selectedId: this.defaultAddress?.id || 0,
-      onSelect: (addr: AddressBook) => {
-        this.defaultAddress = addr;
-        this.showAddressList = false;
-      },
-      onClose: () => {
-        this.showAddressList = false;
-      },
-      onNewAddress: () => {
-        this.editingAddressId = 0;
-        this.showAddressList = false;
-        this.isEditingAddress = true;
-      },
-      onEditAddress: (id: number) => {
-        this.editingAddressId = id;
-        this.showAddressList = false;
-        this.isEditingAddress = true;
-      }
-    })
+    // ✨ 包裹一层明确高度的容器，防止 AddressListView 撑不起来
+    Column() {
+      AddressListView({
+        selectedId: this.defaultAddress?.id || 0,
+        onSelect: (addr: AddressBook) => {
+          console.info('喵！AddressListView 选择地址:', addr.id);
+          this.defaultAddress = addr;
+          this.showAddressList = false;
+        },
+        onClose: () => {
+          console.info('喵！AddressListView 关闭');
+          this.showAddressList = false;
+        },
+        onNewAddress: () => {
+          console.info('喵！AddressListView 新建地址');
+          this.editingAddressId = 0;
+          this.showAddressList = false;
+          this.isEditingAddress = true;
+        },
+        onEditAddress: (id: number) => {
+          console.info('喵！AddressListView 编辑地址:', id);
+          this.editingAddressId = id;
+          this.showAddressList = false;
+          this.isEditingAddress = true;
+        }
+      })
+    }
+    .width('100%')
+    .height('100%')
   }
 
   build() {
     NavDestination() {
-      // ✨ 修复关键：bindSheet 必须挂在最外层容器上喵！
-      Stack() {
-        if ( this.isEditingAddress ) {
-          AddressEditPage({
-            editId: this.editingAddressId,
-            onClose: () => {
-              this.isEditingAddress = false;
-              this.showAddressList = true;
-            },
-            onSaveSuccess: () => {
-              this.isEditingAddress = false;
-              this.showAddressList = true;
-            }
-          })
-        } else if ( this.isAddingRemark ) {
-          RemarkPage({
-            remarkText: this.remark,
-            onSave: (val: string) => {
-              this.remark = val;
-            },
-            onClose: () => {
-              this.isAddingRemark = false;
-            }
-          })
-        } else {
-          Column() {
-            Row() {
-              Text('确认订单')
-                .fontSize(18).fontWeight(FontWeight.Bold)
-                .layoutWeight(1).textAlign(TextAlign.Center)
-            }
-            .width('100%').height(50).padding({ left: 16, right: 16 }).backgroundColor('#F1F3F5')
-
-            Scroll() {
-              Column({ space: 12 }) {
-                this.AddressSection()
-                this.DeliveryTimeSection()
-                this.PayMethodSection()
-                this.OrderDetailSection()
-                this.TablewareSection()
-                this.RemarkSection()
-                Blank().height(80)
+      Column() {
+        // ✨ 将 TimeSheet 绑定到内层 Stack 上，避免与 AddressList 冲突
+        Stack() {
+          if ( this.isEditingAddress ) {
+            AddressEditPage({
+              editId: this.editingAddressId,
+              onClose: () => {
+                this.isEditingAddress = false;
+                this.showAddressList = true;
+              },
+              onSaveSuccess: () => {
+                this.isEditingAddress = false;
+                this.showAddressList = true;
               }
-              .padding(12).width('100%')
-            }
-            .layoutWeight(1).backgroundColor('#F1F3F5')
+            })
+          } else if ( this.isAddingRemark ) {
+            RemarkPage({
+              remarkText: this.remark,
+              onSave: (val: string) => {
+                this.remark = val;
+              },
+              onClose: () => {
+                this.isAddingRemark = false;
+              }
+            })
+          } else {
+            Column() {
+              Row() {
+                Text('确认订单')
+                  .fontSize(18).fontWeight(FontWeight.Bold)
+                  .layoutWeight(1).textAlign(TextAlign.Center)
+              }
+              .width('100%').height(50).padding({ left: 16, right: 16 }).backgroundColor('#F1F3F5')
 
-            this.BottomBar()
+              Scroll() {
+                Column({ space: 12 }) {
+                  this.AddressSection()
+                  this.DeliveryTimeSection()
+                  this.PayMethodSection()
+                  this.OrderDetailSection()
+                  this.TablewareSection()
+                  this.RemarkSection()
+                  Blank().height(80)
+                }
+                .padding(12).width('100%')
+              }
+              .layoutWeight(1).backgroundColor('#F1F3F5')
+
+              this.BottomBar()
+            }
+            .width('100%')
+            .height('100%')
+            .backgroundColor('#F1F3F5')
           }
-          .width('100%')
-          .height('100%')
-          .backgroundColor('#F1F3F5')
         }
+        .width('100%').layoutWeight(1) 
+        .bindSheet(this.showTimeSheet, this.TimeSheetBuilder(), {
+          height: 400,
+          dragBar: true,
+          backgroundColor: Color.White,
+          onDisappear: () => {
+            this.showTimeSheet = false;
+          }
+        })
       }
-      .width('100%').height('100%')
-      // ✨ 绑定移动到这里喵！
-      .bindSheet($$this.showAddressList, this.AddressListBuilder(), {
-        height: SheetSize.MEDIUM,
+      .width('100%')
+      .height('100%')
+      // ✨ 将 AddressSheet 绑定到最外层 Column，物理隔离两个 Sheet
+      .bindSheet(this.showAddressList, this.AddressListBuilder(), {
+        height: 600, 
         dragBar: true,
         backgroundColor: '#F1F3F5',
         onDisappear: () => {
+          console.info('喵！Sheet onDisappear triggered');
           this.showAddressList = false;
-        }
-      })
-      .bindSheet($$this.showTimeSheet, this.TimeSheetBuilder(), {
-        height: 400,
-        dragBar: true,
-        backgroundColor: Color.White,
-        onDisappear: () => {
-          this.showTimeSheet = false;
         }
       })
     }.hideTitleBar(true)
@@ -362,6 +376,7 @@ export struct ConfirmOrderView {
     .borderRadius(8)
     .alignItems(HorizontalAlign.Start)
     .onClick(() => {
+      console.info('喵！点击了地址栏，准备显示地址列表');
       this.showAddressList = true;
     })
   }
