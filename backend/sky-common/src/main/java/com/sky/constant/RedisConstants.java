@@ -4,7 +4,7 @@ public class RedisConstants {
 	public static final String LOGIN_CODE_KEY = "login:code:";
 	public static final Long LOGIN_CODE_TTL = 2L;
 	public static final String LOGIN_USER_KEY = "login:token:";
-	public static final Long LOGIN_USER_TTL = 60 * 7L;
+	public static final Long LOGIN_USER_TTL = 60 * 24 * 7L;
 	
 	public static final String SHOP_STATUS_KEY = "shop:status";
 	
@@ -54,8 +54,8 @@ public class RedisConstants {
 	
 	// 单位：分钟
 	public static final Long CACHE_SETMEAL_TTL = 60L;
-
-    public static final String USER_DEFAULT_ADDRESS_KEY = "cache:user:default_address:";
+	
+	public static final String USER_DEFAULT_ADDRESS_KEY = "cache:user:default_address:";
 	
 	/*// 生成随机TTL
 	public static Long randomTTL() {

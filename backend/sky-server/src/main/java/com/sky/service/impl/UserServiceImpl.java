@@ -95,7 +95,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 		User user = getOne(new LambdaQueryWrapper<User>()
 				.eq(User::getPhone, phone)
 				.eq(User::getIsDeleted, 0)); // 只能查到没注销的
-
+		
 		// 3.1不存在，创建新用户
 		if (user == null) {
 			// 3.2创建新用户 (使用清理后的手机号保存)
@@ -270,7 +270,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 				.set(User::getAvatar, null) // 清空头像
 				.set(User::getIdNumber, null) // 清空身份证
 				.update();
-				
+		
 		if (!userUpdateSuccess) {
 			return Result.error("注销失败，请稍后重试喵！");
 		}
@@ -281,7 +281,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 				.set(AddressBook::getConsignee, "已注销")
 				.set(AddressBook::getPhone, "******")
 				.set(AddressBook::getDetail, "******");
-				
+		
 		addressBookMapper.update(null, addressWrapper);
 		
 		// 3. 清理 Redis 登录状态

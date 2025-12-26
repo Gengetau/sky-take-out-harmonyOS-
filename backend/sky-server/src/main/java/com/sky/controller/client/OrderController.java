@@ -70,4 +70,16 @@ public class OrderController {
 		log.info("历史订单查询喵，page={}, pageSize={}, status={}", page, pageSize, status);
 		return orderService.pageQuery4User(page, pageSize, status);
 	}
+
+	/**
+	 * 主动查询支付状态
+	 * @param orderNumber
+	 * @return
+	 */
+	@GetMapping("/checkPayStatus/{orderNumber}")
+	@ApiOperation("主动查询支付状态")
+	public Result<String> checkPayStatus(@PathVariable String orderNumber) throws Exception {
+		log.info("主动查询支付状态喵：{}", orderNumber);
+		return orderService.checkPayStatus(orderNumber);
+	}
 }

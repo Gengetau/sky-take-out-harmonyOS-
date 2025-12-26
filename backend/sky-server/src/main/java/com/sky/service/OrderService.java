@@ -41,4 +41,11 @@ public interface OrderService extends IService<Orders> {
 	void paySuccess(String outTradeNo);
 
 	Result<Page<OrderVO>> pageQuery4User(int page, int pageSize, Integer status);
+
+	/**
+	 * 主动查询订单支付状态
+	 * @param orderNumber
+	 * @return
+	 */
+	Result<String> checkPayStatus(String orderNumber) throws Exception;
 }

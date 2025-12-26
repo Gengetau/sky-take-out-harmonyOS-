@@ -27,6 +27,7 @@ import com.sky.service.OrderDetailService;
 import com.sky.service.OrderService;
 import com.sky.service.UserService;
 import com.sky.utils.AliOssUtil;
+import com.sky.utils.AliPayUtil;
 import com.sky.vo.*;
 import com.sky.websocket.WebSocketServer;
 import lombok.extern.slf4j.Slf4j;
@@ -68,6 +69,9 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
 	
 	@Autowired
 	private AliPayProperties aliPayProperties;
+
+	@Autowired
+	private AliPayUtil aliPayUtil;
 	
 	@Autowired
 	private WebSocketServer webSocketServer;
@@ -401,5 +405,19 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
 		voPage.setPages(pageInfo.getPages());
 		
 		return Result.success(voPage);
+	}
+
+	@Override
+	public Result<String> checkPayStatus(String orderNumber) throws Exception {
+		// 1. 调用支付宝工具类查询状态
+		String tradeStatus = aliPayUtil.queryOrder(orderNumber);
+
+		// 2. 如果支付成功，且本地状态未更新，则更新
+		if ("TRADE_SUCCESS".equals(tradeStatus) || "TRADE_FINISHED".equals(tradeStatus)) {
+			log.info("主动查询发现订单 {} 已支付，开始修正状态... 喵", orderNumber);
+			paySuccess(orderNumber);
+		}
+
+		return Result.success(tradeStatus);
 	}
 }
