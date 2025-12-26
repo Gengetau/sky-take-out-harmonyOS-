@@ -10,7 +10,10 @@ import { AddressMapPage } from './address/AddressMapPage';
 import { Login } from './Login';
 import { AccountSecurityPage } from './main/AccountSecurityPage';
 import { ConfirmOrderView } from './main/ConfirmOrderPage';
+import { OrderDetailPage } from './main/OrderDetailPage';
 import { OrderHistoryPage } from './main/OrderHistoryPage';
+import { MyFollowPage } from './main/MyFollowPage';
+
 import { PaymentPage } from './main/PaymentPage';
 import { PaySuccessPage } from './main/PaySuccessPage';
 import { RemarkPage } from './main/RemarkPage';
@@ -18,7 +21,6 @@ import { SettingsPage } from './main/SettingsPage';
 import { UserProfilePage } from './main/UserProfilePage';
 import { MainTabs } from './MainTabs';
 import { ShopPage } from './shop/ShopPage';
-
 
 @Entry
 @Component
@@ -58,6 +60,10 @@ struct Index {
       AccountSecurityPage()
     } else if ( name === 'OrderHistoryPage' ) {
       OrderHistoryPage()
+    } else if ( name === 'OrderDetailPage' ) {
+      OrderDetailPage()
+    } else if ( name === 'MyFollowPage' ) {
+      MyFollowPage()
     }
   }
 

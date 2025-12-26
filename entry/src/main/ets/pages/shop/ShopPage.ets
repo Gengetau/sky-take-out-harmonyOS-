@@ -116,7 +116,8 @@ export struct ShopPage {
       Column() {
         ShopHeader({ 
           isShopOpen: this.isShopOpen,
-          shopInfo: this.shopInfo
+          shopInfo: this.shopInfo,
+          shopId: this.shopId // ✨ 传入 shopId 以触发关注状态检查喵！
         })
 
         if ( this.isLoading ) {

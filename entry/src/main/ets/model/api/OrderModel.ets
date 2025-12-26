@@ -60,6 +60,7 @@ export interface OrderPaymentVO {
  */
 export interface OrderDetailVO {
   name: string;
+  image?: string; // ✨ 商品图片 (新增)
   number: number;
   amount: number;
 }
@@ -70,6 +71,8 @@ export interface OrderDetailVO {
 export interface OrderVO {
   id: number;
   number: string; // 订单号
+  shopId: number; // 🏢 店铺ID (新增，用于跳转)
+  shopName?: string; // 🏢 店铺名称
   status: number; // 1:待付款, 2:待接单, 3:已接单, 4:派送中, 5:已完成, 6:已取消
   amount: number; // 订单金额
   orderTime: string; // 下单时间

@@ -202,6 +202,12 @@ export struct MinePage {
 
         ListItemGroup({ header: this.GroupHeader('更多服务') }) {
           ListItem() {
+            this.FuncItem($r('sys.symbol.heart'), '我的关注', '', () => {
+              this.pageStack.pushPath({ name: 'MyFollowPage' });
+            })
+          }
+
+          ListItem() {
             this.FuncItem($r('sys.symbol.person_badge_plus'), '商家入驻')
           }
 

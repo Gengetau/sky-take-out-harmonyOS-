@@ -3,6 +3,7 @@ import { window } from '@kit.ArkUI';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { HttpUtil } from '../common/utils/HttpUtil';
 import { PreferencesUtil } from '../common/utils/PreferencesUtil';
+import { FollowRdb } from '../common/utils/FollowRdb'; // ✨ 引入
 
 const DOMAIN = 0x0000;
 
@@ -15,6 +16,8 @@ export default class EntryAbility extends UIAbility {
     }
     hilog.info(DOMAIN, 'testTag', '%{public}s', 'Ability onCreate');
     await PreferencesUtil.loadPreference(this.context);
+    // ✨ 初始化关注数据库
+    await FollowRdb.getInstance().initRdb(this.context);
   }
 
   onDestroy(): void {

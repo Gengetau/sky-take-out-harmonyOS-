@@ -1,6 +1,6 @@
 # 后端接口文档 (客户端)
 
-> **版本**: 1.5
+> **版本**: 1.7
 > **日期**: 2025-12-26
 > **作者**: 妮娅 (Nia)
 
@@ -363,6 +363,7 @@
           "id": 100,
           "number": "1734926400000",
           "shopId": 1,
+          "shopName": "苍穹外卖总店",
           "status": 5,
           "amount": 108.00,
           "orderTime": "2025-12-25 10:00:00",
@@ -396,6 +397,40 @@
 - **备注**:
     - 返回的 `data` 为支付宝原始交易状态（如 `TRADE_SUCCESS`, `WAIT_BUYER_PAY` 等）。
     - 建议在支付页面等待回调超时或用户点击“我已支付”时调用此接口喵。
+
+### 7.5 查询订单详情 (用户端)
+
+- **接口地址**: `GET /client/order/orderDetail/{id}`
+- **功能描述**: 获取指定订单的详细信息，包含菜品明细、店铺信息等。
+- **请求参数 (路径参数)**:
+  - `id` (Long): 订单ID
+- **返回数据**: `Result<OrderVO>`
+- **响应示例**:
+  ```json
+  {
+    "code": 1,
+    "msg": null,
+    "data": {
+      "id": 1001,
+      "number": "1734926400000",
+      "shopId": 1,
+      "shopName": "苍穹外卖总店",
+      "status": 5,
+      "amount": 108.00,
+      "orderTime": "2025-12-25 10:00:00",
+      "orderDetailList": [
+         { 
+           "name": "老坛酸菜鱼", 
+           "image": "https://<your-bucket>.oss-cn-beijing.aliyuncs.com/xxx.png?OSSAccessKeyId=...", 
+           "number": 1, 
+           "amount": 56.00 
+         }
+      ]
+    }
+  }
+  ```
+- **‼️ 重要备注**:
+    - `image` 字段为 **OSS 预签名 URL**，有效期为 2 小时，客户端不应缓存。
 
 ---
 
@@ -436,7 +471,7 @@
 ### 9.4 修改用户信息
 
 - **接口地址**: `PUT /client/user/edit`
-- **功能描述**: 修改当前登录用户的单一个人信息。
+- **功能描述**: 修改当前登录用户的单个人信息。
 - **参数**: `code` (字段名: name, sex, profile, idNumber, phone), `value` (新值)
 - **返回数据**: `Result<String>`
 

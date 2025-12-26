@@ -191,20 +191,62 @@ export struct OrderHistoryPage {
   @Builder
   OrderCard(order: OrderVO) {
     Column() {
-      // 卡片头部：订单号与状态
+      // 卡片头部：店铺名称与状态
       Row() {
-        Text(`订单号: ${ order.number }`)
-          .fontSize(12)
-          .fontColor('#999')
-          .layoutWeight(1)
+        Image($r('app.media.shop_logo')) // 假设有个店铺logo占位，或者直接用图标
+          .width(20).height(20)
+          .objectFit(ImageFit.Contain)
+          .margin({ right: 5 })
+          .visibility(Visibility.None) // 暂时隐藏，如果没有合适的图标
 
-        Text(this.statusMap[order.status] || '未知状态')
-          .fontSize(12)
-          .fontColor(this.statusColors[order.status] || '#333')
-          .fontWeight(FontWeight.Medium)
+        Row() {
+          Text(order.shopName || '苍穹外卖商家') // 🏢 展示店铺名称喵
+            .fontSize(16)
+            .fontWeight(FontWeight.Bold)
+            .fontColor('#333')
+            .maxLines(1)
+            .textOverflow({ overflow: TextOverflow.Ellipsis })
+            .layoutWeight(1)
+
+          SymbolGlyph($r('sys.symbol.chevron_right')) // ✨ 加个小箭头提醒跳转喵！
+            .fontSize(16)
+            .fontColor(['#999'])
+            .margin({ left: 2, right: 10 })
+        }
+        .layoutWeight(1)
+        .hitTestBehavior(HitTestMode.Block) // ✨ 使用 HitTestMode.Block 阻止事件穿透喵！
+        .onClick(() => {
+           if (order.shopId) {
+             this.pageStack.pushPath({ name: 'ShopPage', param: order.shopId });
+           } else {
+             promptAction.showToast({ message: '无法跳转，店铺ID丢失喵😿' });
+           }
+        })
+          
+        // 状态显示
+        Row() {
+          Text(this.statusMap[order.status] || '未知状态')
+            .fontSize(14)
+            .fontColor(this.statusColors[order.status] || '#333')
+            .fontWeight(FontWeight.Medium)
+          
+          if ( order.status === 4 ) { // 派送中显示个小图标
+             SymbolGlyph($r('sys.symbol.paperplane'))
+               .fontSize(14)
+               .fontColor([ this.statusColors[order.status] ])
+               .margin({ left: 2 })
+          }
+        }
       }
       .width('100%')
-      .margin({ bottom: 12 })
+      .alignItems(VerticalAlign.Center)
+      .margin({ bottom: 4 })
+
+      // 订单号 (稍微小一点显示在店铺名下面)
+      Text(`订单号: ${ order.number }`)
+        .fontSize(12)
+        .fontColor('#999')
+        .margin({ bottom: 12 })
 
       // 卡片内容：商品预览
       Column({ space: 8 }) {
@@ -232,7 +274,7 @@ export struct OrderHistoryPage {
 
         Row() {
           Text('合计:').fontSize(12).fontColor('#666')
-          Text(`￥${ order.amount.toFixed(2) }`)
+          Text(`￥${ order.amount ? order.amount.toFixed(2) : '0.00' }`)
             .fontSize(16)
             .fontWeight(FontWeight.Bold)
             .fontColor('#333')
@@ -245,7 +287,8 @@ export struct OrderHistoryPage {
     .backgroundColor(Color.White)
     .borderRadius(12)
     .onClick(() => {
-      promptAction.showToast({ message: '详情页正在加班开发中喵~' });
+      // ✨ 跳转到订单详情页，并传递整个 OrderVO 对象
+      this.pageStack.pushPath({ name: 'OrderDetailPage', param: [order] });
     })
   }
 }

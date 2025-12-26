@@ -92,6 +92,14 @@ export class OrderService {
   }
 
   /**
+   * 📦 查询订单详情 (API 7.5)
+   * @param id 订单ID
+   */
+  static async getOrderDetail(id: number): Promise<OrderVO> {
+    return HttpUtil.get<OrderVO>(`/client/order/orderDetail/${id}`);
+  }
+
+  /**
    * 📜 分页查询历史订单 (API 7.3)
    * @param page 页码
    * @param pageSize 每页记录数

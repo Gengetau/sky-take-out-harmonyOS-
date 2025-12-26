@@ -1,5 +1,6 @@
 import { promptAction } from '@kit.ArkUI';
 import { ShopVO } from '../../../model/entity/ShopModel';
+import { ShopService } from '../../../service/ShopService';
 
 /**
  * 商店头部重构版 - 展现真实商户风采喵 ✨
@@ -8,6 +9,46 @@ import { ShopVO } from '../../../model/entity/ShopModel';
 export struct ShopHeader {
   @Prop isShopOpen: boolean;
   @Prop shopInfo: ShopVO | null;
+  @State isFollowed: boolean = false; // ✨ 关注状态
+
+  // 监听 shopInfo 变化，重新检查关注状态
+  @Watch('checkFollowStatus') @Prop shopId: number = 0; 
+
+  async aboutToAppear() {
+    this.checkFollowStatus();
+  }
+
+  async checkFollowStatus() {
+    // 优先使用 shopId，即使 shopInfo 还没加载也能查状态喵！
+    const targetId = this.shopId || this.shopInfo?.id;
+    if (targetId) {
+      this.isFollowed = await ShopService.isShopFollowed(targetId);
+    }
+  }
+
+  async toggleFollow() {
+    if (!this.shopInfo) return;
+
+    if (this.isFollowed) {
+      // 取消关注
+      const success = await ShopService.unfollowShop(this.shopInfo.id);
+      if (success) {
+        this.isFollowed = false;
+        promptAction.showToast({ message: '已取消关注喵 💔' });
+      } else {
+        promptAction.showToast({ message: '操作失败，请重试喵' });
+      }
+    } else {
+      // 关注
+      const success = await ShopService.followShop(this.shopInfo);
+      if (success) {
+        this.isFollowed = true;
+        promptAction.showToast({ message: '关注成功喵！💖' });
+      } else {
+        promptAction.showToast({ message: '关注失败，请重试喵' });
+      }
+    }
+  }
 
   build() {
     Stack({ alignContent: Alignment.Bottom }) {
@@ -107,15 +148,19 @@ export struct ShopHeader {
 
         // (3) 右侧收藏/电话按钮
         Column() {
-          SymbolGlyph($r('sys.symbol.heart'))
+          // ✨ 根据关注状态切换图标和颜色
+          SymbolGlyph(this.isFollowed ? $r('sys.symbol.heart_fill') : $r('sys.symbol.heart'))
             .fontSize(20)
-            .fontColor([ '#333333' ])
+            .fontColor([ this.isFollowed ? '#FF3B30' : '#333333' ]) // 已关注显示红色
             .margin({ bottom: 4 })
-          Text('关注').fontSize(10).fontColor('#333')
+            
+          Text(this.isFollowed ? '已关注' : '关注')
+            .fontSize(10)
+            .fontColor(this.isFollowed ? '#FF3B30' : '#333')
         }
         .justifyContent(FlexAlign.Center)
         .width(40)
-        .onClick(() => promptAction.showToast({ message: '关注成功喵！💖' }))
+        .onClick(() => this.toggleFollow())
 
       }
       .width('94%')
