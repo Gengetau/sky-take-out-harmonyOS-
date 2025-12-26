@@ -17,35 +17,33 @@ export struct OrderDetailPage {
     6: '已取消'
   };
 
-    async aboutToAppear() {
+  async aboutToAppear() {
 
-      const params = this.pageStack.getParamByName("OrderDetailPage") as Array<object>;
+    const params = this.pageStack.getParamByName("OrderDetailPage") as Array<object>;
 
-      console.info('喵！OrderDetailPage aboutToAppear, params:', JSON.stringify(params));
+    console.info('喵！OrderDetailPage aboutToAppear, params:', JSON.stringify(params));
 
-      
 
-      let initialData: OrderVO | null = null;
+    let initialData: OrderVO | null = null;
 
-  
 
-      if (params && params.length > 0) {
+    if ( params && params.length > 0 ) {
 
-        const firstParam = params[0];
+      const firstParam = params[0];
 
-        // 检查是否是双重数组喵 [[{...}]]
+      // 检查是否是双重数组喵 [[{...}]]
 
-        if (Array.isArray(firstParam) && firstParam.length > 0) {
+      if ( Array.isArray(firstParam) && firstParam.length > 0 ) {
 
-           initialData = (firstParam as Array<OrderVO>)[0];
+        initialData = (firstParam as Array<OrderVO>)[0];
 
-        } else {
+      } else {
 
-           initialData = firstParam as OrderVO;
-
-        }
+        initialData = firstParam as OrderVO;
 
       }
+
+    }
 
     if ( initialData ) {
       console.info('喵！initialData:', JSON.stringify(initialData));
@@ -282,6 +280,7 @@ export struct OrderDetailPage {
           .onClick(() => {
             // 跳转支付
             const params: PaymentPageParams = {
+              orderId: this.order!.id,
               orderNumber: this.order!.number,
               payMethod: 2, // 默认
               totalAmount: this.order!.amount

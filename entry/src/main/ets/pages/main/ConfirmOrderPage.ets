@@ -111,6 +111,7 @@ export struct ConfirmOrderView {
       const result = await OrderService.submitOrder(submitDTO);
 
       const params: PaymentPageParams = {
+        orderId: result.id, // ✨ 传递 ID
         orderNumber: result.orderNumber,
         payMethod: this.payMethod,
         totalAmount: result.orderAmount

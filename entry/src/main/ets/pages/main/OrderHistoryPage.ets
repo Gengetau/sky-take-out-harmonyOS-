@@ -194,7 +194,8 @@ export struct OrderHistoryPage {
       // 卡片头部：店铺名称与状态
       Row() {
         Image($r('app.media.shop_logo')) // 假设有个店铺logo占位，或者直接用图标
-          .width(20).height(20)
+          .width(20)
+          .height(20)
           .objectFit(ImageFit.Contain)
           .margin({ right: 5 })
           .visibility(Visibility.None) // 暂时隐藏，如果没有合适的图标
@@ -210,31 +211,31 @@ export struct OrderHistoryPage {
 
           SymbolGlyph($r('sys.symbol.chevron_right')) // ✨ 加个小箭头提醒跳转喵！
             .fontSize(16)
-            .fontColor(['#999'])
+            .fontColor([ '#999' ])
             .margin({ left: 2, right: 10 })
         }
         .layoutWeight(1)
         .hitTestBehavior(HitTestMode.Block) // ✨ 使用 HitTestMode.Block 阻止事件穿透喵！
         .onClick(() => {
-           if (order.shopId) {
-             this.pageStack.pushPath({ name: 'ShopPage', param: order.shopId });
-           } else {
-             promptAction.showToast({ message: '无法跳转，店铺ID丢失喵😿' });
-           }
+          if ( order.shopId ) {
+            this.pageStack.pushPath({ name: 'ShopPage', param: order.shopId });
+          } else {
+            promptAction.showToast({ message: '无法跳转，店铺ID丢失喵😿' });
+          }
         })
-          
+
         // 状态显示
         Row() {
           Text(this.statusMap[order.status] || '未知状态')
             .fontSize(14)
             .fontColor(this.statusColors[order.status] || '#333')
             .fontWeight(FontWeight.Medium)
-          
+
           if ( order.status === 4 ) { // 派送中显示个小图标
-             SymbolGlyph($r('sys.symbol.paperplane'))
-               .fontSize(14)
-               .fontColor([ this.statusColors[order.status] ])
-               .margin({ left: 2 })
+            SymbolGlyph($r('sys.symbol.paperplane'))
+              .fontSize(14)
+              .fontColor([ this.statusColors[order.status] ])
+              .margin({ left: 2 })
           }
         }
       }
@@ -288,7 +289,7 @@ export struct OrderHistoryPage {
     .borderRadius(12)
     .onClick(() => {
       // ✨ 跳转到订单详情页，并传递整个 OrderVO 对象
-      this.pageStack.pushPath({ name: 'OrderDetailPage', param: [order] });
+      this.pageStack.pushPath({ name: 'OrderDetailPage', param: [ order ] });
     })
   }
 }
