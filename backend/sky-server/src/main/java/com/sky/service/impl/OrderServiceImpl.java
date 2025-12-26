@@ -3,24 +3,22 @@ package com.sky.service.impl;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.json.JSONUtil;
-import com.aliyun.oss.OSS;
 import com.alipay.api.AlipayClient;
 import com.alipay.api.domain.AlipayTradePrecreateModel;
 import com.alipay.api.request.AlipayTradePrecreateRequest;
 import com.alipay.api.response.AlipayTradePrecreateResponse;
+import com.aliyun.oss.OSS;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.sky.config.OSSConfig;
 import com.sky.dto.*;
-import com.sky.entity.AddressBook;
-import com.sky.entity.OrderDetail;
-import com.sky.entity.Orders;
-import com.sky.entity.User;
+import com.sky.entity.*;
 import com.sky.exception.AddressBookBusinessException;
 import com.sky.exception.OrderBusinessException;
 import com.sky.mapper.AddressBookMapper;
 import com.sky.mapper.OrderMapper;
+import com.sky.mapper.ShopMapper;
 import com.sky.properties.AliPayProperties;
 import com.sky.result.Result;
 import com.sky.service.OrderDetailService;
@@ -62,6 +60,9 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
 	private AddressBookMapper addressBookMapper;
 	
 	@Autowired
+	private ShopMapper shopMapper;
+	
+	@Autowired
 	private UserService userService;
 	
 	@Autowired
@@ -69,7 +70,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
 	
 	@Autowired
 	private AliPayProperties aliPayProperties;
-
+	
 	@Autowired
 	private AliPayUtil aliPayUtil;
 	
@@ -149,6 +150,38 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
 		return Result.success(vo);
 	}
 	
+	@Override
+	public Result<OrderVO> userOrderDetail(Long id) {
+		// 1.根据订单id 查询订单
+		Orders order = getById(id);
+		// 2.查询相关菜品
+		List<OrderDetail> orderDetails = orderDetailService.list(new LambdaQueryWrapper<OrderDetail>()
+				.eq(OrderDetail::getOrderId, id));
+		List<String> strings = new ArrayList<>();
+
+		// 处理图片签名
+		if (CollUtil.isNotEmpty(orderDetails)) {
+			orderDetails.forEach(orderDetail -> {
+				strings.add(orderDetail.getName());
+				String signedUrl = AliOssUtil.getSignedUrl(ossClient, orderDetail.getImage(), ossConfig.getBucketName());
+				orderDetail.setImage(signedUrl);
+			});
+		}
+
+		// 3.复制属性
+		OrderVO orderVO = BeanUtil.copyProperties(order, OrderVO.class);
+		orderVO.setOrderDishes(strings.toString());
+		orderVO.setOrderDetailList(orderDetails);
+
+		// 4. 查询并设置店铺名称
+		Shop shop = shopMapper.getById(order.getShopId());
+		if (shop != null) {
+			orderVO.setShopName(shop.getName());
+		}
+
+		return Result.success(orderVO);
+	}
+
 	@Override
 	public Result<OrderVO> getOrderDetailById(Long id) {
 		// 1.根据订单id 查询订单
@@ -394,6 +427,13 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
 				}
 				
 				orderVO.setOrderDetailList(orderDetailList);
+				
+				// 查询店铺名称
+				Shop shop = shopMapper.getById(orders.getShopId());
+				if (shop != null) {
+					orderVO.setShopName(shop.getName());
+				}
+				
 				orderVOList.add(orderVO);
 			}
 		}
@@ -406,18 +446,18 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
 		
 		return Result.success(voPage);
 	}
-
+	
 	@Override
 	public Result<String> checkPayStatus(String orderNumber) throws Exception {
 		// 1. 调用支付宝工具类查询状态
 		String tradeStatus = aliPayUtil.queryOrder(orderNumber);
-
+		
 		// 2. 如果支付成功，且本地状态未更新，则更新
 		if ("TRADE_SUCCESS".equals(tradeStatus) || "TRADE_FINISHED".equals(tradeStatus)) {
 			log.info("主动查询发现订单 {} 已支付，开始修正状态... 喵", orderNumber);
 			paySuccess(orderNumber);
 		}
-
+		
 		return Result.success(tradeStatus);
 	}
 }

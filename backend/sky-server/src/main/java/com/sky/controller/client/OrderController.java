@@ -72,6 +72,19 @@ public class OrderController {
 	}
 
 	/**
+	 * 查询订单详情
+	 *
+	 * @param id
+	 * @return
+	 */
+	@GetMapping("/orderDetail/{id}")
+	@ApiOperation("查询订单详情")
+	public Result<OrderVO> details(@PathVariable("id") Long id) {
+		log.info("查询订单详情喵：{}", id);
+		return orderService.userOrderDetail(id);
+	}
+
+	/**
 	 * 主动查询支付状态
 	 * @param orderNumber
 	 * @return

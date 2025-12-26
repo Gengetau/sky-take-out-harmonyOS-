@@ -23,6 +23,13 @@ public interface OrderService extends IService<Orders> {
 	Result<OrderStatisticsVO> getOrderStatistics();
 	
 	Result<OrderVO> getOrderDetailById(Long id);
+
+	/**
+	 * 用户端订单详情查询
+	 * @param id
+	 * @return
+	 */
+	Result<OrderVO> userOrderDetail(Long id);
 	
 	Result<String> cancel(OrdersCancelDTO dto);
 	
