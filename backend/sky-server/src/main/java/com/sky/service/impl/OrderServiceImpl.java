@@ -2,7 +2,7 @@ package com.sky.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
-import cn.hutool.json.JSONUtil;
+import cn.hutool.core.lang.UUID;
 import com.alipay.api.AlipayClient;
 import com.alipay.api.domain.AlipayTradePrecreateModel;
 import com.alipay.api.request.AlipayTradePrecreateRequest;
@@ -27,7 +27,7 @@ import com.sky.service.UserService;
 import com.sky.utils.AliOssUtil;
 import com.sky.utils.AliPayUtil;
 import com.sky.vo.*;
-import com.sky.websocket.WebSocketServer;
+import com.sky.websocket.MessageDispatcher;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -35,12 +35,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import static com.sky.constant.MessageConstant.*;
+import static com.sky.constant.WebSocketConstant.*;
 import static com.sky.entity.Orders.*;
 
 /**
@@ -75,7 +75,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
 	private AliPayUtil aliPayUtil;
 	
 	@Autowired
-	private WebSocketServer webSocketServer;
+	private MessageDispatcher messageDispatcher;
 	
 	@Autowired
 	private OSS ossClient;
@@ -158,7 +158,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
 		List<OrderDetail> orderDetails = orderDetailService.list(new LambdaQueryWrapper<OrderDetail>()
 				.eq(OrderDetail::getOrderId, id));
 		List<String> strings = new ArrayList<>();
-
+		
 		// 处理图片签名
 		if (CollUtil.isNotEmpty(orderDetails)) {
 			orderDetails.forEach(orderDetail -> {
@@ -167,21 +167,21 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
 				orderDetail.setImage(signedUrl);
 			});
 		}
-
+		
 		// 3.复制属性
 		OrderVO orderVO = BeanUtil.copyProperties(order, OrderVO.class);
 		orderVO.setOrderDishes(strings.toString());
 		orderVO.setOrderDetailList(orderDetails);
-
+		
 		// 4. 查询并设置店铺名称
 		Shop shop = shopMapper.getById(order.getShopId());
 		if (shop != null) {
 			orderVO.setShopName(shop.getName());
 		}
-
+		
 		return Result.success(orderVO);
 	}
-
+	
 	@Override
 	public Result<OrderVO> getOrderDetailById(Long id) {
 		// 1.根据订单id 查询订单
@@ -228,6 +228,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
 		}
 		orders.setStatus(CONFIRMED);
 		updateById(orders);
+		// todo:websocket消息推送
 		return Result.success();
 	}
 	
@@ -376,13 +377,11 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
 			log.info("订单 {} 支付成功，状态已更新喵！", outTradeNo);
 			
 			// 通过WebSocket推送消息给客户端
-			Map<String, Object> map = new HashMap<>();
-			map.put("type", 1); // 1表示支付成功，2表示商家接单/拒单等（将来扩展用）
-			map.put("orderId", order.getId());
-			map.put("content", "订单支付成功");
-			
-			String json = JSONUtil.toJsonStr(map);
-			webSocketServer.sendToClient(order.getUserId().toString(), json);
+			messageDispatcher.sendSystemNotification(
+					order.getUserId(),
+					ORDER_PAY_SUCCESS,
+					order.getId()
+			);
 		}
 	}
 	
