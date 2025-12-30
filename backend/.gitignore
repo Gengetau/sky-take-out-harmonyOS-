@@ -1,0 +1,9 @@
+**/target/
+.idea
+*.iml
+*.class
+*Test.java
+**/application-dev.yml
+**/1765509897084.txt
+**/AliPay.txt
+**/test/

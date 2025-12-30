@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace = "com.sky.mapper.OrderMapper">
+	<select id = "getOrderDataByTimeRange" resultType = "java.util.Map">
+		SELECT SUM(CASE WHEN Status = 5 THEN Amount ELSE 0 END)  AS Turnover,
+			   COUNT(CASE WHEN Status = 5 THEN Id ELSE NULL END) AS Validordercount,
+			   COUNT(Id)                                         AS Totalordercount
+		FROM Orders
+		WHERE Order_Time BETWEEN #{begin} AND #{end}
+	</select>
+	<select id="getTurnoverByDateRange" resultType="map">
+		select date(order_time) as date, sum(amount) as turnover from orders
+		where status = #{status} and order_time between #{begin} and #{end}
+		group by date(order_time)
+	</select>
+	<select id="getOrderStatisticsByDateRange" resultType="map">
+		select date(order_time) as date, count(id) as totalOrderCount, count(case when status = 5 then id end) as validOrderCount from orders
+		where order_time between #{begin} and #{end}
+		group by date(order_time)
+	</select>
+</mapper>

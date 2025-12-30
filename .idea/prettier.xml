@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="PrettierConfiguration">
+    <option name="myConfigurationMode" value="AUTOMATIC" />
+    <option name="myRunOnSave" value="true" />
+    <option name="myRunOnReformat" value="true" />
+    <option name="customIgnorePath" value="D:\IntelliJ IDEA 2025.2.1\home\.prettierrc.json" />
+  </component>
+</project>

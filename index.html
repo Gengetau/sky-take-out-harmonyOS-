@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="no-referrer" />
+    <title>Meow外卖 - HarmonyOS NEXT 鸿蒙原生应用</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; margin: 0; padding: 0; background-color: #f8f8f8; color: #333; }
+        
+        /* 头部样式 */
+        .header { background: linear-gradient(135deg, #FFCC00 0%, #FF9900 100%); padding: 60px 20px; text-align: center; color: #fff; }
+        .logo-placeholder { width: 100px; height: 100px; background: #fff; border-radius: 20px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; font-size: 40px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        h1 { margin: 0; font-size: 28px; font-weight: 800; text-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        p.slogan { font-size: 18px; margin-top: 10px; opacity: 0.9; }
+        
+        /* 按钮样式 */
+        .btn { display: inline-block; background-color: #333; color: #FFCC00; padding: 14px 40px; border-radius: 30px; text-decoration: none; font-weight: bold; margin-top: 25px; transition: transform 0.2s; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+        .btn:hover { transform: scale(1.05); }
+
+        /* 内容容器 */
+        .container { max-width: 900px; margin: -40px auto 0; padding: 0 20px; position: relative; z-index: 2; }
+        .section { background: #fff; padding: 40px; border-radius: 16px; margin-bottom: 30px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
+        h2 { font-size: 20px; border-left: 5px solid #FFCC00; padding-left: 15px; margin-top: 0; }
+        p { line-height: 1.6; color: #666; }
+
+        /* 🔥 截图区域样式 (自动适配图片) */
+        .screenshot-box { display: flex; gap: 20px; overflow-x: auto; padding: 10px 0; -webkit-overflow-scrolling: touch; }
+        .screenshot { 
+            height: 450px; /* 统一高度，让图片看起来整齐 */
+            width: auto; 
+            border-radius: 12px; 
+            border: 1px solid #eee; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08); 
+            transition: transform 0.3s;
+        }
+        .screenshot:hover { transform: translateY(-5px); }
+
+        /* 页脚 */
+        .footer { text-align: center; padding: 30px; color: #999; font-size: 12px; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="logo-placeholder">
+            <img src="苍穹外卖/logo.png">
+        </div>
+        <h1>Meow外卖 (Meow Takeout)</h1>
+        <p class="slogan">基于 HarmonyOS NEXT 纯血鸿蒙打造的极致点餐体验</p>
+        <a href="#" class="btn">下载鸿蒙尝鲜版</a>
+    </div>
+
+    <div class="container">
+        <div class="section">
+            <h2>应用介绍</h2>
+            <p>Meow外卖是一款专为 HarmonyOS NEXT 操作系统量身打造的原生应用。我们充分利用了 ArkTS 语言与 ArkUI 框架的特性，实现了高性能、低功耗的运行体验。</p>
+            <p>主要功能包括：原生微信一键登录、沉浸式店铺浏览、动效丰富的购物车交互、以及基于模拟支付的全流程订单管理。致力于为鸿蒙用户提供丝滑流畅的外卖点餐服务。</p>
+        </div>
+
+        <div class="section">
+            <h2>应用截图</h2>
+            <div class="screenshot-box">
+                <img src="苍穹外卖/开屏.png" alt="苍穹外卖-开屏页" class="screenshot">
+                <img src="苍穹外卖/登录.png" alt="苍穹外卖-微信登录页" class="screenshot">
+                <img src="苍穹外卖/首页.png" alt="苍穹外卖-首页" class="screenshot">
+            </div>
+            <p style="font-size: 12px; color: #999; margin-top: 15px; text-align: center;">*左右滑动查看更多界面 (HarmonyOS NEXT 实机运行截图)</p>
+        </div>
+
+        <div class="section">
+            <h2>联系我们</h2>
+            <p>如果您在使用过程中遇到任何问题，或希望申请加入内测，请联系我们。</p>
+            <p><strong>开发者邮箱:</strong> x1156798139@gmail.com</p>
+            <p><strong>GitHub 仓库:</strong> <a href="https://github.com/Gengetau/sky-take-out-harmonyOS-" target="_blank" style="color: #FF9900;">点击访问开源地址</a></p>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>&copy; 2025 Gengetau Studio. All Rights Reserved.</p>
+        <p>Designed for HarmonyOS NEXT</p>
+    </div>
+
+</body>
+</html>

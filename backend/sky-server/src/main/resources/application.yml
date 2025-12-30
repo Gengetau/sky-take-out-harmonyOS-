@@ -1,0 +1,53 @@
+server:
+  port: 8080
+
+spring:
+  profiles:
+    active: dev
+  main:
+    allow-circular-references: true
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
+  datasource:
+    druid:
+      driver-class-name: ${sky.datasource.driver-class-name}
+      url: jdbc:mysql://${sky.datasource.host}:${sky.datasource.port}/${sky.datasource.database}?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true
+      username: ${sky.datasource.username}
+      password: ${sky.datasource.password}
+
+
+
+# MyBatis / MyBatis Plus 配置
+mybatis-plus:
+  # 映射文件位置 (注意：如果是 MyBatis Plus，这里改用 mybatis-plus)
+  mapper-locations: classpath:mapper/*.xml
+  configuration:
+    # 开启驼峰命名映射 (user_name -> userName)
+    map-underscore-to-camel-case: true
+    # 打印 SQL 日志 (方便调试)
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  type-aliases-package: com.sky.entity
+
+logging:
+  level:
+    com:
+      sky:
+        mapper: debug
+        service: info
+        controller: info
+
+sky:
+  jwt:
+    # 设置jwt签名加密时使用的秘钥
+    admin-secret-key: itcast
+    # 设置jwt过期时间
+    admin-ttl: 7200000
+    # 设置前端传递过来的令牌名称
+    admin-token-name: token
+  alipay:
+    app-id: 9021000158670321
+    app-private-key: MIIEwAIBADANBgkqhkiG9w0BAQEFAASCBKowggSmAgEAAoIBAQCVyUao8O3HauxlstJ1AMb1Aw0a/6vftAoKVGQDs7mtyRqbJzeQ6K+UabjEBE4wd5kYyMZjUzKb9wUeMCiAhEVakm0ugY8r4PEMkqWbyQlNomeG1n6tq9Ph5JTfJfEuNlT5J/lr1/9DC4Hqu8Ebc9rSeiFs6R4XmBKkVR8xPBKWzGDGXmhRRv9B3dma7MHvYHhirn82uuMoYFIebwBHW+Tbr7imwoFnTRj4Y363JNNBO1ssGE6uGj1guVXggAJmwpOXNP1HPQB2258/YuD5OpprWjcMKrEne21BpKxC8gKx2d6lRMeRRvS4LaW2J5JAQX/tjL9SAnwm1CT4qVeRiEJxAgMBAAECggEBAIk2F199TSSnoyRKWpZJ/vfFMsUvvr+vSp9JzVDC2+4B0jidBT7emLDo5BPUKdgmRv24NlwYg7zx3SNZVFDeWjXs+s1ma8PzTH2K/OAnmjke851Gckcfp3pADcwZEsWVieOwJcEP3csKCJoCIpTGXYb/0AzXw/QzH6igPXG5qQGvkVKEdJ5sGYanRbzQDWRaWCkJBjhSXz4pj6fOk4sTOYA7rrRkQcyWT7xZ8bO7PsBA21X05asuoTeDCHQLxHhCgcfzYsp429fMVs4s804tDMMKDN14thilp+WvDD2nbkSZ/2qNo+xXSkVsce1YBlFC4E3kVWQj6DuQNe/dxW3VLe0CgYEA1P7lnX1Vn57Dhsz1WS11uGRQafaLHN1mpC6Ii91KTEkWJxICiOKsQ8FnFrVQRa6ju52pDo1bcslZWyFXTv1SdtSUh8pDcU4mfyG2GYCwI1msxY2Vmgs8NHBoTIFS3C6Hg5vF8Vg1UWFN8vD1XazKu6oe8pU9AlBn15QBg0s9Y8cCgYEAtAdGAEaQsStV710QjeAc3nN3ITS9MZTkNLAYJMuJO82xLOl4g94r2RaN0Z6U7NYmvmDwZaO6D4nIrqo2X7S2rhk9dn2psa3TbautaZlDPrwOz+AmC1tS4bqCC/qx4iDRalA0LonV936AhkzRi+Eumf5a4fVLy8WT4VsJbkTBOAcCgYEAuAgY+s9dGNKDXEhgwJGPwicid7umjOUbF0aBgl9MH8eSVWWxPPalItHLMYqtddej7qoVdNZcKjygcSXImx4zjyqzvvPa+94rUvMctMJE7fZAWlyv4u5MMX7iDyA6KLYnLmZ8S8AMKWlqgTsCtdJjRGyD2tNpaENyxYhDGl77BucCgYEAkG7hb2ktvqZ47HAqztiF8MaMRhzMyRGeQNMim6qb8FnnEpRBNvKxFRruLsXez2BEdyrI05KWvM6bLd6rfv86LNVdJUpOMZm27d71YqoudA9mhspbW3MqPKVonnnD6xrPSE8OfmPhQQ3ByX2qBGJmA/A4M96br+FU8lEacNhCeFMCgYEAg6Ro1wZUez9c1AOPTLewwxzOEcf7NSj7SLwA3kzNkdpGSxVrPaCEogUpX0gQw1QYVKmGFjaLttUxgIm59Qpp3GF1IujDONgYv/0tW3OvZ8Wkk7lbGoeUq0m+Rkom7Rhaa7oe/QFr5kWRMohYHFAdLOpWXJACLxrINgHwOHqZt6U=
+    alipay-public-key: MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAoTKRNYZmRIMnu39r4vjI2r3jdbMI4sx0rbaMglBkhRoix/P4dTQrMz5oy3jLs5rsMl2XO3vF8bUBr1/iBZ0VcrS3bjTbHRqopURh1oTB13wZX4ACsnH5bgvuO7aFn/4e36Xe2q36ND8O/cMl28ivDY3CshPCabpF+NPvNv5qARvxAUSYtVaEzIzc7wbKJiOiiQfV2emaTrZ7AjOa3WTqDECkV8ysdCAAN69gj717FOV3viCwnP74wibfWH6XI2cowoTSRFFpOwJZBBdH8gMAFEUjKYNv6j6l7utbeEw9t4vvJ/z7OqZuxkB8OgKSZPbRGAGbre8gJ6o4PBDGpOFymQIDAQAB
+    notify-url: https://1b15a51c.r8.cpolar.cn/notify/alipay
+    gateway-url: https://openapi-sandbox.dl.alipaydev.com/gateway.do
