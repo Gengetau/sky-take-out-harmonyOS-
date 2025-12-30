@@ -30,8 +30,6 @@ mybatis-plus:
   type-aliases-package: com.sky.entity
 
 logging:
-  file:
-    name: logs/sky-server.log
   level:
     com:
       sky:
