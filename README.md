@@ -1,135 +1,107 @@
-# SkyDelivery - 鸿蒙分布式外卖平台 (Meow 外卖) 🐱🚀
+# SkyDelivery - 鸿蒙分布式外卖全栈平台 (Meow 外卖) 🐱🚀
 
-> 基于 HarmonyOS (OpenHarmony) ArkTS + ArkUI 开发的现代化、分布式外卖点餐应用。
->
-> **"One Super Device" (1+8+N) 理念实践**
+[![HarmonyOS](https://img.shields.io/badge/OS-HarmonyOS%20NEXT-blue.svg)](https://developer.huawei.com/)
+[![Spring Boot](https://img.shields.io/badge/Backend-Spring%20Boot%202.7-brightgreen.svg)](https://spring.io/projects/spring-boot)
+[![License](https://img.shields.io/badge/License-Apache%202.0-orange.svg)](LICENSE)
+
+> **全栈闭环实践**：基于 HarmonyOS NEXT (前端) + Spring Boot (后端) 开发的现代化、全场景外卖点餐系统。
+
+---
+
+## 🧭 导航菜单 (快速切换)
+
+| [📱 鸿蒙客户端 (ArkTS)](#-客户端---harmonyos-next) | [⚙️ 后端服务 (Spring Boot)](#-后端服务---spring-boot) | [🚀 快速部署](#-快速开始) |
+| :---: | :---: | :---: |
+
+---
 
 ## 📖 项目简介
 
-**SkyDelivery** (Meow外卖) 是一款专为 HarmonyOS 设计的分布式外卖应用。它不仅提供了完整的点餐、支付、订单追踪流程，还深入实践了鸿蒙的
-**元服务 (Atomic Service)** 和 **一次开发，多端部署 (One Code, Multi-Device)** 理念。
-
-应用旨在打造流畅、原生、智能的用户体验，支持自动/手动定位、实时 WebSocket 消息推送、沉浸式 UI 交互以及全链路的 API 数据对接。
-
-## ✨ 核心特性
-
-### 1. 🛍️ 多商家平台架构
-
-* **首页重构**：支持金刚区动态分类、轮播图、附近商家列表（基于 GeoHash/经纬度）。
-* **智能定位**：
-    * **自动定位 (GPS)**：利用 `LocationKit` 获取精确经纬度。
-    * **地图选点**：集成 `MapKit`，支持拖拽地图手动选择收货地址，并实现逆地理编码。
-    * **全局联动**：位置变化实时驱动商家列表刷新。
-
-### 2. 🍱 沉浸式点餐体验
-
-* **双联动列表**：经典的左侧分类、右侧菜品联动布局 (类似美团/饿了么)。
-* **复杂商品支持**：支持多规格（辣度、加料）、多属性、套餐商品的选择。
-* **购物车闭环**：支持购物车本地持久化 (RDB)、跨店购物车切换逻辑。
-
-### 3. 💬 实时消息中心 (WebSocket + RDB)
-
-* **全双工通信**：基于 WebSocket 实现用户与商家的实时聊天。
-* **本地存储**：使用 `RelationalStore` (RDB) 本地缓存聊天记录，支持离线查看。
-* **消息状态**：支持未读消息计数、红点提醒、消息发送状态反馈。
-
-### 4. 📦 完整的订单生命周期
-
-* **全流程**：`下单` -> `支付(模拟)` -> `接单/派送(WebSocket推送)` -> `收货` -> `评价`。
-* **状态管理**：清晰的订单状态流转 (待支付、待接单、制作中、派送中、已完成、已取消/退款)。
-* **售后支持**：支持用户主动取消订单，选择取消原因。
-
-### 5. 🎨 极致的 ArkUI 视觉
-
-* **动画效果**：转场动画、购物车抛物线动画(计划)、点赞动效。
-* **响应式布局**：适配不同分辨率和屏幕尺寸。
-* **深色模式**：部分组件支持深色模式适配 (Dark Mode)。
+**SkyDelivery** (Meow外卖) 是一个完整的全栈外卖解决方案。
+- **前端**：深入实践鸿蒙 **元服务** 与 **分布式** 理念，提供沉浸式点餐、地图选点及实时聊天体验。
+- **后端**：采用多商家平台架构，基于 **WebSocket** 构建高性能消息中枢，集成 **支付宝** 支付与自动化退款链路。
 
 ---
 
-## 🏗️ 技术栈
+## 📱 客户端 - HarmonyOS NEXT
 
-* **开发语言**: [ArkTS](https://developer.huawei.com/consumer/cn/arkts) (TypeScript Extended)
-* **UI 框架**: [ArkUI](https://developer.huawei.com/consumer/cn/arkui) (Declarative)
-* **系统能力**:
-    * `@kit.LocationKit`: 定位服务
-    * `@kit.MapKit`: 地图服务
-    * `@kit.NetworkKit`: HTTP 请求 (Axios 封装) & WebSocket
-    * `@kit.ArkData`: RDB 关系型数据库 (SQLite) & Preferences 首选项
-    * `@kit.NotificationKit`: 系统通知 (规划中)
-* **后端 API**: RESTful API + WebSocket Server (需配合 SkyDelivery-Backend 运行)
+### ✨ 核心特性
+*   **🛍️ 多商家联动**：动态分类、基于 GeoHash 的附近商家智能排序。
+*   **📍 智能地址**：集成 `LocationKit` 自动定位与 `MapKit` 手动选点，支持逆地理编码。
+*   **💬 实时消息中心**：全双工 WebSocket 通信 + 本地 RDB 关系型数据库持久化存储聊天记录。
+*   **📦 订单全生命周期**：从下单、模拟支付到 WebSocket 实时驱动的状态追踪。
+*   **🎨 原生视觉**：基于 ArkUI 的响应式布局与高性能动画。
+
+### 🏗️ 客户端技术栈
+*   **语言**: ArkTS (TypeScript Extended)
+*   **框架**: ArkUI (Declarative)
+*   **Kit**: LocationKit, MapKit, NetworkKit, ArkData, NotificationKit (规划中)
 
 ---
 
-## 📂 目录结构 (Key Directories)
+## ⚙️ 后端服务 - Spring Boot
 
+### ✨ 核心特性
+*   **🏢 多商家平台架构**：支持数据层级的商家隔离，具备灵活的店铺状态管理与 GEO 地理位置查询能力。
+*   **📨 实时消息中枢 (Message Center)**：
+    *   **智能分发**：自研 `MessageDispatcher`，支持“用户/商家/系统”多角色身份识别。
+    *   **自动签名**：集成阿里云 OSS，通过 WebSocket 推送的头像均由后端实时生成带签名的安全 URL。
+    *   **双重通知**：支持系统状态通知与商家温馨私聊的并发推送。
+*   **💳 支付与售后闭环**：
+    *   **支付宝集成**：对接支付宝当面付，支持预下单、主动查单及状态修正。
+    *   **自动化退款**：用户取消或商家拒单时，系统自动识别支付状态并执行**原路全额退款**。
+*   **稳定性保障**：完善的拦截器链路（JWT 验证、WebSocket 握手校验）及全链路日志监控体系。
+
+### 🏗️ 后端技术栈
+*   **核心框架**: Spring Boot 2.7+ / Spring MVC
+*   **持久层**: MyBatis Plus / MySQL 8.0
+*   **中间件**: Redis (缓存 + GEO 排序)
+*   **通信**: Spring WebSocket (基于 Handler 模式)
+*   **第三方服务**: 阿里云 OSS (预签名存储), 支付宝 SDK (支付/退款)
+*   **工具**: Hutool (数据处理), Lombok, FastJSON
+
+---
+
+## 📂 目录结构预览
+
+<details>
+<summary><b>点击展开：项目目录树</b></summary>
+
+```text
+SkyDelivery/
+├── SkyDelivery-Frontend/ (HarmonyOS)
+│   └── entry/src/main/ets/
+│       ├── manager/        # 消息中心逻辑
+│       ├── pages/          # UI 页面
+│       └── service/        # 业务逻辑桥接
+└── SkyDelivery-Backend/ (Spring Boot)
+    ├── sky-server/         # 核心业务模块
+    │   ├── handler/        # WebSocket 处理器
+    │   ├── interceptor/    # 握手/权限拦截器
+    │   └── websocket/      # 消息分发中枢
+    ├── sky-pojo/           # DTO/VO/Entity
+    └── sky-common/         # 常量与工具类
 ```
-entry/src/main/ets/
-├── common/             # 公共工具类
-│   ├── constants/      # 常量定义
-│   └── utils/          # 核心工具 (Http, Location, RDB, WebSocket)
-├── manager/            # 业务管理器 (MessageManager - 消息中心逻辑)
-├── model/              # 数据模型
-│   ├── api/            # API 接口定义 & DTO
-│   └── entity/         # 本地实体类 (ShopModel, OrderModel, etc.)
-├── pages/              # 页面组件
-│   ├── main/           # 主业务页 (Home, Order, Mine, Settings)
-│   ├── shop/           # 商店 & 点餐页
-│   ├── message/        # 消息 & 聊天页
-│   └── address/        # 地址管理 & 地图选点页
-├── service/            # 业务逻辑层 (Auth, Shop, Order, Cart - 桥接 UI 与 API)
-└── entryability/       # 应用入口 Ability
-```
+</details>
 
 ---
 
 ## 🚀 快速开始
 
-### 前置要求
+### 1. 启动后端
+1.  修改 `sky-server/src/main/resources/application.yml` 中的 MySQL、Redis、OSS 及 支付宝 配置。
+2.  运行 `SkyApplication`。默认端口 `8080`。
 
-1. **DevEco Studio**: NEXT Beta1 或更高版本 (API 11+)。
-2. **HarmonyOS SDK**: 配套 API 11/12 SDK。
-3. **真机/模拟器**: 建议使用 API 11+ 的模拟器或真机调试定位与地图功能。
-
-### 安装与运行
-
-1. **克隆项目**
-   ```bash
-   git clone https://github.com/your-repo/SkyDelivery.git
-   cd SkyDelivery
-   ```
-
-2. **安装依赖**
-   项目根目录下运行 (通常 DevEco 会自动处理):
-   ```bash
-   ohpm install
-   ```
-
-3. **配置签名**
-   打开 `File` -> `Project Structure` -> `Signing Configs`，勾选 `Automatically generate signature`。
-
-4. **运行后端 (可选)**
-   若需要完整数据体验，请确保 `SkyDelivery-Backend` 服务已在本地或远程服务器启动，并在
-   `entry/src/main/ets/common/constants/Constants.ets` (或类似配置文件) 中修改 `BASE_URL`。
-
-5. **编译运行**
-   点击 DevEco Studio 上方的 `Run 'entry'` 按钮。
-
----
-
-## 📝 待办事项 (TODO)
-
-- [ ] **性能优化**: 列表页引入 `LazyForEach` 进行长列表渲染优化。
-- [ ] **UI 美化**: 为空状态 (Empty State) 添加插画；优化购物车动画。
-- [ ] **元服务适配**: 拆分 Feature 模块，支持卡片 (Service Widget) 独立运行。
-- [ ] **多端适配**: 进一步优化折叠屏和平板布局。
+### 2. 启动前端
+1.  使用 DevEco Studio 打开前端工程。
+2.  在 `Constants.ets` 中修改 `BASE_URL` 为您的服务器 IP。
+3.  点击 **Run 'entry'**。
 
 ---
 
 ## 🤝 贡献与反馈
 
-欢迎提交 Issue 或 Pull Request！
-如果您喜欢这个项目，请给它一个 ⭐️ Star 吧！
+欢迎提交 Issue 或 Pull Request！如果您喜欢这个项目，请给它一个 ⭐️ Star 吧！
 
 **Maintainer**: Gengetsu && Nia (妮娅) 🐱
 **License**: Apache-2.0
