@@ -7,8 +7,9 @@ import { PaySuccessPageParams } from './PaySuccessPage';
  * 支付页面参数
  */
 export interface PaymentPageParams {
+  orderId: number;     // ✨ 新增 orderId
   orderNumber: string;
-  payMethod: number; // 1微信 2支付宝
+  payMethod: number;   // 1微信 2支付宝
   totalAmount: number;
 }
 
@@ -16,10 +17,12 @@ export interface PaymentPageParams {
 export struct PaymentPage {
   @Consume('pageStack') pageStack: NavPathStack;
   @State qrCodeContent: string = ''; // 二维码内容
+  @State orderId: number = 0;        // ✨
   @State orderNumber: string = '';
   @State payMethod: number = 1;
   @State totalAmount: number = 0;
   @State isLoading: boolean = true;
+  @State isCheckingStatus: boolean = false; // 是否正在主动查询状态
   @State timeLeft: number = 15 * 60; // 倒计时 15分钟
   private timer: number = -1;
   // 监听支付成功信号
@@ -46,7 +49,7 @@ export struct PaymentPage {
           Text(this.totalAmount.toFixed(2)).fontSize(36).fontWeight(FontWeight.Bold)
         }.margin({ bottom: 40 })
 
-        // 二维码区域
+        // 二 二维码区域
         if ( this.isLoading ) {
           LoadingProgress().width(50).height(50).color('#FFCC00')
           Text('正在生成二维码...').fontSize(12).fontColor('#999').margin({ top: 10 })
@@ -74,15 +77,16 @@ export struct PaymentPage {
 
         Blank()
 
-        // 底部按钮（兜底用，防止 WS 没收到）
-        Button('我已完成支付')
+        // 底部按钮（主动查询状态 喵！）
+        Button(this.isCheckingStatus ? '正在查询支付状态...' : '我已完成支付')
           .width('90%')
           .height(45)
           .backgroundColor('#FFCC00')
           .fontColor('#333')
           .margin({ bottom: 30 })
+          .enabled(!this.isCheckingStatus)
           .onClick(() => {
-            this.onPaySuccess();
+            this.manualCheckStatus();
           })
 
       }
@@ -95,6 +99,7 @@ export struct PaymentPage {
       this.pageStack = context.pathStack;
       const params = context.pathInfo.param as PaymentPageParams;
       if ( params ) {
+        this.orderId = params.orderId; // ✨
         this.orderNumber = params.orderNumber;
         this.payMethod = params.payMethod;
         this.totalAmount = params.totalAmount;
@@ -126,6 +131,30 @@ export struct PaymentPage {
     }
   }
 
+  /**
+   * 🔍 主动查询支付状态
+   */
+  async manualCheckStatus() {
+    if ( !this.orderNumber ) return;
+    this.isCheckingStatus = true;
+    try {
+      const status = await OrderService.checkPayStatus(this.orderNumber);
+      if ( status === 'TRADE_SUCCESS' ) {
+        promptAction.showToast({ message: '支付成功喵！' });
+        this.onPaySuccess();
+      } else if ( status === 'WAIT_BUYER_PAY' ) {
+        promptAction.showToast({ message: '订单尚未支付，请扫码支付喵' });
+      } else {
+        promptAction.showToast({ message: `支付状态: ${ status }` });
+      }
+    } catch ( e ) {
+      console.error('喵！查询支付状态失败:', e);
+      promptAction.showToast({ message: '查询支付状态失败，请重试' });
+    } finally {
+      this.isCheckingStatus = false;
+    }
+  }
+
   startTimer() {
     this.timer = setInterval(() => {
       if ( this.timeLeft > 0 ) {
@@ -144,10 +173,13 @@ export struct PaymentPage {
 
   onPaySuccess() {
     // 只要触发了这个方法，我们就认为支付成功了
-    // 优先使用当前页面持有的 orderNumber (长串)，如果没有（极少见）再用 WS 推送的 orderId
-    if ( this.orderNumber || this.paySuccessOrderId > 0 ) {
+    // ✨ 这里的 orderId 可能是页面带过来的，也可能是 WS 推送的 paySuccessOrderId
+    const finalId = this.paySuccessOrderId > 0 ? this.paySuccessOrderId : this.orderId;
+    
+    if ( finalId > 0 || this.orderNumber ) {
       const successParams: PaySuccessPageParams = {
-        orderNumber: this.orderNumber || this.paySuccessOrderId.toString(),
+        orderId: finalId, // ✨ 传递 ID
+        orderNumber: this.orderNumber || finalId.toString(),
         amount: this.totalAmount
       };
 

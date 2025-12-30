@@ -1,7 +1,7 @@
 import { DateGroup, TimeGenerator } from '../../common/utils/TimeGenerator';
 import { CartItemDTO, OrderSubmitDTO } from '../../model/api/OrderModel';
 import { AddressBook } from '../../model/entity/AddressBook';
-import { CartItem } from '../../model/entity/ShopModel';
+import { CartItem, ShopVO } from '../../model/entity/ShopModel';
 import { CartService } from '../../service/CartService';
 import { OrderService } from '../../service/OrderService';
 import { AddressEditPage } from '../address/AddressEditPage';
@@ -11,14 +11,17 @@ import { PaymentPageParams } from './PaymentPage';
 import { promptAction } from '@kit.ArkUI';
 
 /**
- * 确认订单弹窗组件
+ * 确认订单弹窗组件 - 多商店重构版 ✨
  */
 @Component
 export struct ConfirmOrderView {
   @Consume('pageStack') pageStack: NavPathStack;
-  // 外部传入的关闭回调，用于关闭 bindSheet
-  onClose: () => void = () => {
-  };
+  
+  @Prop shopId: number;
+  @Prop shopInfo: ShopVO | null;
+
+  onClose: () => void = () => {};
+  
   @State cartService: CartService = CartService.getInstance();
   @StorageProp('CartUpdateSignal') @Watch('onCartUpdate') cartSignal: number = 0;
   @State currentTotalPrice: number = 0;
@@ -26,22 +29,22 @@ export struct ConfirmOrderView {
   @State defaultAddress: AddressBook | null = null;
   @State remark: string = '';
   @State isLoading: boolean = false;
-  // ✨ 新增状态
-  @State payMethod: number = 2; // ✨ 默认改为 2 (支付宝)，因为微信暂时不可用
-  @State tablewareNumber: number = 0; // 餐具数量
-  @State tablewareStatus: number = 1; // 1:按餐量提供, 0:具体数量
-  // ✨ 弹窗控制
+  
+  @State payMethod: number = 2; 
+  @State tablewareNumber: number = 0; 
+  @State tablewareStatus: number = 1; 
+  
   @State showAddressList: boolean = false;
   @State isEditingAddress: boolean = false;
-  @State isAddingRemark: boolean = false; // ✨ 新增备注页控制
+  @State isAddingRemark: boolean = false; 
   @State editingAddressId: number = 0;
-  // ✨ 时间选择相关
+  
   @State showTimeSheet: boolean = false;
   @State timeGroups: DateGroup[] = [];
   @State selectedDateIndex: number = 0;
   @State deliveryTimeText: string = TimeGenerator.getImmediateDeliveryTime();
-  private packAmount: number = 2; // 模拟打包费
-  private deliveryPrice: number = 6; // 模拟配送费
+  
+  private packAmount: number = 2; 
 
   async aboutToAppear() {
     this.onCartUpdate();
@@ -53,7 +56,7 @@ export struct ConfirmOrderView {
     this.currentTotalPrice = this.cartService.totalPrice;
     const price = this.currentTotalPrice || 0;
     const pack = this.packAmount || 0;
-    const delivery = this.deliveryPrice || 0;
+    const delivery = this.shopInfo?.shippingFee || 0;
     const total = price + pack + delivery;
     this.subTotalAmount = isNaN(total) ? 0 : total;
   }
@@ -70,20 +73,15 @@ export struct ConfirmOrderView {
   }
 
   async onSubmitOrder() {
-    console.info('喵！开始提交订单...');
     if (!this.defaultAddress ) {
-      console.warn('喵！未选择地址，终止提交');
       promptAction.showToast({ message: '请选择收货地址喵' });
       return;
     }
     this.isLoading = true;
     try {
-      // 1. 解析时间
       const isImmediate = this.deliveryTimeText.startsWith('立即送出');
       const estimatedTime = this.parseEstimatedTime(this.deliveryTimeText);
-      console.info(`喵！解析预计时间: ${estimatedTime}, 是否立即: ${isImmediate}`);
 
-      // 2. 转换购物车数据
       const cartItemsDTO: CartItemDTO[] = this.cartService.cartItems.map((item: CartItem): CartItemDTO => {
         return {
           dishId: item.dishId,
@@ -95,9 +93,9 @@ export struct ConfirmOrderView {
           image: item.image
         } as CartItemDTO;
       });
-      console.info(`喵！购物车项数: ${cartItemsDTO.length}`);
 
       const submitDTO: OrderSubmitDTO = {
+        shopId: this.shopId,
         addressBookId: this.defaultAddress.id,
         payMethod: this.payMethod,
         remark: this.remark,
@@ -110,38 +108,31 @@ export struct ConfirmOrderView {
         cartItems: cartItemsDTO
       };
 
-      console.info('喵！正在调用 OrderService.submitOrder...');
       const result = await OrderService.submitOrder(submitDTO);
-      console.info('喵！订单提交成功！返回结果:', JSON.stringify(result));
 
-      // ✨ 跳转到支付页面
       const params: PaymentPageParams = {
+        orderId: result.id, // ✨ 传递 ID
         orderNumber: result.orderNumber,
         payMethod: this.payMethod,
         totalAmount: result.orderAmount
       };
 
-      // 🚀 关键修改：先跳转，然后立刻关闭当前的 bindSheet 弹窗！
       this.pageStack.pushPath({ name: 'PaymentPage', param: params });
 
       if (this.onClose) {
-        this.onClose(); // 这行代码会让 ShopPage 里的 showConfirmOrder = false，从而关闭弹窗
+        this.onClose(); 
       }
 
-      // 清空购物车
       this.cartService.clearCart();
 
     } catch ( err ) {
-      console.error('喵！！！下单失败，错误信息:', err);
-      promptAction.showToast({ message: '下单失败，请检查网络喵' });
+      console.error('下单失败:', err);
+      promptAction.showToast({ message: '下单失败，请重试喵' });
     } finally {
       this.isLoading = false;
     }
   }
 
-  /**
-   * 解析配送时间文本为 yyyy-MM-dd HH:mm:ss 格式
-   */
   parseEstimatedTime(text: string): string {
     const now = new Date();
     let targetTime = new Date();
@@ -176,7 +167,6 @@ export struct ConfirmOrderView {
   @Builder
   TimeSheetBuilder() {
     Column() {
-      // 标题
       Text('选择送达时间')
         .fontSize(16)
         .fontWeight(FontWeight.Bold)
@@ -186,7 +176,6 @@ export struct ConfirmOrderView {
         .backgroundColor('#F9F9F9')
 
       Row() {
-        // --- 左侧：日期列表 ---
         List() {
           ForEach(this.timeGroups, (group: DateGroup, index: number) => {
             ListItem() {
@@ -208,7 +197,6 @@ export struct ConfirmOrderView {
         .height('100%')
         .backgroundColor('#F5F5F5')
 
-        // --- 右侧：时间段列表 ---
         List() {
           if ( this.timeGroups.length > 0 && this.timeGroups[this.selectedDateIndex] ) {
             ForEach(this.timeGroups[this.selectedDateIndex].times, (timeStr: string) => {
@@ -254,100 +242,116 @@ export struct ConfirmOrderView {
 
   @Builder
   AddressListBuilder() {
-    AddressListView({
-      selectedId: this.defaultAddress?.id || 0,
-      onSelect: (addr: AddressBook) => {
-        this.defaultAddress = addr;
-        this.showAddressList = false;
-      },
-      onClose: () => {
-        this.showAddressList = false;
-      },
-      onNewAddress: () => {
-        this.editingAddressId = 0;
-        this.showAddressList = false;
-        this.isEditingAddress = true;
-      },
-      onEditAddress: (id: number) => {
-        this.editingAddressId = id;
-        this.showAddressList = false;
-        this.isEditingAddress = true;
-      }
-    })
+    // ✨ 包裹一层明确高度的容器，防止 AddressListView 撑不起来
+    Column() {
+      AddressListView({
+        selectedId: this.defaultAddress?.id || 0,
+        onSelect: (addr: AddressBook) => {
+          console.info('喵！AddressListView 选择地址:', addr.id);
+          this.defaultAddress = addr;
+          this.showAddressList = false;
+        },
+        onClose: () => {
+          console.info('喵！AddressListView 关闭');
+          this.showAddressList = false;
+        },
+        onNewAddress: () => {
+          console.info('喵！AddressListView 新建地址');
+          this.editingAddressId = 0;
+          this.showAddressList = false;
+          this.isEditingAddress = true;
+        },
+        onEditAddress: (id: number) => {
+          console.info('喵！AddressListView 编辑地址:', id);
+          this.editingAddressId = id;
+          this.showAddressList = false;
+          this.isEditingAddress = true;
+        }
+      })
+    }
+    .width('100%')
+    .height('100%')
   }
 
   build() {
     NavDestination() {
-      Stack() {
-        if ( this.isEditingAddress ) {
-          AddressEditPage({
-            editId: this.editingAddressId,
-            onClose: () => {
-              this.isEditingAddress = false;
-              this.showAddressList = true;
-            },
-            onSaveSuccess: () => {
-              this.isEditingAddress = false;
-              this.showAddressList = true;
-            }
-          })
-        } else if ( this.isAddingRemark ) {
-          RemarkPage({
-            remarkText: this.remark,
-            onSave: (val: string) => {
-              this.remark = val;
-            },
-            onClose: () => {
-              this.isAddingRemark = false;
-            }
-          })
-        } else {
-          Column() {
-            Row() {
-              Text('确认订单')
-                .fontSize(18).fontWeight(FontWeight.Bold)
-                .layoutWeight(1).textAlign(TextAlign.Center)
-            }
-            .width('100%').height(50).padding({ left: 16, right: 16 }).backgroundColor('#F1F3F5')
-
-            Scroll() {
-              Column({ space: 12 }) {
-                this.AddressSection()
-                this.DeliveryTimeSection()
-                this.PayMethodSection()
-                this.OrderDetailSection()
-                this.TablewareSection()
-                this.RemarkSection()
-                Blank().height(80)
+      Column() {
+        // ✨ 将 TimeSheet 绑定到内层 Stack 上，避免与 AddressList 冲突
+        Stack() {
+          if ( this.isEditingAddress ) {
+            AddressEditPage({
+              editId: this.editingAddressId,
+              onClose: () => {
+                this.isEditingAddress = false;
+                this.showAddressList = true;
+              },
+              onSaveSuccess: () => {
+                this.isEditingAddress = false;
+                this.showAddressList = true;
               }
-              .padding(12).width('100%')
-            }
-            .layoutWeight(1).backgroundColor('#F1F3F5')
+            })
+          } else if ( this.isAddingRemark ) {
+            RemarkPage({
+              remarkText: this.remark,
+              onSave: (val: string) => {
+                this.remark = val;
+              },
+              onClose: () => {
+                this.isAddingRemark = false;
+              }
+            })
+          } else {
+            Column() {
+              Row() {
+                Text('确认订单')
+                  .fontSize(18).fontWeight(FontWeight.Bold)
+                  .layoutWeight(1).textAlign(TextAlign.Center)
+              }
+              .width('100%').height(50).padding({ left: 16, right: 16 }).backgroundColor('#F1F3F5')
 
-            this.BottomBar()
+              Scroll() {
+                Column({ space: 12 }) {
+                  this.AddressSection()
+                  this.DeliveryTimeSection()
+                  this.PayMethodSection()
+                  this.OrderDetailSection()
+                  this.TablewareSection()
+                  this.RemarkSection()
+                  Blank().height(80)
+                }
+                .padding(12).width('100%')
+              }
+              .layoutWeight(1).backgroundColor('#F1F3F5')
+
+              this.BottomBar()
+            }
+            .width('100%')
+            .height('100%')
+            .backgroundColor('#F1F3F5')
           }
-          .width('100%')
-          .height('100%')
-          .backgroundColor('#F1F3F5')
-          .bindSheet(this.showAddressList, this.AddressListBuilder(), {
-            height: SheetSize.MEDIUM,
-            dragBar: true,
-            backgroundColor: '#F1F3F5',
-            onDisappear: () => {
-              this.showAddressList = false;
-            }
-          })
-          .bindSheet(this.showTimeSheet, this.TimeSheetBuilder(), {
-            height: 400,
-            dragBar: true,
-            backgroundColor: Color.White,
-            onDisappear: () => {
-              this.showTimeSheet = false;
-            }
-          })
         }
+        .width('100%').layoutWeight(1) 
+        .bindSheet(this.showTimeSheet, this.TimeSheetBuilder(), {
+          height: 400,
+          dragBar: true,
+          backgroundColor: Color.White,
+          onDisappear: () => {
+            this.showTimeSheet = false;
+          }
+        })
       }
-      .width('100%').height('100%')
+      .width('100%')
+      .height('100%')
+      // ✨ 将 AddressSheet 绑定到最外层 Column，物理隔离两个 Sheet
+      .bindSheet(this.showAddressList, this.AddressListBuilder(), {
+        height: 600, 
+        dragBar: true,
+        backgroundColor: '#F1F3F5',
+        onDisappear: () => {
+          console.info('喵！Sheet onDisappear triggered');
+          this.showAddressList = false;
+        }
+      })
     }.hideTitleBar(true)
   }
 
@@ -373,6 +377,7 @@ export struct ConfirmOrderView {
     .borderRadius(8)
     .alignItems(HorizontalAlign.Start)
     .onClick(() => {
+      console.info('喵！点击了地址栏，准备显示地址列表');
       this.showAddressList = true;
     })
   }
@@ -399,7 +404,9 @@ export struct ConfirmOrderView {
   @Builder
   OrderDetailSection() {
     Column() {
-      Text('苍穹外卖').fontSize(14).fontWeight(FontWeight.Bold).margin({ bottom: 10 })
+      // 🏠 展示真实店名喵
+      Text(this.shopInfo?.name || '商家').fontSize(14).fontWeight(FontWeight.Bold).margin({ bottom: 10 })
+      
       ForEach(this.cartService.cartItems, (item: CartItem) => {
         Row() {
           Image(item.image)
@@ -429,7 +436,8 @@ export struct ConfirmOrderView {
       Row() {
         Text('配送费').fontSize(14);
         Blank();
-        Text(`¥${ this.deliveryPrice }`).fontSize(14).fontWeight(FontWeight.Bold)
+        // 🚚 展示真实配送费喵
+        Text(`¥${ this.shopInfo?.shippingFee ?? 0 }`).fontSize(14).fontWeight(FontWeight.Bold)
       }.width('100%').margin({ top: 8 })
 
       Divider().color('#f5f5f5').margin({ top: 10, bottom: 10 })
@@ -453,19 +461,18 @@ export struct ConfirmOrderView {
         Text('支付方式').fontSize(14).fontWeight(FontWeight.Bold)
       }.width('100%').margin({ bottom: 10 })
 
-      // ✨ 微信支付 - 禁用状态
       Row() {
         Image($r('app.media.wechat'))
           .width(24)
           .height(24)
           .margin({ right: 10 })
-          .grayscale(1) // 变灰
-          .opacity(0.5) // 半透明
+          .grayscale(1) 
+          .opacity(0.5) 
 
         Text('微信支付')
           .fontSize(14)
           .layoutWeight(1)
-          .fontColor('#999') // 文字变灰
+          .fontColor('#999') 
 
         Text('(维护中)')
           .fontSize(12)
@@ -474,7 +481,7 @@ export struct ConfirmOrderView {
 
         Radio({ value: '1', group: 'pay' })
           .checked(this.payMethod === 1)
-          .enabled(false) // 禁用单选框
+          .enabled(false) 
       }
       .width('100%')
       .padding({ top: 10, bottom: 10 })
@@ -482,7 +489,6 @@ export struct ConfirmOrderView {
         promptAction.showToast({ message: '微信支付暂不可用，请使用支付宝喵' });
       })
 
-      // ✨ 支付宝 - 正常状态 (默认选中)
       Row() {
         Image($r('app.media.alipay')).width(24).height(24).margin({ right: 10 })
         Text('支付宝').fontSize(14).layoutWeight(1)

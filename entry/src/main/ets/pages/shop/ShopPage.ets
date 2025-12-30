@@ -1,39 +1,45 @@
 import { promptAction } from '@kit.ArkUI';
-import { CategoryWithItems } from '../../model/entity/MockData';
-import { DishVO } from '../../model/entity/ShopModel';
+import { CategoryWithItems, DishVO, ShopVO } from '../../model/entity/ShopModel';
 import { CartService } from '../../service/CartService';
 import { ShopService } from '../../service/ShopService';
-import { ConfirmOrderView } from '../main/ConfirmOrderPage'; // 引入 ConfirmOrderView
+import { ConfirmOrderView } from '../main/ConfirmOrderPage'; 
 import { CartBar } from './components/CartBar';
 import { DishCard } from './components/DishCard';
 import { FlavorDialog } from './components/FlavorDialog';
 import { ShopHeader } from './components/ShopHeader';
 
 /**
- * 商店主页面
+ * 商店主页面 - 多商店平台重构版 ✨
  */
 @Component
 export struct ShopPage {
   @Consume('pageStack') pageStack: NavPathStack;
+  
   // 1.数据源
   @State categoryList: CategoryWithItems[] = [];
+  @State shopInfo: ShopVO | null = null;
+  @State shopId: number = 0;
+
   // 2.状态变量
-  @State currentCategoryIndex: number = 0; // 当前选中的分类索引
-  @State isLoading: boolean = true; // 加个 loading 状态
-  @State isShopOpen: boolean = false; // 店铺是否营业
-  // ✨ 新增：控制确认订单弹窗的显示
+  @State currentCategoryIndex: number = 0; 
+  @State isLoading: boolean = true; 
+  @State isShopOpen: boolean = false; 
   @State showConfirmOrder: boolean = false;
+  
   // 3.控制器
   private rightScroller: Scroller = new Scroller();
+  
   // 4.服务实例
   @Provide('cartService') cartService: CartService = CartService.getInstance();
+  
   // 5.标志变量
   private isClickScroll: boolean = false;
   @State currentDish: DishVO | null = null;
+  
   // 定义弹窗控制器
   private flavorController: CustomDialogController = new CustomDialogController({
     builder: FlavorDialog({
-      dish: this.currentDish!, // 传进去
+      dish: this.currentDish!, 
       onConfirm: (flavors: string) => {
         if ( this.currentDish ) {
           this.cartService.addItem(this.currentDish, flavors);
@@ -41,44 +47,63 @@ export struct ShopPage {
         }
       }
     }),
-    alignment: DialogAlignment.Center, // 中间弹出
-    customStyle: true // 使用自定义样式 (去默认圆角和边距)
+    alignment: DialogAlignment.Center, 
+    customStyle: true 
   });
 
   async aboutToAppear() {
+    // 🔍 从路由参数中获取 shopId
+    const params = this.pageStack.getParamByName('ShopPage') as number[];
+    if (params && params.length > 0) {
+      this.shopId = params[params.length - 1]; 
+      
+      // 🛒 切换购物车到当前店铺喵！
+      this.cartService.switchShop(this.shopId);
+    }
+    
     this.loadData();
   }
 
   async loadData() {
+    if (this.shopId <= 0) {
+      promptAction.showToast({ message: '商家信息异常喵' });
+      return;
+    }
+    
     this.isLoading = true;
 
-    // 并发请求，提升加载速度
+    try {
+      // 🚀 核心改动：拉取数据时带上 shopId，确保分类是该商家的喵！
+      const results = await Promise.all([
+        ShopService.getShopStatus(),
+        ShopService.getShopData(this.shopId), // 传递 shopId
+        ShopService.getShopDetail(this.shopId)
+      ]);
 
-    const results = await Promise.all([
+      this.isShopOpen = results[0] === 1;
+      
+      const data = results[1];
+      if ( data.length > 0 ) {
+        this.categoryList = data;
+      }
+      
+      this.shopInfo = results[2];
+      if (this.shopInfo) {
+        this.isShopOpen = this.shopInfo.status === 1;
+      }
 
-      ShopService.getShopStatus(),
-
-      ShopService.getShopData()
-
-    ]);
-
-
-    this.isShopOpen = results[0] === 1;
-
-    console.info("营业状态，{}", this.isShopOpen)
-
-    const data = results[1];
-
-    if ( data.length > 0 ) {
-      this.categoryList = data;
+    } catch (e) {
+      console.error('加载店铺数据失败喵', e);
+    } finally {
+      this.isLoading = false;
     }
-    this.isLoading = false;
   }
 
-  // ✨ 构建半模态弹窗的内容
   @Builder
   ConfirmOrderBuilder() {
     ConfirmOrderView({
+      shopId: this.shopId,
+      shopInfo: this.shopInfo,
       onClose: () => {
         this.showConfirmOrder = false;
       }
@@ -88,24 +113,23 @@ export struct ShopPage {
   build() {
     NavDestination() {
       Column() {
-        // 店招牌
-        ShopHeader({ isShopOpen: this.isShopOpen })
+        ShopHeader({ 
+          isShopOpen: this.isShopOpen,
+          shopInfo: this.shopInfo,
+          shopId: this.shopId // ✨ 传入 shopId 以触发关注状态检查喵！
+        })
 
         if ( this.isLoading ) {
-          // ⏳ 加载中显示一个 Loading
           Column() {
             LoadingProgress().width(40).height(40).color('#0D9FFB')
             Text('正在准备美食喵...').fontSize(12).fontColor(Color.Gray).margin({ top: 10 })
           }
           .width('100%').layoutWeight(1).justifyContent(FlexAlign.Center)
         } else {
-          // 联动列表
           Row() {
-            // 左侧：分类列表
             List({ initialIndex: 0 }) {
               ForEach(this.categoryList, (item: CategoryWithItems, index: number) => {
                 ListItem() {
-                  // 分类item布局
                   Text(item.category.name)
                     .fontSize(14)
                     .fontColor(this.currentCategoryIndex === index ? '#333333' : '#666666')
@@ -116,36 +140,31 @@ export struct ShopPage {
                 .height(50)
                 .backgroundColor(this.currentCategoryIndex === index ? '#FFFFFF' : '#F8F8F8')
                 .onClick(() => {
-                  // 点击左侧事件
                   this.selectCategory(index);
                 })
               })
             }
-            .width('25%') // 左侧占25%
+            .width('25%') 
             .height('100%')
             .backgroundColor('#F8F8F8')
-            .scrollBar(BarState.Off) // 滚动条关闭
+            .scrollBar(BarState.Off) 
 
-            // 右侧：菜品列表
             List({ scroller: this.rightScroller }) {
               ForEach(this.categoryList, (group: CategoryWithItems, groupIndex: number) => {
-                // 分组组件，一个分类对应一个Group
                 ListItemGroup({ header: this.RightGroupHeader(group.category.name) }) {
                   ForEach(group.items, (dish: DishVO) => {
                     ListItem() {
-                      // 【最终方案】不再需要传递 cartService
                       DishCard({
                         dish: dish,
-                        isShopOpen: this.isShopOpen, // 传递营业状态
-                        isSetmeal: group.category.type === 2, // ✨ 传递是否为套餐
-                        // ✨ 正确的父子通讯方式：父组件把一个函数（能力）传给子组件
+                        isShopOpen: this.isShopOpen, 
+                        isSetmeal: group.category.type === 2, 
                         onOpenFlavorDialog: (dishToOpen: DishVO) => {
                           this.currentDish = dishToOpen;
                           this.flavorController.open();
                         }
                       })
                     }
-                  }, (dish: DishVO) => dish.id.toString()) // ✨ 关键修正：为ForEach的每一项提供唯一的key！
+                  }, (dish: DishVO) => dish.id.toString()) 
                 }
               })
             }
@@ -153,26 +172,22 @@ export struct ShopPage {
             .height('100%')
             .backgroundColor(Color.White)
             .scrollBar(BarState.Off)
-            .sticky(StickyStyle.Header) // 让分组标题吸顶
+            .sticky(StickyStyle.Header) 
             .onScrollIndex((firstIndex: number) => {
-              // 滑动右侧逻辑:  反向更新左侧
               if (!this.isClickScroll ) {
                 this.currentCategoryIndex = firstIndex;
               }
             })
-            // 监听滚动停止，重置标志变量
             .onScrollStop(() => {
               this.isClickScroll = false;
             })
           }
-          .layoutWeight(1) // 占满中间空间
+          .layoutWeight(1) 
           .alignItems(VerticalAlign.Top)
         }
 
-        // 底部购物车
         CartBar({
           isShopOpen: this.isShopOpen,
-          // ✨ 连接弹窗逻辑
           onCheckout: () => {
             this.showConfirmOrder = true;
           }
@@ -180,11 +195,9 @@ export struct ShopPage {
       }
       .height('100%')
       .backgroundColor(Color.White)
-      // ✨ 绑定半模态转场
       .bindSheet($$this.showConfirmOrder, this.ConfirmOrderBuilder(), {
-        height: SheetSize.LARGE, // 大概是屏幕的 90% 左右，也可以自定义 height: 600
-        dragBar: true, // 显示顶部的小横条，允许拖拽关闭
-        // showCloseIcon: true, // ✨ 开启原生关闭图标
+        height: SheetSize.LARGE, 
+        dragBar: true, 
         backgroundColor: '#F1F3F5',
         onDisappear: () => {
           this.showConfirmOrder = false;
@@ -194,7 +207,6 @@ export struct ShopPage {
     .hideTitleBar(true)
   }
 
-  // 辅助构建器：右侧分组标题
   @Builder
   RightGroupHeader(title: string) {
     Row() {
@@ -207,13 +219,9 @@ export struct ShopPage {
     .backgroundColor('#F3F4F6')
   }
 
-  //  核心逻辑：点击左侧，右侧滚动
   selectCategory(index: number) {
-    this.isClickScroll = true; // 标记：这是点击触发的滚动
+    this.isClickScroll = true; 
     this.currentCategoryIndex = index;
-
-    // 让右侧列表滚动到 指定分组的头部
-    // ListItemGroup 的索引逻辑：index 对应的就是第几个 Group
-    this.rightScroller.scrollToIndex(index, true); // true 表示平滑滚动
+    this.rightScroller.scrollToIndex(index, true); 
   }
 }

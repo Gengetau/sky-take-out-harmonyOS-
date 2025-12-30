@@ -19,6 +19,24 @@ export class CategoryVO {
 }
 
 /**
+ * 商家/店铺模型 (API 1.2 & 1.3)
+ */
+export interface ShopVO {
+  id: number;
+  name: string;
+  avatar: string; // 临时 OSS 预签名 URL
+  score: number; // 评分
+  monthlySales: number; // 月售
+  deliveryPrice: number; // 起送价
+  shippingFee: number; // 配送费
+  averageDeliveryTime: number; // 平均配送时间 (分钟)
+  distance?: string; // 距离 (由后端计算，如 "1.2km")
+  status: number; // 0: 休息中, 1: 营业中
+  description?: string; // 店铺公告/描述
+  address?: string; // 店铺详细地址
+}
+
+/**
  * 菜品口味模型
  */
 export class DishFlavor {
@@ -120,6 +138,20 @@ export class SetMealVO {
     this.status = status;
     this.description = description;
     this.image = image;
+  }
+}
+
+/**
+ * 📦 聚合类：分类 + 该分类下的菜品列表
+ * (原 MockData 中迁移至此 ✨)
+ */
+export class CategoryWithItems {
+  category: CategoryVO;
+  items: DishVO[];
+
+  constructor(category: CategoryVO, items: DishVO[]) {
+    this.category = category;
+    this.items = items;
   }
 }
 

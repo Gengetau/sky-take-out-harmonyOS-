@@ -13,6 +13,7 @@ export class AuthService {
   private static readonly USER_INFO_URL = '/client/user/info';
   private static readonly LOGOUT_URL = '/client/user/logout';
   private static readonly EDIT_INFO_URL = '/client/user/edit';
+  private static readonly CANCEL_URL = '/client/user/cancel'; // 🆔 注销接口 (新增)
 
   /**
    * 📨 发送验证码
@@ -90,9 +91,18 @@ export class AuthService {
       // 3. 清理内存状态
       AppStorage.delete('token');
       AppStorage.delete('userId');
+      AppStorage.delete('currentUserInfo');
       // 4. 断开 WebSocket
       WebSocketService.getInstance().close();
       console.info('喵！本地登录数据已清理，WS 已断开');
     }
+  }
+
+  /**
+   * 🗑️ 注销账号 (API 9.5)
+   */
+  static async cancelAccount(): Promise<string> {
+    const emptyBody: Record<string, string> = {};
+    return await HttpUtil.post<string>(AuthService.CANCEL_URL, emptyBody);
   }
 }

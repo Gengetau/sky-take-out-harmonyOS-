@@ -128,6 +128,9 @@ export struct MinePage {
                   .fontSize(12)
                   .fontColor([ '#999' ])
               }
+              .onClick(() => {
+                this.pageStack.pushPath({ name: 'OrderHistoryPage' });
+              })
             }
             .width('100%')
             .padding({
@@ -139,11 +142,19 @@ export struct MinePage {
 
             // 保持图标设置不动的四个入口
             Flex({ justifyContent: FlexAlign.SpaceAround }) {
-              this.OrderIconItem($r('sys.symbol.doc_plaintext'), '全部订单')
-              this.OrderIconItem($r('sys.symbol.clock'), '待收货')
-              this.OrderIconItem($r('sys.symbol.ellipsis_message'), '待评价')
+              this.OrderIconItem($r('sys.symbol.doc_plaintext'), '全部订单', () => {
+                this.pageStack.pushPath({ name: 'OrderHistoryPage' });
+              })
+              // 待收货 -> status: 4 (派送中)
+              this.OrderIconItem($r('sys.symbol.clock'), '待收货', () => {
+                this.pageStack.pushPath({ name: 'OrderHistoryPage', param: 4 });
+              })
+              // 待评价 -> status: 5 (已完成)
+              this.OrderIconItem($r('sys.symbol.ellipsis_message'), '待评价', () => {
+                this.pageStack.pushPath({ name: 'OrderHistoryPage', param: 5 });
+              })
 
-              // 售后图标 - 使用SVG
+              // 售后图标 -> status: 6 (已取消)
               Column({ space: 5 }) {
                 Image($r('app.media.ic_refund'))
                   .width(28)
@@ -153,7 +164,7 @@ export struct MinePage {
                   .fontColor('#333')
               }
               .onClick(() => {
-                promptAction.showToast({ message: '退款/售后 页面正在装修喵~' });
+                this.pageStack.pushPath({ name: 'OrderHistoryPage', param: 6 });
               })
             }
             .padding({ bottom: 16 })
@@ -190,6 +201,12 @@ export struct MinePage {
         })
 
         ListItemGroup({ header: this.GroupHeader('更多服务') }) {
+          ListItem() {
+            this.FuncItem($r('sys.symbol.heart'), '我的关注', '', () => {
+              this.pageStack.pushPath({ name: 'MyFollowPage' });
+            })
+          }
+
           ListItem() {
             this.FuncItem($r('sys.symbol.person_badge_plus'), '商家入驻')
           }
@@ -230,7 +247,7 @@ export struct MinePage {
 
   // 订单入口小组件
   @Builder
-  OrderIconItem(icon: Resource, title: string) {
+  OrderIconItem(icon: Resource, title: string, onClick?: () => void) {
     Column({ space: 6 }) {
       SymbolGlyph(icon)
         .fontSize(26)
@@ -240,7 +257,11 @@ export struct MinePage {
         .fontColor('#444')
     }
     .onClick(() => {
-      promptAction.showToast({ message: `${ title } 页面正在装修喵~` });
+      if (onClick) {
+        onClick();
+      } else {
+        promptAction.showToast({ message: `${ title } 页面正在装修喵~` });
+      }
     })
   }
 

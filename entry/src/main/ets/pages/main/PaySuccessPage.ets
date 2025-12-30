@@ -1,16 +1,19 @@
+import { OrderVO } from '../../model/api/OrderModel';
 
 /**
  * 支付成功页面参数
  */
 export interface PaySuccessPageParams {
-  orderNumber: string; // ✨ 改为 string，防止精度丢失，且语义更准确
+  orderId: number;     // ✨ 新增 orderId，用于精准查询详情
+  orderNumber: string; // 订单号 (显示用)
   amount: number;
 }
 
 @Component
 export struct PaySuccessPage {
   @Consume('pageStack') pageStack: NavPathStack;
-  @State orderNumber: string = ''; // ✨
+  @State orderId: number = 0;
+  @State orderNumber: string = '';
   @State amount: number = 0;
 
   build() {
@@ -53,7 +56,7 @@ export struct PaySuccessPage {
           Row() {
             Text('订单编号').fontSize(14).fontColor('#999')
             Blank()
-            Text(this.orderNumber).fontSize(14).fontColor('#333') // 直接显示字符串
+            Text(this.orderNumber).fontSize(14).fontColor('#333') 
           }
           .width('100%')
           .padding({ top: 15, bottom: 15 })
@@ -86,9 +89,24 @@ export struct PaySuccessPage {
             .fontColor('#666')
             .border({ width: 1, color: '#DDD' })
             .onClick(() => {
-              // TODO: 跳转到订单详情或订单列表喵
-              this.pageStack.clear();
-              this.pageStack.pushPath({ name: 'MainTabs' });
+              // ✨ 跳转到订单详情页
+              if (this.orderId > 0) {
+                // 构造一个包含 ID 的简易 OrderVO 对象，详情页会自动通过接口刷新完整数据喵！
+                const orderData: OrderVO = {
+                  id: this.orderId,
+                  number: this.orderNumber,
+                  amount: this.amount,
+                  status: 2, // 已支付一般状态为待接单
+                  orderTime: '',
+                  orderDetailList: [],
+                  shopId: 0 // 后端详情接口会补齐
+                };
+                // 使用 replacePath 以免点击返回又回到支付成功页喵
+                this.pageStack.replacePath({ name: 'OrderDetailPage', param: [orderData] });
+              } else {
+                // 兜底方案：回列表
+                this.pageStack.replacePath({ name: 'OrderHistoryPage' });
+              }
             })
         }
         .margin({ bottom: 50 })
@@ -102,7 +120,8 @@ export struct PaySuccessPage {
       this.pageStack = context.pathStack;
       const params = context.pathInfo.param as PaySuccessPageParams;
       if (params) {
-        this.orderNumber = params.orderNumber; // 直接赋值
+        this.orderId = params.orderId;
+        this.orderNumber = params.orderNumber;
         this.amount = params.amount;
       }
     })

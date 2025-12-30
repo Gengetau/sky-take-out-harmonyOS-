@@ -37,6 +37,7 @@ export interface UserInfoVO {
   avatar: string; // 阿里云 OSS 预签名 URL
   profile: string; // 📝 用户账号简介
   createTime: string;
+  idNumber?: string; // 🆔 身份证号 (修正为 idNumber 喵)
 }
 
 /**
