@@ -3,6 +3,7 @@ package com.sky.service.impl;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.lang.UUID;
+import cn.hutool.core.util.StrUtil;
 import com.alipay.api.AlipayClient;
 import com.alipay.api.domain.AlipayTradePrecreateModel;
 import com.alipay.api.request.AlipayTradePrecreateRequest;
@@ -228,7 +229,10 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
 		}
 		orders.setStatus(CONFIRMED);
 		updateById(orders);
-		// todo:websocket消息推送
+		
+		// 推送消息：商家已接单
+		messageDispatcher.sendOrderNotification(orders.getUserId(), ORDER_CONFIRMED, orders.getId());
+		
 		return Result.success();
 	}
 	
@@ -245,6 +249,11 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
 		orders.setRejectionReason(dto.getRejectionReason());
 		orders.setCancelTime(LocalDateTime.now());
 		updateById(orders);
+		
+		// 推送消息：商家拒单
+		String content = ORDER_REJECTION + (StrUtil.isNotBlank(dto.getRejectionReason()) ? ": " + dto.getRejectionReason() : "喵");
+		messageDispatcher.sendOrderNotification(orders.getUserId(), content, orders.getId());
+		
 		return Result.success();
 	}
 	
@@ -256,6 +265,10 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
 		}
 		orders.setStatus(COMPLETED);
 		updateById(orders);
+		
+		// 推送消息：订单已完成
+		messageDispatcher.sendOrderNotification(orders.getUserId(), ORDER_COMPLETED, orders.getId());
+		
 		return Result.success();
 	}
 	
@@ -267,6 +280,10 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
 		}
 		orders.setStatus(DELIVERY_IN_PROGRESS);
 		updateById(orders);
+		
+		// 推送消息：正在派送
+		messageDispatcher.sendOrderNotification(orders.getUserId(), ORDER_DELIVERY, orders.getId());
+		
 		return Result.success();
 	}
 	
