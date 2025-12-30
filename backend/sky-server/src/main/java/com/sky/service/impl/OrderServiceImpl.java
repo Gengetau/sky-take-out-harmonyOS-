@@ -210,8 +210,20 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
 			throw new OrderBusinessException(ORDER_STATUS_ERROR);
 		}
 		// 3.已接单,但已付款,需要退款
+		// 妮娅注：这里的逻辑是“取消订单”，如果订单状态符合取消条件且已付款，则退款。
 		if (orders.getPayStatus().equals(PAID)) {
-			// TODO 退款操作
+			// 调用支付宝退款
+			String refundAmount = orders.getAmount().toString();
+			String outRequestNo = UUID.randomUUID().toString();
+			boolean refundSuccess = aliPayUtil.refund(orders.getNumber(), refundAmount, outRequestNo);
+			
+			if (refundSuccess) {
+				log.info("订单取消：退款成功 喵！订单号：{}", orders.getNumber());
+				orders.setPayStatus(REFUND);
+			} else {
+				log.error("订单取消：退款失败 喵！订单号：{}", orders.getNumber());
+				throw new OrderBusinessException("支付宝退款失败，请联系管理员喵");
+			}
 		}
 		// 4.更新订单状态
 		orders.setStatus(CANCELLED);
@@ -243,7 +255,18 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
 			throw new OrderBusinessException(ORDER_STATUS_ERROR);
 		}
 		if (orders.getPayStatus().equals(PAID)) {
-			// TODO 用户已付款,需要退款
+			// 用户已付款,需要退款
+			String refundAmount = orders.getAmount().toString();
+			String outRequestNo = UUID.randomUUID().toString();
+			boolean refundSuccess = aliPayUtil.refund(orders.getNumber(), refundAmount, outRequestNo);
+			
+			if (refundSuccess) {
+				log.info("商家拒单：退款成功 喵！订单号：{}", orders.getNumber());
+				orders.setPayStatus(REFUND);
+			} else {
+				log.error("商家拒单：退款失败 喵！订单号：{}", orders.getNumber());
+				throw new OrderBusinessException("支付宝退款失败，请联系管理员喵");
+			}
 		}
 		orders.setStatus(CANCELLED);
 		orders.setRejectionReason(dto.getRejectionReason());
