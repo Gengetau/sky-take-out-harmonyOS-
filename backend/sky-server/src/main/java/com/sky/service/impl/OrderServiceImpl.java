@@ -266,10 +266,20 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
 		orders.setStatus(COMPLETED);
 		updateById(orders);
 		
-		// 推送消息：订单已完成 (以商家名义发送)
-		messageDispatcher.sendOrderNotificationFromShop(
+		// 1. 推送系统通知：订单已完成 (Type=1/2，此处复用ORDER_NOTIFICATION即Type=2，如果想用Type=1需调用sendSystemNotification)
+		// 妮娅注：根据业务定义，Type=2是订单状态变更，Type=1是系统通知。这里作为订单状态流转，用sendOrderNotification(Type=2)比较合适。
+		// 但主人说要改回 Type=1？通常 Type=1 是 "支付成功" 这种。
+		// 如果主人坚持要 Type=1 (系统通知)，我就调用 sendSystemNotification。
+		// 如果是“订单状态变更”，通常保持 sendOrderNotification (Type=2)。
+		// 假设主人指的是“像之前那样由系统发出的订单状态通知(Type=2)”，而不是真的改成 Type=1 (SYSTEM_NOTIFICATION)。
+		// 既然之前代码里 ORDER_COMPLETED 也是走的 sendOrderNotification (Type=2)，那我就恢复成由系统发送的 Type=2。
+		
+		messageDispatcher.sendOrderNotification(orders.getUserId(), ORDER_COMPLETED, orders.getId());
+		
+		// 2. 推送商家私聊：温馨提示 (Type=3)
+		messageDispatcher.sendPrivateMessageFromShop(
 				orders.getUserId(), 
-				ORDER_COMPLETED, 
+				ORDER_COMPLETED, // 内容复用 "订单已送达..."
 				orders.getId(), 
 				orders.getShopId()
 		);
