@@ -38,7 +38,8 @@ public class SessionManager {
 	 */
 	public void addSession(String userId, WebSocketSession session) {
 		sessionPool.put(userId, session);
-		log.info("用户上线:{},当前在线人数:{}", userId, sessionPool.size());
+		log.info("【WebSocket会话】用户上线: [{}], 当前在线人数: {}, 全部在线用户: {}", 
+				userId, sessionPool.size(), sessionPool.keySet());
 	}
 	
 	/**
@@ -49,7 +50,7 @@ public class SessionManager {
 	public WebSocketSession removeSession(String userId) {
 		WebSocketSession removedSession = sessionPool.remove(userId);
 		if (removedSession != null) {
-			log.info("用户：{}下线，当前在线人数：{}", userId, sessionPool.size());
+			log.info("【WebSocket会话】用户下线: [{}], 当前在线人数: {}", userId, sessionPool.size());
 		}
 		return removedSession;
 	}
@@ -69,9 +70,10 @@ public class SessionManager {
 				synchronized (webSocketSession) {
 					webSocketSession.sendMessage(textMessage);
 				}
+				log.info("【WebSocket下行】消息成功送达给 [{}]: {}", userId, jsonStr);
 				return true;
 			} catch (IOException e) {
-				log.error("给用户{}发送消息失败:{}", userId, e.getMessage());
+				log.error("【WebSocket下行】给用户[{}]发送消息失败喵: {}", userId, e.getMessage());
 				return false;
 			}
 		}
@@ -84,7 +86,8 @@ public class SessionManager {
 	public void sendMessageToUser(String userId, MessageDTO messageDTO) {
 		boolean sent = sendMessageIfExist(userId, messageDTO);
 		if (!sent) {
-			log.warn("用户{}不在线或会话已关闭，消息发送失败", userId);
+			log.warn("【WebSocket下行】推送失败！目标用户 [{}] 不在线。当前池中用户: {}", 
+					userId, sessionPool.keySet());
 		}
 	}
 	
@@ -94,6 +97,7 @@ public class SessionManager {
 	public void broadcast(MessageDTO messageDTO) {
 		String jsonStr = JSONUtil.toJsonStr(messageDTO);
 		TextMessage textMessage = new TextMessage(jsonStr);
+		log.info("【WebSocket广播】开始广播消息: {}", jsonStr);
 		sessionPool.forEach((userId, session) -> {
 			if (session.isOpen()) {
 				try {
@@ -101,7 +105,7 @@ public class SessionManager {
 						session.sendMessage(textMessage);
 					}
 				} catch (IOException e) {
-					log.error("广播消息给{}失败：{}", userId, e.getMessage());
+					log.error("【WebSocket广播】发送给[{}]失败喵：{}", userId, e.getMessage());
 				}
 			}
 		});

@@ -35,12 +35,16 @@ public class MyWebSocketHandle extends TextWebSocketHandler {
 	@Override
 	public void afterConnectionEstablished(WebSocketSession session) throws Exception {
 		// 1.从attributes取出sid
-		String sid = (String) session.getAttributes().get("sid");
+		Object sidObj = session.getAttributes().get("sid");
+		String sid = sidObj != null ? String.valueOf(sidObj) : null;
+		
+		log.info("【WebSocket连接】SessionID: {}, 远程地址: {}, 携带SID: [{}]", 
+				session.getId(), session.getRemoteAddress(), sid);
+		
 		if (sid != null && !sid.isEmpty()) {
-			log.info("Handle获取到用户:{}", sid);
 			sessionManager.addSession(sid, session);
 		} else {
-			log.warn("未找到sid，拒绝链接");
+			log.warn("【WebSocket连接】未找到有效sid，拒绝链接喵");
 			session.close(CloseStatus.BAD_DATA);
 		}
 	}
@@ -55,6 +59,7 @@ public class MyWebSocketHandle extends TextWebSocketHandler {
 	@Override
 	public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
 		String sid = (String) session.getAttributes().get("sid");
+		log.info("【WebSocket断开】SID: [{}], 原因状态: {}", sid, status);
 		if (sid != null && !sid.isEmpty()) {
 			sessionManager.removeSession(sid);
 		}
@@ -70,17 +75,13 @@ public class MyWebSocketHandle extends TextWebSocketHandler {
 	@Override
 	protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
 		String payload = message.getPayload();
-		log.info("收到消息:{}", payload);
-		
-		// 获取发送者SID
 		String sid = (String) session.getAttributes().get("sid");
+		log.info("【WebSocket上行】收到来自[{}]的消息: {}", sid, payload);
+		
 		if (sid != null) {
-			// 分发消息
 			messageDispatcher.dispatch(payload, sid);
 		} else {
-			log.warn("无法识别发送者身份，忽略消息");
+			log.warn("【WebSocket上行】无法识别发送者身份，忽略消息喵");
 		}
 	}
-	
-	
 }

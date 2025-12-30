@@ -1,5 +1,6 @@
 package com.sky.interceptor;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServerHttpResponse;
 import org.springframework.stereotype.Component;
@@ -23,16 +24,21 @@ public class SidHandshakeInterceptor implements HandshakeInterceptor {
 	public boolean beforeHandshake(ServerHttpRequest request, ServerHttpResponse response, WebSocketHandler wsHandler, Map<String, Object> attributes) throws Exception {
 		// 1.获取请求路径
 		String path = request.getURI().getPath();
+		log.info("【WebSocket握手】收到请求，完整URI: {}, Path: {}", request.getURI(), path);
+		
 		// 2.解析sid
 		String sid = path.substring(path.lastIndexOf("/") + 1);
+		
 		// 3.存入attributes
 		attributes.put("sid", sid);
-		log.info("检测到握手请求，sid={}", sid);
+		log.info("【WebSocket握手】解析得到 sid=[{}], 已存入 attributes 喵", sid);
 		return true;
 	}
 	
 	@Override
 	public void afterHandshake(ServerHttpRequest request, ServerHttpResponse response, WebSocketHandler wsHandler, Exception exception) {
-	
+		if (exception != null) {
+			log.error("【WebSocket握手】握手后发生异常喵：", exception);
+		}
 	}
 }
