@@ -2,6 +2,7 @@ import { promptAction } from '@kit.ArkUI';
 import { OrderDetailVO, OrderVO } from '../../model/api/OrderModel';
 import { OrderService } from '../../service/OrderService';
 import { PaymentPageParams } from './PaymentPage';
+import { ChatPageParam } from '../message/ChatPage'; // ✨ 引入 ChatPageParam
 
 @Component
 export struct OrderDetailPage {
@@ -153,6 +154,24 @@ export struct OrderDetailPage {
           .fontSize(16)
           .fontWeight(FontWeight.Bold)
           .layoutWeight(1)
+
+        // ✨ 联系商家按钮
+        Row() {
+          SymbolGlyph($r('sys.symbol.message'))
+            .fontSize(16)
+            .fontColor(['#007DFF'])
+            .margin({ right: 4 })
+          Text('联系').fontSize(12).fontColor('#007DFF')
+        }
+        .margin({ right: 16 })
+        .onClick(() => {
+          if (this.order!.shopId) {
+            const sessionId = `shop_${this.order!.shopId}`;
+            const title = this.order!.shopName || '商家';
+            // 订单详情里没有头像，传空字符串，ChatPage会处理默认头像
+            this.pageStack.pushPath({ name: 'ChatPage', param: new ChatPageParam(sessionId, title, '') });
+          }
+        })
 
         Row() {
           Text('进店').fontSize(12).fontColor('#666')

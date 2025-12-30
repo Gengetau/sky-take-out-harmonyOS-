@@ -1,17 +1,19 @@
 import { promptAction } from '@kit.ArkUI';
 import { ShopVO } from '../../../model/entity/ShopModel';
 import { ShopService } from '../../../service/ShopService';
+import { ChatPageParam } from '../../message/ChatPage';
 
 /**
  * 商店头部重构版 - 展现真实商户风采喵 ✨
  */
 @Component
 export struct ShopHeader {
+  @Consume('pageStack') pageStack: NavPathStack;
   @Prop isShopOpen: boolean;
   @Prop shopInfo: ShopVO | null;
-  @State isFollowed: boolean = false; // ✨ 关注状态
+  @State isFollowed: boolean = false; // 关注状态
 
-  // 监听 shopInfo 变化，重新检查关注状态
+  // 监听 shopId 变化，重新检查关注状态
   @Watch('checkFollowStatus') @Prop shopId: number = 0; 
 
   async aboutToAppear() {
@@ -89,12 +91,7 @@ export struct ShopHeader {
                 .fontSize(10)
                 .fontColor(Color.White)
                 .backgroundColor('#4CD964')
-                .padding({
-                  left: 4,
-                  right: 4,
-                  top: 2,
-                  bottom: 2
-                })
+                .padding({ left: 4, right: 4, top: 2, bottom: 2 })
                 .borderRadius(2)
                 .margin({ left: 8 })
             } else {
@@ -102,12 +99,7 @@ export struct ShopHeader {
                 .fontSize(10)
                 .fontColor(Color.White)
                 .backgroundColor('#AAAAAA')
-                .padding({
-                  left: 4,
-                  right: 4,
-                  top: 2,
-                  bottom: 2
-                })
+                .padding({ left: 4, right: 4, top: 2, bottom: 2 })
                 .borderRadius(2)
                 .margin({ left: 8 })
             }
@@ -146,22 +138,45 @@ export struct ShopHeader {
         .layoutWeight(1)
         .alignItems(HorizontalAlign.Start)
 
-        // (3) 右侧收藏/电话按钮
-        Column() {
-          // ✨ 根据关注状态切换图标和颜色
-          SymbolGlyph(this.isFollowed ? $r('sys.symbol.heart_fill') : $r('sys.symbol.heart'))
-            .fontSize(20)
-            .fontColor([ this.isFollowed ? '#FF3B30' : '#333333' ]) // 已关注显示红色
-            .margin({ bottom: 4 })
+        // (3) 右侧操作区 (关注 + 联系)
+        Row({ space: 12 }) { 
+          // 关注按钮
+          Column() {
+            SymbolGlyph(this.isFollowed ? $r('sys.symbol.heart_fill') : $r('sys.symbol.heart'))
+              .fontSize(20)
+              .fontColor([ this.isFollowed ? '#FF3B30' : '#333333' ]) // 已关注显示红色
+              .margin({ bottom: 4 })
             
-          Text(this.isFollowed ? '已关注' : '关注')
-            .fontSize(10)
-            .fontColor(this.isFollowed ? '#FF3B30' : '#333')
-        }
-        .justifyContent(FlexAlign.Center)
-        .width(40)
-        .onClick(() => this.toggleFollow())
+            Text(this.isFollowed ? '已关注' : '关注')
+              .fontSize(10)
+              .fontColor(this.isFollowed ? '#FF3B30' : '#333')
+          }
+          .justifyContent(FlexAlign.Center)
+          .onClick(() => this.toggleFollow())
 
+          // 联系商家按钮
+          Column() {
+            SymbolGlyph($r('sys.symbol.message'))
+              .fontSize(20)
+              .fontColor(['#007DFF'])
+              .margin({ bottom: 4 })
+            Text('联系')
+              .fontSize(10)
+              .fontColor('#333')
+          }
+          .justifyContent(FlexAlign.Center)
+          .onClick(() => {
+            if (this.shopInfo) {
+              const sessionId = `shop_${this.shopInfo.id}`;
+              const title = this.shopInfo.name;
+              const avatar = this.shopInfo.avatar || '';
+              // 跳转到聊天页
+              this.pageStack.pushPath({ name: 'ChatPage', param: new ChatPageParam(sessionId, title, avatar) });
+            }
+          })
+
+        }
+        .padding({ left: 5 })
       }
       .width('94%')
       .height(80)

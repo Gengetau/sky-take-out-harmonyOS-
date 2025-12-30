@@ -1,6 +1,7 @@
 import { common } from '@kit.AbilityKit';
 import { HttpUtil } from '../common/utils/HttpUtil';
 import { PreferencesUtil } from '../common/utils/PreferencesUtil';
+import { AuthService } from '../service/AuthService';
 import { CartService } from '../service/CartService';
 import { WebSocketService } from '../service/WebSocketService';
 import { AddressBookPage } from './address/AddressBookPage';
@@ -10,9 +11,9 @@ import { AddressMapPage } from './address/AddressMapPage';
 import { Login } from './Login';
 import { AccountSecurityPage } from './main/AccountSecurityPage';
 import { ConfirmOrderView } from './main/ConfirmOrderPage';
+import { MyFollowPage } from './main/MyFollowPage';
 import { OrderDetailPage } from './main/OrderDetailPage';
 import { OrderHistoryPage } from './main/OrderHistoryPage';
-import { MyFollowPage } from './main/MyFollowPage';
 
 import { PaymentPage } from './main/PaymentPage';
 import { PaySuccessPage } from './main/PaySuccessPage';
@@ -20,6 +21,9 @@ import { RemarkPage } from './main/RemarkPage';
 import { SettingsPage } from './main/SettingsPage';
 import { UserProfilePage } from './main/UserProfilePage';
 import { MainTabs } from './MainTabs';
+
+import { ChatPage } from './message/ChatPage'; // ✨ 引入 ChatPage
+import { SystemNotifyPage } from './message/SystemNotifyPage'; // ✨ 引入 SystemNotifyPage
 import { ShopPage } from './shop/ShopPage';
 
 @Entry
@@ -64,6 +68,10 @@ struct Index {
       OrderDetailPage()
     } else if ( name === 'MyFollowPage' ) {
       MyFollowPage()
+    } else if ( name === 'ChatPage' ) { // ✨ 注册聊天页
+      ChatPage()
+    } else if ( name === 'SystemNotifyPage' ) { // ✨ 注册系统通知页
+      SystemNotifyPage()
     }
   }
 
@@ -113,8 +121,20 @@ struct Index {
         console.info(`喵！[Index] Token有效，UserId=${ userId }`);
 
         if ( userId > 0 ) {
-          // ✅ 数据完整，连接 WS 并进入主页
+          // ✅ 1. 数据完整，连接 WS
           WebSocketService.getInstance().connect(userId, '192.168.0.210:8080');
+
+          // ✅ 2. 获取并缓存用户信息 (主要是头像)
+          try {
+            const userInfo = await AuthService.getUserInfo();
+            if ( userInfo && userInfo.avatar ) {
+              AppStorage.setOrCreate('userAvatar', userInfo.avatar);
+              console.info('喵！用户头像已缓存:', userInfo.avatar);
+            }
+          } catch ( e ) {
+            console.warn('喵！获取用户信息失败，使用默认头像');
+          }
+
           targetName = 'MainTabs';
         } else {
           console.warn('喵！！！[Index] 发现脏数据：有Token但UserId为0。正在清除数据...');

@@ -1,7 +1,7 @@
 # 后端接口文档 (客户端)
 
-> **版本**: 1.7
-> **日期**: 2025-12-26
+> **版本**: 1.8
+> **日期**: 2025-12-30
 > **作者**: 妮娅 (Nia)
 
 本文档旨在说明 SkyDelivery (苍穹外卖) 项目客户端所需的主要后端接口。
@@ -345,11 +345,14 @@
 ### 7.3 历史订单查询
 
 - **接口地址**: `GET /client/order/historyOrders`
-- **功能描述**: 分页查询当前登录用户的历史订单，支持按状态过滤。返回结果为标准的 MyBatis-Plus 分页对象结构。
+- **功能描述**: 分页查询当前登录用户的历史订单，支持按状态过滤。
+- **状态常量说明**:
+  - **订单状态 (`status`)**: 1:待付款, 2:待接单, 3:已接单, 4:派送中, 5:已完成, 6:已取消
+  - **支付状态 (`payStatus`)**: 0:未支付, 1:已支付, 2:已退款 (REFUND)
 - **请求参数 (Query)**:
   - `page` (int): 页码
   - `pageSize` (int): 每页记录数
-  - `status` (Integer, 可选): 订单状态 (1:待付款, 2:待接单, 3:已接单, 4:派送中, 5:已完成, 6:已取消)
+  - `status` (Integer, 可选): 订单状态
 - **返回数据**: `Result<Page<OrderVO>>`
 - **响应示例**:
   ```json
@@ -419,11 +422,11 @@
       "amount": 108.00,
       "orderTime": "2025-12-25 10:00:00",
       "orderDetailList": [
-         { 
-           "name": "老坛酸菜鱼", 
-           "image": "https://<your-bucket>.oss-cn-beijing.aliyuncs.com/xxx.png?OSSAccessKeyId=...", 
-           "number": 1, 
-           "amount": 56.00 
+         {
+           "name": "老坛酸菜鱼",
+           "image": "https://<your-bucket>.oss-cn-beijing.aliyuncs.com/xxx.png?OSSAccessKeyId=...",
+           "number": 1,
+           "amount": 56.00
          }
       ]
     }
@@ -491,14 +494,68 @@
 ### 10.1 建立 WebSocket 连接
 
 - **连接地址**: `ws://{host}:{port}/ws/{userId}`
+- **功能描述**: 建立长连接，用于接收系统的实时推送消息（如订单状态变更、支付成功通知等）。
+- **参数说明**:
+  - `userId`: 当前登录用户的 ID。**注意：商家端连接时，路径最后的 {userId} 需携带 `S_` 前缀（如 `ws://.../ws/S_1`）喵。**
 
-### 10.2 消息格式 (后端推送)
+### 10.2 消息协议结构 (MessageDTO)
 
-- **消息示例**:
-  ```json
-  {
-    "type": 1,
-    "orderId": 1001,
-    "content": "订单支付成功"
-  }
-  ```
+系统推送及私聊消息将统一采用以下 JSON 结构：
+
+| 字段名         | 类型    | 说明                                            |
+|:------------|:------|:----------------------------------------------|
+| `type`      | Integer | 消息类型 (1:系统通知, 2:订单状态, 3:私聊消息)             |
+| `msgId`     | String  | 消息唯一ID (UUID)                                 |
+| `senderId`  | Long    | 发送者ID (0 代表系统)                               |
+| `senderRole`| Integer | **发送者身份** (0:用户, 1:商家, 2:系统)               |
+| `receiverId`| Long    | 接收者ID                                        |
+| `receiverRole`| Integer| **接收者身份** (0:用户, 1:商家)                      |
+| `senderName`| String  | 发送者显示名称                                     |
+| `senderAvatar`| String| 发送者头像 (带签名的有效URL)                        |
+| `content`   | String  | 消息正文                                        |
+| `timestamp` | Long    | 发送时间戳                                       |
+| `orderId`   | Long    | 关联的订单ID (可选)                                |
+
+### 10.3 消息类型定义
+
+- **1 (系统通知)**: 支付成功通知、退款通知。
+- **2 (订单状态)**: 商家接单、派送中、订单送达（由系统名义发出）。
+- **3 (私聊消息)**: 商家私信（如送达时的温馨提示）、用户与商家对话。
+
+### 10.4 特殊业务逻辑说明 (重要 ‼️)
+
+#### 10.4.1 订单送达通知
+当订单送达时，后端会同时推送 **两条** 消息：
+1. **Type 2**: 系统发出的状态通知（"订单已送达"）。
+2. **Type 3**: 商家发出的私聊消息（"订单已送达，祝您用餐愉快喵"），此消息会存入用户的私聊会话列表中。
+
+### 10.5 消息示例
+
+#### 10.5.1 订单完成时的双重通知示例
+
+**消息 1 (系统通知 - Type 2):**
+```json
+{
+  "type": 2,
+  "msgId": "uuid-1",
+  "senderId": 0,
+  "senderRole": 2,
+  "senderName": "Meow外卖",
+  "content": "订单已送达，祝您用餐愉快喵",
+  "orderId": 202512290001
+}
+```
+
+**消息 2 (商家私聊 - Type 3):**
+```json
+{
+  "type": 3,
+  "msgId": "uuid-2",
+  "senderId": 1,
+  "senderRole": 1,
+  "senderName": "肯德基宅急送",
+  "senderAvatar": "https://oss.../kfc.png?...",
+  "content": "订单已送达，祝您用餐愉快喵",
+  "orderId": 202512290001
+}
+```
