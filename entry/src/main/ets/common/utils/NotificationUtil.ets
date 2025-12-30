@@ -44,7 +44,7 @@ export class NotificationUtil {
       deliveryTime: new Date().getTime(),
       showDeliveryTime: true,
       groupName: 'meow_delivery_msg', // 消息分组
-      slotType: notificationManager.SlotType.SOCIAL_COMMUNICATION // 社交类型通知，优先级较高
+      // slotType: notificationManager.SlotType.SOCIAL_COMMUNICATION // 社交类型通知，优先级较高
     };
 
     try {
