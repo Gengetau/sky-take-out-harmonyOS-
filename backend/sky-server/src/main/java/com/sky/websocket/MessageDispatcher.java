@@ -147,6 +147,50 @@ public class MessageDispatcher {
     }
 
     /**
+     * 发送订单状态通知（以商家身份发送给用户）
+     * 
+     * @param toUserId 接收者ID (用户)
+     * @param content 内容
+     * @param orderId 订单ID
+     * @param shopId 发送者ID (商家)
+     */
+    public void sendOrderNotificationFromShop(Long toUserId, String content, Long orderId, Long shopId) {
+        // 1. 查询商家信息以获取头像和名称
+        Shop shop = shopMapper.selectById(shopId);
+        String senderName = "商家";
+        String senderAvatar = null;
+        
+        if (shop != null) {
+            senderName = shop.getName();
+            String avatarKey = shop.getAvatar();
+            if (StrUtil.isNotBlank(avatarKey)) {
+                 try {
+                     String cleanKey = AliOssUtil.extractKeyFromUrl(avatarKey);
+                     senderAvatar = AliOssUtil.getSignedUrl(ossClient, cleanKey, ossConfig.getBucketName());
+                 } catch (Exception e) {
+                     log.error("商家头像签名失败", e);
+                 }
+            }
+        }
+
+        MessageDTO message = MessageDTO.builder()
+                .type(WebSocketConstant.ORDER_NOTIFICATION)
+                .msgId(IdUtil.simpleUUID())
+                .senderId(shopId)
+                .senderRole(WebSocketConstant.ROLE_SHOP) // 设定为商家身份
+                .senderName(senderName)
+                .senderAvatar(senderAvatar)
+                .content(content)
+                .timestamp(System.currentTimeMillis())
+                .orderId(orderId)
+                .receiverId(toUserId)
+                .receiverRole(WebSocketConstant.ROLE_USER)
+                .build();
+                
+        sessionManager.sendMessageToUser(String.valueOf(toUserId), message);
+    }
+
+    /**
      * 获取系统头像的签名URL
      */
     private String getSignedSystemAvatar() {

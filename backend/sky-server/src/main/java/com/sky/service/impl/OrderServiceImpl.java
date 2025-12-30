@@ -266,8 +266,13 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
 		orders.setStatus(COMPLETED);
 		updateById(orders);
 		
-		// 推送消息：订单已完成
-		messageDispatcher.sendOrderNotification(orders.getUserId(), ORDER_COMPLETED, orders.getId());
+		// 推送消息：订单已完成 (以商家名义发送)
+		messageDispatcher.sendOrderNotificationFromShop(
+				orders.getUserId(), 
+				ORDER_COMPLETED, 
+				orders.getId(), 
+				orders.getShopId()
+		);
 		
 		return Result.success();
 	}
