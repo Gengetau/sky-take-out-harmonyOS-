@@ -48,4 +48,10 @@ public class User implements Serializable {
 	// 注册时间
 	@TableField(fill = FieldFill.INSERT)
 	private LocalDateTime createTime;
+	
+	// 是否注销 0:否 1:是
+	private Integer isDeleted;
+	
+	// 注销时间
+	private LocalDateTime cancelTime;
 }

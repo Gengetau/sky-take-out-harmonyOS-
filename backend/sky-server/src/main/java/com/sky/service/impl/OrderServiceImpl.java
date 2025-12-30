@@ -2,31 +2,33 @@ package com.sky.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
-import cn.hutool.json.JSONUtil;
+import cn.hutool.core.lang.UUID;
+import cn.hutool.core.util.StrUtil;
 import com.alipay.api.AlipayClient;
 import com.alipay.api.domain.AlipayTradePrecreateModel;
 import com.alipay.api.request.AlipayTradePrecreateRequest;
 import com.alipay.api.response.AlipayTradePrecreateResponse;
+import com.aliyun.oss.OSS;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.sky.config.OSSConfig;
 import com.sky.dto.*;
-import com.sky.entity.AddressBook;
-import com.sky.entity.OrderDetail;
-import com.sky.entity.Orders;
-import com.sky.entity.User;
+import com.sky.entity.*;
 import com.sky.exception.AddressBookBusinessException;
 import com.sky.exception.OrderBusinessException;
 import com.sky.mapper.AddressBookMapper;
 import com.sky.mapper.OrderMapper;
+import com.sky.mapper.ShopMapper;
 import com.sky.properties.AliPayProperties;
 import com.sky.result.Result;
 import com.sky.service.OrderDetailService;
 import com.sky.service.OrderService;
 import com.sky.service.UserService;
 import com.sky.utils.AliOssUtil;
+import com.sky.utils.AliPayUtil;
 import com.sky.vo.*;
-import com.sky.websocket.WebSocketServer;
+import com.sky.websocket.MessageDispatcher;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -34,12 +36,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import static com.sky.constant.MessageConstant.*;
+import static com.sky.constant.WebSocketConstant.*;
 import static com.sky.entity.Orders.*;
 
 /**
@@ -59,6 +61,9 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
 	private AddressBookMapper addressBookMapper;
 	
 	@Autowired
+	private ShopMapper shopMapper;
+	
+	@Autowired
 	private UserService userService;
 	
 	@Autowired
@@ -68,7 +73,16 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
 	private AliPayProperties aliPayProperties;
 	
 	@Autowired
-	private WebSocketServer webSocketServer;
+	private AliPayUtil aliPayUtil;
+	
+	@Autowired
+	private MessageDispatcher messageDispatcher;
+	
+	@Autowired
+	private OSS ossClient;
+	
+	@Autowired
+	private OSSConfig ossConfig;
 	
 	@Override
 	public Result<Page<OrderVO>> getOrdersByPage(OrdersPageQueryDTO dto) {        // 1.获取分页数据
@@ -138,6 +152,38 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
 	}
 	
 	@Override
+	public Result<OrderVO> userOrderDetail(Long id) {
+		// 1.根据订单id 查询订单
+		Orders order = getById(id);
+		// 2.查询相关菜品
+		List<OrderDetail> orderDetails = orderDetailService.list(new LambdaQueryWrapper<OrderDetail>()
+				.eq(OrderDetail::getOrderId, id));
+		List<String> strings = new ArrayList<>();
+		
+		// 处理图片签名
+		if (CollUtil.isNotEmpty(orderDetails)) {
+			orderDetails.forEach(orderDetail -> {
+				strings.add(orderDetail.getName());
+				String signedUrl = AliOssUtil.getSignedUrl(ossClient, orderDetail.getImage(), ossConfig.getBucketName());
+				orderDetail.setImage(signedUrl);
+			});
+		}
+		
+		// 3.复制属性
+		OrderVO orderVO = BeanUtil.copyProperties(order, OrderVO.class);
+		orderVO.setOrderDishes(strings.toString());
+		orderVO.setOrderDetailList(orderDetails);
+		
+		// 4. 查询并设置店铺名称
+		Shop shop = shopMapper.getById(order.getShopId());
+		if (shop != null) {
+			orderVO.setShopName(shop.getName());
+		}
+		
+		return Result.success(orderVO);
+	}
+	
+	@Override
 	public Result<OrderVO> getOrderDetailById(Long id) {
 		// 1.根据订单id 查询订单
 		Orders order = getById(id);
@@ -155,6 +201,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
 		return Result.success(orderVO);
 	}
 	
+	
 	@Override
 	public Result<String> cancel(OrdersCancelDTO dto) {
 		// 1.根据id查询订单
@@ -164,14 +211,31 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
 			throw new OrderBusinessException(ORDER_STATUS_ERROR);
 		}
 		// 3.已接单,但已付款,需要退款
+		// 妮娅注：这里的逻辑是“取消订单”，如果订单状态符合取消条件且已付款，则退款。
 		if (orders.getPayStatus().equals(PAID)) {
-			// TODO 退款操作
+			// 调用支付宝退款
+			String refundAmount = orders.getAmount().toString();
+			String outRequestNo = UUID.randomUUID().toString();
+			boolean refundSuccess = aliPayUtil.refund(orders.getNumber(), refundAmount, outRequestNo);
+			
+			if (refundSuccess) {
+				log.info("订单取消：退款成功 喵！订单号：{}", orders.getNumber());
+				orders.setPayStatus(REFUND);
+			} else {
+				log.error("订单取消：退款失败 喵！订单号：{}", orders.getNumber());
+				throw new OrderBusinessException("支付宝退款失败，请联系管理员喵");
+			}
 		}
 		// 4.更新订单状态
 		orders.setStatus(CANCELLED);
 		orders.setCancelReason(dto.getCancelReason());
 		orders.setCancelTime(LocalDateTime.now());
 		updateById(orders);
+		
+		// 推送系统通知：订单已取消
+		String notifyContent = (orders.getPayStatus().equals(REFUND)) ? ORDER_REFUND : ORDER_CANCELLED;
+		messageDispatcher.sendSystemNotification(orders.getUserId(), notifyContent, orders.getId());
+		
 		return Result.success();
 	}
 	
@@ -183,6 +247,10 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
 		}
 		orders.setStatus(CONFIRMED);
 		updateById(orders);
+		
+		// 推送消息：商家已接单
+		messageDispatcher.sendOrderNotification(orders.getUserId(), ORDER_CONFIRMED, orders.getId());
+		
 		return Result.success();
 	}
 	
@@ -193,12 +261,28 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
 			throw new OrderBusinessException(ORDER_STATUS_ERROR);
 		}
 		if (orders.getPayStatus().equals(PAID)) {
-			// TODO 用户已付款,需要退款
+			// 用户已付款,需要退款
+			String refundAmount = orders.getAmount().toString();
+			String outRequestNo = UUID.randomUUID().toString();
+			boolean refundSuccess = aliPayUtil.refund(orders.getNumber(), refundAmount, outRequestNo);
+			
+			if (refundSuccess) {
+				log.info("商家拒单：退款成功 喵！订单号：{}", orders.getNumber());
+				orders.setPayStatus(REFUND);
+			} else {
+				log.error("商家拒单：退款失败 喵！订单号：{}", orders.getNumber());
+				throw new OrderBusinessException("支付宝退款失败，请联系管理员喵");
+			}
 		}
 		orders.setStatus(CANCELLED);
 		orders.setRejectionReason(dto.getRejectionReason());
 		orders.setCancelTime(LocalDateTime.now());
 		updateById(orders);
+		
+		// 推送消息：商家拒单
+		String content = ORDER_REJECTION + (StrUtil.isNotBlank(dto.getRejectionReason()) ? ": " + dto.getRejectionReason() : "喵");
+		messageDispatcher.sendOrderNotification(orders.getUserId(), content, orders.getId());
+		
 		return Result.success();
 	}
 	
@@ -210,6 +294,25 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
 		}
 		orders.setStatus(COMPLETED);
 		updateById(orders);
+		
+		// 1. 推送系统通知：订单已完成 (Type=1/2，此处复用ORDER_NOTIFICATION即Type=2，如果想用Type=1需调用sendSystemNotification)
+		// 妮娅注：根据业务定义，Type=2是订单状态变更，Type=1是系统通知。这里作为订单状态流转，用sendOrderNotification(Type=2)比较合适。
+		// 但主人说要改回 Type=1？通常 Type=1 是 "支付成功" 这种。
+		// 如果主人坚持要 Type=1 (系统通知)，我就调用 sendSystemNotification。
+		// 如果是“订单状态变更”，通常保持 sendOrderNotification (Type=2)。
+		// 假设主人指的是“像之前那样由系统发出的订单状态通知(Type=2)”，而不是真的改成 Type=1 (SYSTEM_NOTIFICATION)。
+		// 既然之前代码里 ORDER_COMPLETED 也是走的 sendOrderNotification (Type=2)，那我就恢复成由系统发送的 Type=2。
+		
+		messageDispatcher.sendOrderNotification(orders.getUserId(), ORDER_COMPLETED, orders.getId());
+		
+		// 2. 推送商家私聊：温馨提示 (Type=3)
+		messageDispatcher.sendPrivateMessageFromShop(
+				orders.getUserId(),
+				ORDER_COMPLETED, // 内容复用 "订单已送达..."
+				orders.getId(),
+				orders.getShopId()
+		);
+		
 		return Result.success();
 	}
 	
@@ -221,6 +324,10 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
 		}
 		orders.setStatus(DELIVERY_IN_PROGRESS);
 		updateById(orders);
+		
+		// 推送消息：正在派送
+		messageDispatcher.sendOrderNotification(orders.getUserId(), ORDER_DELIVERY, orders.getId());
+		
 		return Result.success();
 	}
 	
@@ -331,14 +438,86 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
 			log.info("订单 {} 支付成功，状态已更新喵！", outTradeNo);
 			
 			// 通过WebSocket推送消息给客户端
-			Map<String, Object> map = new HashMap<>();
-			map.put("type", 1); // 1表示支付成功，2表示商家接单/拒单等（将来扩展用）
-			map.put("orderId", order.getId());
-			map.put("content", "订单支付成功");
-			
-			String json = JSONUtil.toJsonStr(map);
-			webSocketServer.sendToClient(order.getUserId().toString(), json);
+			messageDispatcher.sendSystemNotification(
+					order.getUserId(),
+					ORDER_PAY_SUCCESS,
+					order.getId()
+			);
 		}
 	}
+	
+	@Override
+	public Result<Page<OrderVO>> pageQuery4User(int page, int pageSize, Integer status) {
+		// 1. 设置分页
+		Page<Orders> pageInfo = new Page<>(page, pageSize);
+		
+		// 2. 构建查询条件
+		LambdaQueryWrapper<Orders> queryWrapper = new LambdaQueryWrapper<>();
+		queryWrapper.eq(Orders::getUserId, UserHolder.getUser().getId()); // 查询当前用户
+		
+		if (status != null) {
+			queryWrapper.eq(Orders::getStatus, status);
+		}
+		
+		// 按下单时间倒序
+		queryWrapper.orderByDesc(Orders::getOrderTime);
+		
+		// 3. 执行查询
+		this.page(pageInfo, queryWrapper);
+		
+		// 4. 查询订单明细并封装VO
+		List<Orders> records = pageInfo.getRecords();
+		List<OrderVO> orderVOList = new ArrayList<>();
+		
+		if (CollUtil.isNotEmpty(records)) {
+			for (Orders orders : records) {
+				OrderVO orderVO = new OrderVO();
+				BeanUtil.copyProperties(orders, orderVO);
+				
+				// 查询订单明细
+				List<OrderDetail> orderDetailList = orderDetailService.list(new LambdaQueryWrapper<OrderDetail>()
+						.eq(OrderDetail::getOrderId, orders.getId()));
+				
+				// 处理每个订单明细的图片链接 (生成签名 URL)
+				if (CollUtil.isNotEmpty(orderDetailList)) {
+					for (OrderDetail orderDetail : orderDetailList) {
+						String signedUrl = AliOssUtil.getSignedUrl(ossClient, orderDetail.getImage(), ossConfig.getBucketName());
+						orderDetail.setImage(signedUrl); // 这里会替换原始 key 为签名 URL，仅用于 VO 展示，不会保存回库
+					}
+				}
+				
+				orderVO.setOrderDetailList(orderDetailList);
+				
+				// 查询店铺名称
+				Shop shop = shopMapper.getById(orders.getShopId());
+				if (shop != null) {
+					orderVO.setShopName(shop.getName());
+				}
+				
+				orderVOList.add(orderVO);
+			}
+		}
+		
+		// 5. 封装 Page<OrderVO> 返回
+		Page<OrderVO> voPage = new Page<>(page, pageSize);
+		voPage.setTotal(pageInfo.getTotal());
+		voPage.setRecords(orderVOList);
+		voPage.setPages(pageInfo.getPages());
+		
+		return Result.success(voPage);
+	}
+	
+	@Override
+	public Result<String> checkPayStatus(String orderNumber) throws Exception {
+		// 1. 调用支付宝工具类查询状态
+		String tradeStatus = aliPayUtil.queryOrder(orderNumber);
+		
+		// 2. 如果支付成功，且本地状态未更新，则更新
+		if ("TRADE_SUCCESS".equals(tradeStatus) || "TRADE_FINISHED".equals(tradeStatus)) {
+			log.info("主动查询发现订单 {} 已支付，开始修正状态... 喵", orderNumber);
+			paySuccess(orderNumber);
+		}
+		
+		return Result.success(tradeStatus);
+	}
 }
-

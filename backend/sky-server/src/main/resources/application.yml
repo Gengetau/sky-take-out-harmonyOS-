@@ -30,12 +30,17 @@ mybatis-plus:
   type-aliases-package: com.sky.entity
 
 logging:
+  file:
+    name: logs/sky-server.log
   level:
     com:
       sky:
         mapper: debug
         service: info
         controller: info
+        interceptor: debug
+        handler: debug
+        websocket: debug
 
 sky:
   jwt:

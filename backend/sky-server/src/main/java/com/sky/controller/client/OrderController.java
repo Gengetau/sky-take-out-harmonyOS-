@@ -1,11 +1,14 @@
 package com.sky.controller.client;
 
+import com.sky.dto.OrdersCancelDTO;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.sky.dto.OrdersPaymentDTO;
 import com.sky.dto.OrdersSubmitDTO;
 import com.sky.result.Result;
 import com.sky.service.OrderService;
 import com.sky.vo.OrderPaymentVO;
 import com.sky.vo.OrderSubmitVO;
+import com.sky.vo.OrderVO;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
@@ -22,34 +25,88 @@ import org.springframework.web.bind.annotation.*;
 @Api(tags = "C端-订单相关接口")
 @Slf4j
 public class OrderController {
+	
+	@Autowired
+	private OrderService orderService;
+	
+	/**
+	 * 用户下单
+	 *
+	 * @param ordersSubmitDTO
+	 * @return
+	 */
+	@PostMapping("/submit")
+	@ApiOperation("用户下单")
+	public Result<OrderSubmitVO> submit(@RequestBody OrdersSubmitDTO ordersSubmitDTO) {
+		log.info("用户下单喵，参数为：{}", ordersSubmitDTO);
+		return orderService.submit(ordersSubmitDTO);
+	}
+	
+	/**
+	 * 订单支付
+	 *
+	 * @param ordersPaymentDTO
+	 * @return
+	 */
+	@PutMapping("/payment")
+	@ApiOperation("订单支付")
+	public Result<OrderPaymentVO> payment(@RequestBody OrdersPaymentDTO ordersPaymentDTO) throws Exception {
+		log.info("订单支付喵：{}", ordersPaymentDTO);
+		OrderPaymentVO orderPaymentVO = orderService.payment(ordersPaymentDTO).getData();
+		log.info("生成预支付交易单喵：{}", orderPaymentVO);
+		return Result.success(orderPaymentVO);
+	}
+	
+	/**
+	 * 历史订单查询
+	 *
+	 * @param page
+	 * @param pageSize
+	 * @param status   订单状态 1待付款 2待接单 3已接单 4派送中 5已完成 6已取消
+	 * @return
+	 */
+	@GetMapping("/historyOrders")
+	@ApiOperation("历史订单查询")
+	public Result<Page<OrderVO>> page(int page, int pageSize, Integer status) {
+		log.info("历史订单查询喵，page={}, pageSize={}, status={}", page, pageSize, status);
+		return orderService.pageQuery4User(page, pageSize, status);
+	}
 
-    @Autowired
-    private OrderService orderService;
+	/**
+	 * 查询订单详情
+	 *
+	 * @param id
+	 * @return
+	 */
+	@GetMapping("/orderDetail/{id}")
+	@ApiOperation("查询订单详情")
+	public Result<OrderVO> details(@PathVariable("id") Long id) {
+		log.info("查询订单详情喵：{}", id);
+		return orderService.userOrderDetail(id);
+	}
 
-    /**
-     * 用户下单
-     * @param ordersSubmitDTO
-     * @return
-     */
-    @PostMapping("/submit")
-    @ApiOperation("用户下单")
-    public Result<OrderSubmitVO> submit(@RequestBody OrdersSubmitDTO ordersSubmitDTO) {
-        log.info("用户下单喵，参数为：{}", ordersSubmitDTO);
-        return orderService.submit(ordersSubmitDTO);
-    }
+	/**
+	 * 主动查询支付状态
+	 * @param orderNumber
+	 * @return
+	 */
+	@GetMapping("/checkPayStatus/{orderNumber}")
+	@ApiOperation("主动查询支付状态")
+	public Result<String> checkPayStatus(@PathVariable String orderNumber) throws Exception {
+		log.info("主动查询支付状态喵：{}", orderNumber);
+		return orderService.checkPayStatus(orderNumber);
+	}
 
-    /**
-     * 订单支付
-     *
-     * @param ordersPaymentDTO
-     * @return
-     */
-    @PutMapping("/payment")
-    @ApiOperation("订单支付")
-    public Result<OrderPaymentVO> payment(@RequestBody OrdersPaymentDTO ordersPaymentDTO) throws Exception {
-        log.info("订单支付喵：{}", ordersPaymentDTO);
-        OrderPaymentVO orderPaymentVO = orderService.payment(ordersPaymentDTO).getData();
-        log.info("生成预支付交易单喵：{}", orderPaymentVO);
-        return Result.success(orderPaymentVO);
-    }
+	/**
+	 * 用户取消订单
+	 *
+	 * @param ordersCancelDTO
+	 * @return
+	 */
+	@PutMapping("/cancel")
+	@ApiOperation("取消订单")
+	public Result<String> cancel(@RequestBody OrdersCancelDTO ordersCancelDTO) {
+		log.info("用户取消订单喵，订单号为：{}", ordersCancelDTO.getId());
+		return orderService.cancel(ordersCancelDTO);
+	}
 }

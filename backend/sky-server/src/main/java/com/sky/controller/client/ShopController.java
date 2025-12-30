@@ -1,41 +1,47 @@
 package com.sky.controller.client;
 
 import com.sky.result.Result;
+import com.sky.service.ShopService;
+import com.sky.vo.ShopVO;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import static com.sky.constant.RedisConstants.SHOP_STATUS_KEY;
+import java.util.List;
 
-/**
- * @author Gengetsu
- * @version v1.0
- * @ClassName ShopController
- * @Description 客户端店铺控制器
- * @dateTime 18/12/2025 下午5:00
- */
-@Slf4j
-@Api(tags = "客户端店铺控制器")
-@RestController
+@RestController("clientShopController")
 @RequestMapping("/client/shop")
+@Api(tags = "C端-店铺相关接口")
+@Slf4j
 public class ShopController {
-	@Autowired
-	private StringRedisTemplate stringRedisTemplate;
-	
-	@GetMapping("/status")
-	@ApiOperation("获取店铺营业状态")
-	public Result<Integer> getShopStatus() {
-		String status = stringRedisTemplate.opsForValue().get(SHOP_STATUS_KEY);
-		log.info("获取店铺营业状态,{}", status);
-		if (status != null && !status.isEmpty()) {
-			return Result.success(Integer.valueOf(status));
-		}
-		// 如果未设置，为了安全默认返回 0（打烊）
-		return Result.success(0);
-	}
+
+    @Autowired
+    private ShopService shopService;
+
+    @GetMapping("/list/{typeId}")
+    @ApiOperation("查询商家列表 (支持地理位置排序)")
+    public Result<List<ShopVO>> list(
+            @PathVariable Long typeId,
+            Double longitude,
+            Double latitude,
+            @RequestParam(defaultValue = "1") Integer page) {
+        log.info("C端查询店铺列表，类型ID：{}，坐标：({},{})，页码：{}", typeId, longitude, latitude, page);
+        
+        if (longitude != null && latitude != null) {
+            // 如果提供了经纬度，走 GEO 查询
+            return shopService.getNearbyShops(typeId, longitude, latitude, page);
+        } else {
+            // 否则走基础按类型查询
+            return shopService.getShopsByType(typeId);
+        }
+    }
+
+    @GetMapping("/{id}")
+    @ApiOperation("根据ID查询店铺详情")
+    public Result<ShopVO> getById(@PathVariable Long id) {
+        log.info("C端查询店铺详情，ID：{}", id);
+        return shopService.getShopById(id);
+    }
 }

@@ -23,6 +23,13 @@ public interface OrderService extends IService<Orders> {
 	Result<OrderStatisticsVO> getOrderStatistics();
 	
 	Result<OrderVO> getOrderDetailById(Long id);
+
+	/**
+	 * 用户端订单详情查询
+	 * @param id
+	 * @return
+	 */
+	Result<OrderVO> userOrderDetail(Long id);
 	
 	Result<String> cancel(OrdersCancelDTO dto);
 	
@@ -39,4 +46,13 @@ public interface OrderService extends IService<Orders> {
 	Result<OrderPaymentVO> payment(OrdersPaymentDTO ordersPaymentDTO) throws Exception;
 
 	void paySuccess(String outTradeNo);
+
+	Result<Page<OrderVO>> pageQuery4User(int page, int pageSize, Integer status);
+
+	/**
+	 * 主动查询订单支付状态
+	 * @param orderNumber
+	 * @return
+	 */
+	Result<String> checkPayStatus(String orderNumber) throws Exception;
 }
