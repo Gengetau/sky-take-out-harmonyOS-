@@ -18,12 +18,11 @@ import java.util.List;
  * @author Gengetsu
  * @version v1.0
  * @ClassName SetMealController
- * @Description 客户端套餐控制器
- * @dateTime 18/12/2025 下午6:00
+ * @Description 客户端套餐控制器 (客户端)
  */
 @RestController
 @RequestMapping("/client/setmeal")
-@Api(tags = "客户端套餐控制器")
+@Api(tags = "C端-套餐接口")
 @Slf4j
 public class SetMealController {
 	
@@ -38,6 +37,7 @@ public class SetMealController {
 	@GetMapping("/{categoryId}")
 	@ApiOperation("根据分类id查询套餐")
 	public Result<List<SetMealVO>> getByCategoryId(@PathVariable Long categoryId) {
+		// 套餐分类 ID 本身已具备唯一性并关联了 shopId
 		return setMealService.getByCategoryId(categoryId);
 	}
 }

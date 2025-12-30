@@ -11,7 +11,9 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.sky.config.OSSConfig;
 import com.sky.dto.UserEditDTO;
 import com.sky.dto.UserLoginDTO;
+import com.sky.entity.AddressBook;
 import com.sky.entity.User;
+import com.sky.mapper.AddressBookMapper;
 import com.sky.mapper.UserMapper;
 import com.sky.result.Result;
 import com.sky.service.UserService;
@@ -25,6 +27,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -50,6 +53,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 	
 	@Autowired
 	private OSSConfig ossConfig;
+	
+	@Autowired
+	private AddressBookMapper addressBookMapper;
 	
 	@Override
 	public Result<String> sendCode(UserLoginDTO userLoginDTO) {
@@ -85,7 +91,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 			return Result.error("验证码错误!");
 		}
 		// 3.根据手机号查询用户 (使用清理后的手机号查询)
-		User user = getOne(new LambdaQueryWrapper<User>().eq(User::getPhone, phone));
+		// 且必须是未注销的用户
+		User user = getOne(new LambdaQueryWrapper<User>()
+				.eq(User::getPhone, phone)
+				.eq(User::getIsDeleted, 0)); // 只能查到没注销的
+		
 		// 3.1不存在，创建新用户
 		if (user == null) {
 			// 3.2创建新用户 (使用清理后的手机号保存)
@@ -93,6 +103,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 			newUser.setName("用户" + RandomUtil.randomNumbers(6));
 			newUser.setPhone(phone);
 			newUser.setMeowId("meow" + System.currentTimeMillis());
+			newUser.setIsDeleted(0); // 明确设置
 			save(newUser);
 			user = newUser;
 		}
@@ -121,6 +132,14 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 			return Result.error("用户未登录喵！");
 		}
 		User user = getById(userVO.getId());
+		
+		// 校验用户是否已注销
+		if (user == null || (user.getIsDeleted() != null && user.getIsDeleted() == 1)) {
+			// 清理 Redis 缓存，强制退出
+			stringRedisTemplate.delete(LOGIN_USER_KEY + userVO.getToken());
+			UserHolder.removeUser();
+			return Result.error("账号已注销喵！");
+		}
 		
 		// 处理头像签名
 		if (user.getAvatar() != null && !user.getAvatar().isEmpty()) {
@@ -225,5 +244,50 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 		} else {
 			return Result.error("信息修改失败，请稍后重试！");
 		}
+	}
+	
+	@Override
+	@Transactional(rollbackFor = Exception.class)
+	public Result<String> cancelAccount() {
+		UserLoginVO userVO = UserHolder.getUser();
+		if (userVO == null) {
+			return Result.error("用户未登录喵！");
+		}
+		
+		Long userId = userVO.getId();
+		
+		// 1. 用户信息脱敏与注销标记
+		// 生成随机后缀确保唯一性约束不冲突（如 phone/openid）
+		String suffix = "_del_" + System.currentTimeMillis();
+		
+		boolean userUpdateSuccess = lambdaUpdate()
+				.eq(User::getId, userId)
+				.set(User::getIsDeleted, 1) // 标记注销
+				.set(User::getCancelTime, LocalDateTime.now()) // 记录注销时间
+				.set(User::getName, "已注销用户")
+				.set(User::getPhone, "已注销" + RandomUtil.randomNumbers(4)) // 脱敏
+				.set(User::getOpenid, (userVO.getOpenid() != null ? userVO.getOpenid() : "") + suffix) // 避免唯一索引冲突
+				.set(User::getAvatar, null) // 清空头像
+				.set(User::getIdNumber, null) // 清空身份证
+				.update();
+		
+		if (!userUpdateSuccess) {
+			return Result.error("注销失败，请稍后重试喵！");
+		}
+		
+		// 2. 关联地址簿信息脱敏
+		LambdaUpdateWrapper<AddressBook> addressWrapper = new LambdaUpdateWrapper<>();
+		addressWrapper.eq(AddressBook::getUserId, userId)
+				.set(AddressBook::getConsignee, "已注销")
+				.set(AddressBook::getPhone, "******")
+				.set(AddressBook::getDetail, "******");
+		
+		addressBookMapper.update(null, addressWrapper);
+		
+		// 3. 清理 Redis 登录状态
+		stringRedisTemplate.delete(LOGIN_USER_KEY + userVO.getToken());
+		UserHolder.removeUser();
+		
+		return Result.success("账号已注销，江湖再见喵！");
 	}
 }

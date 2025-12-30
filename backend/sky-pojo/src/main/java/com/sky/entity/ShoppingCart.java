@@ -52,4 +52,7 @@ public class ShoppingCart implements Serializable {
 	private String image;
 	
 	private LocalDateTime createTime;
+
+	// 店铺ID
+	private Long shopId;
 }
