@@ -1,6 +1,5 @@
 import { promptAction } from '@kit.ArkUI';
-import { CategoryWithItems } from '../../model/entity/MockData';
-import { DishVO, ShopVO } from '../../model/entity/ShopModel';
+import { CategoryWithItems, DishVO, ShopVO } from '../../model/entity/ShopModel';
 import { CartService } from '../../service/CartService';
 import { ShopService } from '../../service/ShopService';
 import { ConfirmOrderView } from '../main/ConfirmOrderPage'; 

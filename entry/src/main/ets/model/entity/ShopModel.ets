@@ -141,6 +141,20 @@ export class SetMealVO {
   }
 }
 
+/**
+ * 📦 聚合类：分类 + 该分类下的菜品列表
+ * (原 MockData 中迁移至此 ✨)
+ */
+export class CategoryWithItems {
+  category: CategoryVO;
+  items: DishVO[];
+
+  constructor(category: CategoryVO, items: DishVO[]) {
+    this.category = category;
+    this.items = items;
+  }
+}
+
 // 监听装饰器
 @Observed
 export class CartItem {

@@ -3,8 +3,7 @@
  */
 import { HttpUtil } from '../common/utils/HttpUtil';
 // 复用我们之前定义的聚合类
-import { CategoryWithItems } from '../model/entity/MockData';
-import { CategoryVO, DishVO, SetMealVO, ShopVO } from '../model/entity/ShopModel';
+import { CategoryWithItems, CategoryVO, DishVO, SetMealVO, ShopVO } from '../model/entity/ShopModel';
 import { FollowItem, FollowRdb } from '../common/utils/FollowRdb'; // ✨ 引入 FollowItem
 
 export class ShopService {
