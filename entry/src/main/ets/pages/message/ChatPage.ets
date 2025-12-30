@@ -37,8 +37,17 @@ export struct ChatPage {
     this.title = params.title;
     this.targetAvatar = params.targetAvatar; // 获取对方头像
     
+    // ✨ 进入聊天会话状态，抑制通知
+    MessageManager.getInstance().enterChat(this.sessionId);
+
     MessageRdb.clearUnread(this.sessionId);
     this.loadMessages();
+  }
+  
+  // ✨ 页面销毁或隐藏时调用
+  onDisappear() {
+    console.info('喵！离开聊天页，恢复通知');
+    MessageManager.getInstance().leaveChat();
   }
 
   async loadMessages() {
@@ -140,6 +149,9 @@ export struct ChatPage {
        if (params) {
          this.initParams(params);
        }
+    })
+    .onDisappear(() => {
+      this.onDisappear();
     })
   }
 }
