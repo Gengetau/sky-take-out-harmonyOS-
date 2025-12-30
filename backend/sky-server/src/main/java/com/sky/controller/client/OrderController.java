@@ -1,5 +1,6 @@
 package com.sky.controller.client;
 
+import com.sky.dto.OrdersCancelDTO;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.sky.dto.OrdersPaymentDTO;
 import com.sky.dto.OrdersSubmitDTO;
@@ -94,5 +95,18 @@ public class OrderController {
 	public Result<String> checkPayStatus(@PathVariable String orderNumber) throws Exception {
 		log.info("主动查询支付状态喵：{}", orderNumber);
 		return orderService.checkPayStatus(orderNumber);
+	}
+
+	/**
+	 * 用户取消订单
+	 *
+	 * @param ordersCancelDTO
+	 * @return
+	 */
+	@PutMapping("/cancel")
+	@ApiOperation("取消订单")
+	public Result<String> cancel(@RequestBody OrdersCancelDTO ordersCancelDTO) {
+		log.info("用户取消订单喵，订单号为：{}", ordersCancelDTO.getId());
+		return orderService.cancel(ordersCancelDTO);
 	}
 }
