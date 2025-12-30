@@ -1,5 +1,5 @@
 import { AddressBook } from '../model/entity/AddressBook';
-import { OrderSubmitDTO, OrderSubmitVO, OrderPaymentDTO, OrderPaymentVO, OrderVO, PageResult } from '../model/api/OrderModel';
+import { OrderSubmitDTO, OrderSubmitVO, OrderPaymentDTO, OrderPaymentVO, OrderVO, PageResult, OrderCancelDTO } from '../model/api/OrderModel';
 import { HttpUtil } from '../common/utils/HttpUtil';
 
 /**
@@ -97,6 +97,14 @@ export class OrderService {
    */
   static async getOrderDetail(id: number): Promise<OrderVO> {
     return HttpUtil.get<OrderVO>(`/client/order/orderDetail/${id}`);
+  }
+
+  /**
+   * ❌ 取消订单 (API 7.6)
+   * @param cancelDTO 取消信息
+   */
+  static async cancelOrder(cancelDTO: OrderCancelDTO): Promise<string> {
+    return HttpUtil.put<string>('/client/order/cancel', cancelDTO);
   }
 
   /**

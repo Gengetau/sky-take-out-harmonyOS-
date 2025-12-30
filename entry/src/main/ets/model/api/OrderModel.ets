@@ -1,4 +1,3 @@
-
 /**
  * 购物车明细 DTO
  */
@@ -85,4 +84,17 @@ export interface OrderVO {
 export interface PageResult<T> {
   total: number;
   records: T[];
+}
+
+/**
+ * ❌ 取消订单 DTO (API 7.6)
+ */
+export class OrderCancelDTO {
+  id: number;
+  cancelReason?: string;
+
+  constructor(id: number, cancelReason?: string) {
+    this.id = id;
+    this.cancelReason = cancelReason;
+  }
 }

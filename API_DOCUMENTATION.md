@@ -408,37 +408,27 @@
 - **请求参数 (路径参数)**:
   - `id` (Long): 订单ID
 - **返回数据**: `Result<OrderVO>`
+
+### 7.6 取消订单 (用户端)
+
+- **接口地址**: `PUT /client/order/cancel`
+- **功能描述**: 用户主动取消订单。仅在“待付款”或“待接单”状态下允许取消。如果已付款，将自动触发退款喵。
+- **请求参数 (JSON)**:
+  - `id` (Long): 订单ID
+  - `cancelReason` (String, 可选): 取消原因
+- **返回数据**: `Result<String>`
 - **响应示例**:
   ```json
   {
     "code": 1,
     "msg": null,
-    "data": {
-      "id": 1001,
-      "number": "1734926400000",
-      "shopId": 1,
-      "shopName": "苍穹外卖总店",
-      "status": 5,
-      "amount": 108.00,
-      "orderTime": "2025-12-25 10:00:00",
-      "orderDetailList": [
-         {
-           "name": "老坛酸菜鱼",
-           "image": "https://<your-bucket>.oss-cn-beijing.aliyuncs.com/xxx.png?OSSAccessKeyId=...",
-           "number": 1,
-           "amount": 56.00
-         }
-      ]
-    }
+    "data": "ok"
   }
   ```
-- **‼️ 重要备注**:
-    - `image` 字段为 **OSS 预签名 URL**，有效期为 2 小时，客户端不应缓存。
 
 ---
 
 ## 9. 用户相关 (`/client/user`)
-
 ### 9.1 获取个人信息
 
 - **接口地址**: `GET /client/user/info`
