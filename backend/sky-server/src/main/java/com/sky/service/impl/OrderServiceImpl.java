@@ -201,6 +201,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
 		return Result.success(orderVO);
 	}
 	
+	
 	@Override
 	public Result<String> cancel(OrdersCancelDTO dto) {
 		// 1.根据id查询订单
@@ -230,6 +231,11 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
 		orders.setCancelReason(dto.getCancelReason());
 		orders.setCancelTime(LocalDateTime.now());
 		updateById(orders);
+		
+		// 推送系统通知：订单已取消
+		String notifyContent = (orders.getPayStatus().equals(REFUND)) ? ORDER_REFUND : ORDER_CANCELLED;
+		messageDispatcher.sendSystemNotification(orders.getUserId(), notifyContent, orders.getId());
+		
 		return Result.success();
 	}
 	
@@ -301,9 +307,9 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
 		
 		// 2. 推送商家私聊：温馨提示 (Type=3)
 		messageDispatcher.sendPrivateMessageFromShop(
-				orders.getUserId(), 
+				orders.getUserId(),
 				ORDER_COMPLETED, // 内容复用 "订单已送达..."
-				orders.getId(), 
+				orders.getId(),
 				orders.getShopId()
 		);
 		

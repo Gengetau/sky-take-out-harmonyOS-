@@ -53,14 +53,21 @@ public class WebSocketConstant {
 		 * 订单派送中
 		 */
 		public static final String ORDER_DELIVERY = "您的订单正在派送中喵";
-		/**
-		 * 订单已送达
-		 */
-		public static final String ORDER_COMPLETED = "订单已送达，祝您用餐愉快喵";
-		
-		
-		// 身份类型
-	/**
+			/**
+			 * 订单已送达
+			 */
+			public static final String ORDER_COMPLETED = "订单已送达，祝您用餐愉快喵";
+			/**
+			 * 订单已取消
+			 */
+			public static final String ORDER_CANCELLED = "订单已取消";
+			/**
+			 * 订单已取消（含退款）
+			 */
+			public static final String ORDER_REFUND = "订单已取消，退款已原路退回喵";
+			
+			
+			// 身份类型	/**
 	 * 身份：用户
 	 */
 	public static final Integer ROLE_USER = 0;
