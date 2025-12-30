@@ -3,11 +3,10 @@ package com.sky.controller.client;
 import com.sky.result.Result;
 import com.sky.service.DishService;
 import com.sky.vo.DishVO;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -15,18 +14,20 @@ import java.util.List;
  * @author Gengetsu
  * @version v1.0
  * @ClassName DishController
- * @Description 菜品控制器
- * @dateTime 4/12/2025 上午10:58
+ * @Description 菜品控制器 (客户端)
  */
+@Api(tags = "C端-菜品接口")
 @RestController
 @RequestMapping("/client/dish")
 public class DishController {
 	@Autowired
 	private DishService dishService;
 	
-	// 查询店铺菜品,按分类
+	// 查询指定分类下的菜品
 	@GetMapping("/{categoryId}")
+	@ApiOperation("根据分类id查询菜品")
 	public Result<List<DishVO>> queryDishList(@PathVariable Integer categoryId) {
+		// 分类 ID 本身已具备唯一性并关联了 shopId，故此处直接查询即可
 		return dishService.queryDishList(categoryId);
 	}
 }
