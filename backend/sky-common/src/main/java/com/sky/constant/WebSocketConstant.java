@@ -30,6 +30,10 @@ public class WebSocketConstant {
 	 * senderName(系统)
 	 */
 	public static final String SYSTEM_NAME = "Meow外卖";
+	/**
+	 * senderAvatar(系统)
+	 */
+	public static final String SYSTEM_AVATAR = "698f7f2074f04165b60ad43a3fb67802.png";
 	
 	
 	// 系统推送信息
@@ -38,5 +42,18 @@ public class WebSocketConstant {
 	 */
 	public static final String ORDER_PAY_SUCCESS = "订单支付成功";
 	
+	// 身份类型
+	/**
+	 * 身份：用户
+	 */
+	public static final Integer ROLE_USER = 0;
+	/**
+	 * 身份：商家
+	 */
+	public static final Integer ROLE_SHOP = 1;
+	/**
+	 * 身份：系统
+	 */
+	public static final Integer ROLE_SYSTEM = 2;
 	
 }

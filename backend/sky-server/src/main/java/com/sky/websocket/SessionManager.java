@@ -55,22 +55,35 @@ public class SessionManager {
 	}
 	
 	/**
-	 * 单点推送
+	 * 尝试发送单点消息 (如果不在线则返回false，不打印WARN日志)
+	 * @param userId 接收者ID
+	 * @param messageDTO 消息对象
+	 * @return true if sent, false if not found
 	 */
-	public void sendMessageToUser(String userId, MessageDTO messageDTO) {
+	public boolean sendMessageIfExist(String userId, MessageDTO messageDTO) {
 		WebSocketSession webSocketSession = sessionPool.get(userId);
-		String jsonStr = JSONUtil.toJsonStr(messageDTO);
-		TextMessage textMessage = new TextMessage(jsonStr);
 		if (webSocketSession != null && webSocketSession.isOpen()) {
+			String jsonStr = JSONUtil.toJsonStr(messageDTO);
+			TextMessage textMessage = new TextMessage(jsonStr);
 			try {
-				// 加锁发送，防止并发写入异常
 				synchronized (webSocketSession) {
 					webSocketSession.sendMessage(textMessage);
 				}
+				return true;
 			} catch (IOException e) {
 				log.error("给用户{}发送消息失败:{}", userId, e.getMessage());
+				return false;
 			}
-		} else {
+		}
+		return false;
+	}
+
+	/**
+	 * 单点推送
+	 */
+	public void sendMessageToUser(String userId, MessageDTO messageDTO) {
+		boolean sent = sendMessageIfExist(userId, messageDTO);
+		if (!sent) {
 			log.warn("用户{}不在线或会话已关闭，消息发送失败", userId);
 		}
 	}

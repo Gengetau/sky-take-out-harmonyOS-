@@ -38,6 +38,16 @@ public class MessageDTO {
 	private Long receiverId;
 	
 	/**
+	 * 发送者身份 (0:用户, 1:商家, 2:系统)
+	 */
+	private Integer senderRole;
+
+	/**
+	 * 接收者身份 (0:用户, 1:商家, 2:系统)
+	 */
+	private Integer receiverRole;
+	
+	/**
 	 * 发送者显示名称
 	 */
 	private String senderName;
