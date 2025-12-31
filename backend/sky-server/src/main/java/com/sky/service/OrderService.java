@@ -55,4 +55,23 @@ public interface OrderService extends IService<Orders> {
 	 * @return
 	 */
 	Result<String> checkPayStatus(String orderNumber) throws Exception;
+
+	// =====================================================================
+	// ==================== 以下为 Meow 商家端 App 专属接口 ====================
+	// =====================================================================
+
+	/**
+	 * 商家端分页查询订单 (强制 shopId 隔离)
+	 * @param dto
+	 * @param shopId
+	 * @return
+	 */
+	Result<Page<OrderVO>> getShopOrdersByPage(OrdersPageQueryDTO dto, Long shopId);
+
+	/**
+	 * 商家端订单数量统计 (强制 shopId 隔离)
+	 * @param shopId
+	 * @return
+	 */
+	Result<OrderStatisticsVO> getShopOrderStatistics(Long shopId);
 }
