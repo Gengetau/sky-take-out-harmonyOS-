@@ -37,50 +37,31 @@ public interface CategoryService extends IService<Category> {
 	
 	/**
 	 * 后台分类分页查询
-	 *
-	 * @param pageDTO
-	 * @return
 	 */
 	Result<Page<CategoryVO>> getCategoryByPage(CategoryPageQueryDTO pageDTO);
 	
 	/**
 	 * 后台分类信息修改
-	 *
-	 * @param categoryDTO
-	 * @return
 	 */
 	Result<CategoryVO> updateCategory(CategoryDTO categoryDTO);
 	
 	/**
 	 * 后台更新分类状态
-	 *
-	 * @param status
-	 * @param id
-	 * @return
 	 */
 	Result<String> updateCategoryStatus(Integer status, Long id);
 	
 	/**
 	 * 后台新增分类
-	 *
-	 * @param categoryDTO
-	 * @return
 	 */
 	Result<String> addCategory(CategoryDTO categoryDTO);
 	
 	/**
 	 * 后台根据id删除分类
-	 *
-	 * @param id
-	 * @return
 	 */
 	Result<String> deleteCategoryById(Long id);
 	
 	/**
 	 * 根据类型查询分类
-	 *
-	 * @param type
-	 * @return
 	 */
 	Result<List<CategoryVO>> getCategoryByType(Integer type);
 
@@ -90,33 +71,30 @@ public interface CategoryService extends IService<Category> {
 
 	/**
 	 * 商家端根据类型查询分类 (强制 shopId 隔离)
-	 * @param type 分类类型 (1:菜品分类 2:套餐分类)
-	 * @param shopId 店铺ID
-	 * @return
 	 */
 	Result<List<CategoryVO>> getShopCategoryByType(Integer type, Long shopId);
 
 	/**
 	 * 商家端新增分类 (带 shopId 归属)
-	 * @param categoryDTO 分类信息
-	 * @param shopId 店铺ID
-	 * @return
 	 */
 	Result<String> addShopCategory(CategoryDTO categoryDTO, Long shopId);
 
 	/**
 	 * 商家端修改分类 (带 shopId 权限检查)
-	 * @param categoryDTO 分类信息
-	 * @param shopId 店铺ID
-	 * @return
 	 */
 	Result<String> updateShopCategory(CategoryDTO categoryDTO, Long shopId);
 
 	/**
 	 * 商家端删除分类 (带 shopId 权限检查)
+	 */
+	Result<String> deleteShopCategory(Long id, Long shopId);
+
+	/**
+	 * 商家端启用/禁用分类 (带 shopId 权限检查)喵！✨
+	 * @param status 1:启用, 0:禁用
 	 * @param id 分类ID
 	 * @param shopId 店铺ID
 	 * @return
 	 */
-	Result<String> deleteShopCategory(Long id, Long shopId);
+	Result<String> updateShopCategoryStatus(Integer status, Long id, Long shopId);
 }

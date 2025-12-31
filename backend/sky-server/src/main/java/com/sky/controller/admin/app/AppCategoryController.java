@@ -27,8 +27,6 @@ public class AppCategoryController {
 
     /**
      * 根据类型查询分类
-     * @param type 1:菜品分类 2:套餐分类
-     * @return
      */
     @GetMapping("/list")
     @ApiOperation("根据类型查询分类")
@@ -69,5 +67,15 @@ public class AppCategoryController {
         Long shopId = BaseContext.getCurrentShopId();
         log.info("App端删除分类ID：{}, 店铺ID: {} 喵", id, shopId);
         return categoryService.deleteShopCategory(id, shopId);
+    }
+
+    /**
+     * 启用、禁用分类 (补齐接口喵！✨)
+     */
+    @PostMapping("/status/{status}")
+    @ApiOperation("启用禁用分类")
+    public Result<String> startOrStop(@PathVariable Integer status, Long id) {
+        Long shopId = BaseContext.getCurrentShopId();
+        return categoryService.updateShopCategoryStatus(status, id, shopId);
     }
 }
