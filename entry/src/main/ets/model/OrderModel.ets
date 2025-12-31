@@ -2,8 +2,13 @@
  * 订单详情明细
  */
 export interface OrderDetailVO {
+  id: number;
   name: string;
   image?: string;
+  orderId: number;
+  dishId?: number;
+  setmealId?: number;
+  dishFlavor?: string; // 口味
   number: number;
   amount: number;
 }
@@ -16,13 +21,35 @@ export interface OrderVO {
   id: number;
   number: string;
   status: number;
-  amount: number;
+  amount: number; // 总金额
   orderTime: string;
-  userName?: string; // 下单用户
-  address?: string; // 送餐地址
-  phone?: string; // 用户手机号
+  checkoutTime?: string;
+  payMethod: number; // 支付方式 1微信,2支付宝
+  payStatus: number; // 支付状态 0未支付 1已支付 2退款
+  
+  // 用户信息
+  userId: number;
+  userName?: string; 
+  phone?: string; 
+  address?: string; 
+  consignee?: string; // 收货人
+  sex?: string; // 用户性别
+  
+  // 费用相关
+  packAmount?: number; // 打包费
+  tablewareNumber?: number; // 餐具数量
+  tablewareStatus?: number; // 餐具状态
+  
   remark?: string; // 备注
+  cancelReason?: string;
+  rejectionReason?: string;
+  deliveryTime?: string; // 预计送达时间
+  
   orderDetailList: OrderDetailVO[];
+  
+  // 店铺信息（可选）
+  shopId?: number;
+  shopName?: string;
 }
 
 /**
@@ -38,18 +65,23 @@ export interface PageResult<T> {
  */
 export class OrderRejectionDTO {
   id: number;
-  rejectionReason: string;
+  rejectionReason?: string; // 拒单原因
+  cancelReason?: string;    // 取消原因 (复用此类)
 
   constructor(id: number, reason: string) {
     this.id = id;
     this.rejectionReason = reason;
+    this.cancelReason = reason;
   }
 }
 
 /**
  * 接单 DTO
  */
-export interface OrderConfirmDTO {
+export class OrderConfirmDTO {
   id: number;
-  status: number;
+
+  constructor(id: number) {
+    this.id = id;
+  }
 }

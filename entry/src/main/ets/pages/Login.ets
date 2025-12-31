@@ -13,7 +13,7 @@ export struct Login {
     NavDestination() {
       Column() {
         // 1. Logo 区域
-        Image($r('app.media.startIcon'))
+        Image($r('app.media.app_logo'))
           .width(100)
           .height(100)
           .margin({ top: 100, bottom: 20 })

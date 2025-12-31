@@ -1,5 +1,6 @@
 import { HttpUtil } from '../common/HttpUtil';
 import { EmployeeLoginDTO, EmployeeLoginVO } from '../model/EmployeeLoginModel';
+import { PreferencesUtil } from '../common/PreferencesUtil';
 
 export class AuthService {
   /**
@@ -9,11 +10,15 @@ export class AuthService {
    */
   static async login(dto: EmployeeLoginDTO): Promise<EmployeeLoginVO> {
     // 发送登录请求
-    const result = await HttpUtil.post<EmployeeLoginVO>('/admin/employee/login', dto);
+    const result = await HttpUtil.post<EmployeeLoginVO>('/employee/login', dto);
     
-    // 登录成功后，持久化 Token (简化版，先存 AppStorage)
+    // 1. 存入内存，供当前会话使用
     AppStorage.setOrCreate('token', result.token);
     AppStorage.setOrCreate('employeeInfo', result);
+
+    // 2. 持久化存储，下次启动自动登录
+    await PreferencesUtil.saveToken(result.token);
+    await PreferencesUtil.saveEmployeeInfo(result);
     
     return result;
   }

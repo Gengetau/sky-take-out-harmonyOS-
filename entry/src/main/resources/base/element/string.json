@@ -2,15 +2,15 @@
   "string": [
     {
       "name": "module_desc",
-      "value": "module description"
+      "value": "Meow外卖商家端核心模块"
     },
     {
       "name": "EntryAbility_desc",
-      "value": "description"
+      "value": "提供订单管理、菜品管理等商家核心功能"
     },
     {
       "name": "EntryAbility_label",
-      "value": "label"
+      "value": "Meow商家"
     }
   ]
 }

@@ -19,4 +19,5 @@ export interface EmployeeLoginVO {
   userName: string;
   name: string;
   token: string;
+  shopId: number;
 }

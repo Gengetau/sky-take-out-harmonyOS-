@@ -7,7 +7,7 @@ import { Result } from '../model/ResultModel';
 import { promptAction } from '@kit.ArkUI';
 
 // TODO: 如果真机调试，请修改为电脑的局域网IP；模拟器通常可以使用 127.0.0.1 或宿主IP
-const BASE_URL = 'http://192.168.0.210:8080'; 
+const BASE_URL = 'http://192.168.0.210:8080/admin/app/'; 
 const TIMEOUT = 5000;
 
 /**
@@ -20,7 +20,7 @@ class TokenInterceptor implements rcp.Interceptor {
       if (!context.request.headers) {
         context.request.headers = {};
       }
-      context.request.headers['authentication'] = token;
+      context.request.headers['token'] = token;
     }
     return next.handle(context);
   }
@@ -69,6 +69,9 @@ export class HttpUtil {
 
   static async post<T>(url: string, data?: object): Promise<T> {
     HttpUtil.init();
+    if (url.startsWith('/')) {
+      url = url.substring(1);
+    }
     try {
       const resp = await HttpUtil.session!.post(url, data);
       return HttpUtil.handleResponse<T>(resp);
@@ -79,6 +82,9 @@ export class HttpUtil {
 
   static async get<T>(url: string): Promise<T> {
     HttpUtil.init();
+    if (url.startsWith('/')) {
+      url = url.substring(1);
+    }
     try {
       const resp = await HttpUtil.session!.get(url);
       return HttpUtil.handleResponse<T>(resp);
@@ -89,6 +95,9 @@ export class HttpUtil {
 
   static async put<T>(url: string, data?: object): Promise<T> {
     HttpUtil.init();
+    if (url.startsWith('/')) {
+      url = url.substring(1);
+    }
     try {
       const resp = await HttpUtil.session!.put(url, data);
       return HttpUtil.handleResponse<T>(resp);
@@ -99,6 +108,9 @@ export class HttpUtil {
 
   static async delete<T>(url: string): Promise<T> {
     HttpUtil.init();
+    if (url.startsWith('/')) {
+      url = url.substring(1);
+    }
     try {
       const resp = await HttpUtil.session!.delete(url);
       return HttpUtil.handleResponse<T>(resp);
