@@ -1,8 +1,13 @@
 import { common } from '@kit.AbilityKit';
 import { PreferencesUtil } from '../common/PreferencesUtil';
 import { Login } from './Login';
-import { OrderDetailPage } from './main/OrderDetailPage';
 import { MainTabs } from './MainTabs';
+import { OrderDetailPage } from './main/OrderDetailPage';
+import { DishManagePage } from './manage/DishManagePage';
+import { SetmealManagePage } from './manage/SetmealManagePage';
+import { CategoryManagePage } from './manage/CategoryManagePage';
+import { DishEditPage } from './manage/DishEditPage';
+import { SetmealEditPage } from './manage/SetmealEditPage';
 
 @Entry
 @Component
@@ -12,12 +17,22 @@ struct Index {
 
   @Builder
   PagesMap(name: string) {
-    if ( name === 'Login' ) {
+    if (name === 'Login') {
       Login()
-    } else if ( name === 'MainTabs' ) {
+    } else if (name === 'MainTabs') {
       MainTabs()
-    } else if ( name === 'OrderDetailPage' ) {
+    } else if (name === 'OrderDetailPage') {
       OrderDetailPage()
+    } else if (name === 'DishManagePage') {
+      DishManagePage()
+    } else if (name === 'SetmealManagePage') {
+      SetmealManagePage()
+    } else if (name === 'CategoryManagePage') {
+      CategoryManagePage()
+    } else if (name === 'DishEditPage') {
+      DishEditPage()
+    } else if (name === 'SetmealEditPage') {
+      SetmealEditPage()
     }
   }
 

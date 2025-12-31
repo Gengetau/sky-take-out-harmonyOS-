@@ -1,0 +1,20 @@
+﻿feat: 深度重构商家管理模块，实现菜品/套餐全生命周期管理与特色UI交互 🐾
+
+1. 核心业务逻辑升级 (Service & Model):
+- 完善 Category/Dish/Setmeal Service，全面支持增(POST)、删(DELETE)、改(PUT)及详情追回(GET by ID)。
+- 升级 HttpUtil 文件上传机制，通过独立 RCP Session 彻底解决 Multipart 上传的 Content-Type 冲突。
+- 严格规范化数据模型，补全了 DishFlavor 和 SetmealDishDTO，消灭所有 any 类型，确保类型安全。
+
+2. UI/UX 体验重塑 (View):
+- 实现 DishEditPage & SetmealEditPage：采用 FormItem 封装架构，支持详情异步预加载、图片预览上传。
+- 创新“妮娅特色”卡片式弹窗：取代陈旧的滚动选择器，实现 FlavorSelectDialog(口味模版) 与 CategorySelectDialog(分类标签)，交互更灵动。
+- 打造 DishSelectDialog：仿点餐系统的双栏菜品选择器，支持分类联动切换与数量动态加减。
+
+3. 基础设施与流程优化 (Common):
+- 新增 FileUtil：打通“图库选取 -> 沙箱拷贝 -> 接口上传”的安全闭环逻辑。
+- 优化 ManageContent 状态管理：引入“变更防抖”与“操作确认”弹窗，杜绝营业状态切换的逻辑死循环。
+
+4. 关键 Bug 修复与规范达标 (Fix):
+- 修复了 Scroll 组件由于嵌套多个子组件导致的编译器报错。
+- 解决了编辑页面在“新增模式”下因参数缺失导致的 undefined 崩溃问题。
+- 修正了 TextPickerDialog 静态调用及 @Builder 闭包传递等 ArkTS 语法规范。

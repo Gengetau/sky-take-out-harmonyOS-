@@ -119,6 +119,42 @@ export class HttpUtil {
     }
   }
 
+  /**
+   * 📤 上传文件
+   * @param url 相对路径，例如 '/common/upload'
+   * @param fileUri 文件本地路径
+   */
+  static async upload<T>(url: string, fileUri: string): Promise<T> {
+    // ⚠️ 使用专用 Session，避免全局 Session 的 'Content-Type': 'application/json' 干扰
+    const uploadSession = rcp.createSession({
+      baseAddress: BASE_URL,
+      interceptors: [new TokenInterceptor(), new LogInterceptor()]
+    });
+
+    try {
+      if (url.startsWith('/')) {
+        url = url.substring(1);
+      }
+      
+      const req = new rcp.Request(BASE_URL + url, 'POST');
+
+      // 构造多部分表单
+      const form = new rcp.MultipartForm({
+        'file': {
+          contentOrPath: fileUri
+        }
+      });
+
+      req.content = form;
+      const resp = await uploadSession.fetch(req);
+      return HttpUtil.handleResponse<T>(resp);
+    } catch (err) {
+      return HttpUtil.handleError(err);
+    } finally {
+      uploadSession.close();
+    }
+  }
+
   private static handleResponse<T>(resp: rcp.Response): Promise<T> {
     if (resp.statusCode !== 200) {
       return Promise.reject(`HTTP Error: ${resp.statusCode}`);

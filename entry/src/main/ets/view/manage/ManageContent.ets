@@ -4,6 +4,7 @@ import { ShopService } from '../../service/ShopService';
 
 @Component
 export struct ManageContent {
+  @Consume('pageStack') pageStack: NavPathStack;
   @State shopStatus: number = 0; // 1:营业中, 0:打烊中
   @State shopInfo: ShopInfoVO | null = null;
   @State isLoading: boolean = true;
@@ -111,20 +112,29 @@ export struct ManageContent {
       }
       .padding({ left: 15, right: 15, top: 10 })
 
-      // 其他功能菜单 (占位)
-      List() {
-        ListItem() {
-          this.MenuItem('菜品管理', '管理您的美味佳肴')
-        }
+            // 其他功能菜单 (占位)
 
-        ListItem() {
-          this.MenuItem('套餐管理', '组合优惠更好卖喵')
-        }
+            List() {
 
-        ListItem() {
-          this.MenuItem('分类管理', '让菜单井井有条')
-        }
-      }
+              ListItem() {
+
+                this.MenuItem('菜品管理', '管理您的美味佳肴', 'DishManagePage')
+
+              }
+
+              ListItem() {
+
+                this.MenuItem('套餐管理', '组合优惠更好卖喵', 'SetmealManagePage')
+
+              }
+
+              ListItem() {
+
+                this.MenuItem('分类管理', '让菜单井井有条', 'CategoryManagePage')
+
+              }
+
+            }
       .margin({ top: 20 })
       .padding({ left: 15, right: 15 })
     }
@@ -133,25 +143,27 @@ export struct ManageContent {
     .backgroundColor($r('app.color.page_background'))
   }
 
-  @Builder
-  MenuItem(title: string, subTitle: string) {
-    Row() {
-      Column() {
-        Text(title).fontSize(16).fontColor($r('app.color.text_main')).fontWeight(FontWeight.Medium)
-        Text(subTitle).fontSize(12).fontColor($r('app.color.text_secondary')).margin({ top: 2 })
-      }.alignItems(HorizontalAlign.Start)
-
-      Blank()
-
-      Image($r('app.media.startIcon')) // 这里用前进箭头图标喵
-        .width(16)
-        .height(16)
-        .opacity(0.3)
-    }
-    .width('100%')
-    .padding(15)
-    .backgroundColor(Color.White)
-    .borderRadius(8)
-    .margin({ bottom: 10 })
-  }
-}
+    @Builder
+    MenuItem(title: string, subTitle: string, targetPage: string) {
+      Row() {
+        Column() {
+          Text(title).fontSize(16).fontColor($r('app.color.text_main')).fontWeight(FontWeight.Medium)
+          Text(subTitle).fontSize(12).fontColor($r('app.color.text_secondary')).margin({ top: 2 })
+        }.alignItems(HorizontalAlign.Start)
+        
+        Blank()
+        
+        Image($r('app.media.startIcon')) // 这里用前进箭头图标喵
+          .width(16)
+          .height(16)
+          .opacity(0.3)
+      }
+      .width('100%')
+      .padding(15)
+      .backgroundColor(Color.White)
+      .borderRadius(8)
+      .margin({ bottom: 10 })
+      .onClick(() => {
+        this.pageStack.pushPath({ name: targetPage });
+      })
+    }}
