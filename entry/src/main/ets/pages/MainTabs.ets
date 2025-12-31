@@ -1,4 +1,6 @@
 import { OrderListContent } from '../view/home/OrderListContent';
+import { ManageContent } from '../view/manage/ManageContent';
+import { MineContent } from '../view/mine/MineContent';
 
 class StatusItem {
   label: string;
@@ -89,9 +91,9 @@ export struct MainTabs {
         }
         .tabBar(this.TabBuilder('订单', 0, $r('app.media.startIcon'), $r('app.media.startIcon')))
 
-        // 2. 菜品管理 (占位)
+        // 2. 菜品管理
         TabContent() {
-          Column() { Text('菜品管理建设中...').fontSize(18) }.width('100%').height('100%').justifyContent(FlexAlign.Center)
+          ManageContent()
         }
         .tabBar(this.TabBuilder('管理', 1, $r('app.media.startIcon'), $r('app.media.startIcon')))
 
@@ -101,9 +103,9 @@ export struct MainTabs {
         }
         .tabBar(this.TabBuilder('数据', 2, $r('app.media.startIcon'), $r('app.media.startIcon')))
 
-        // 4. 个人中心 (占位)
+        // 4. 个人中心
         TabContent() {
-          Column() { Text('个人中心建设中...').fontSize(18) }.width('100%').height('100%').justifyContent(FlexAlign.Center)
+          MineContent()
         }
         .tabBar(this.TabBuilder('我的', 3, $r('app.media.startIcon'), $r('app.media.startIcon')))
       }

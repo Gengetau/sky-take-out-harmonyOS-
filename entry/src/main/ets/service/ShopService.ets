@@ -1,6 +1,14 @@
 import { HttpUtil } from '../common/HttpUtil';
+import { ShopInfoVO } from '../model/ShopModel';
 
 export class ShopService {
+  /**
+   * 获取店铺详情 (包含营业状态、Logo等)
+   */
+  static async getShopInfo(): Promise<ShopInfoVO> {
+    return HttpUtil.get<ShopInfoVO>('/shop');
+  }
+
   /**
    * 获取店铺营业状态
    * @returns 1:营业中, 0:打烊中
