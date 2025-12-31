@@ -306,5 +306,112 @@ public class DishServiceImpl extends ServiceImpl<DishMapper, Dish> implements Di
 		java.util.Set<String> keys = cacheClient.keys(pattern);
 		cacheClient.delete(keys);
 	}
-}
 
+	// ===============================================
+	// =================== Meow App 商家端实现 ============
+	// ===============================================
+
+	@Override
+	public Result<List<DishVO>> getShopDishListByCategory(Long categoryId, Long shopId) {
+		log.info("App端根据分类查询菜品，分类ID: {}, 店铺ID: {} 喵", categoryId, shopId);
+		
+		// 1. 校验分类是否属于该店铺
+		Category category = categoryService.getById(categoryId);
+		if (category == null) {
+			return Result.success(CollUtil.newArrayList());
+		}
+		if (!category.getShopId().equals(shopId)) {
+			// 如果分类不属于该店铺，直接返回空，或者抛出异常
+			log.warn("App端尝试查询非本店铺的分类菜品，已拦截喵！");
+			return Result.success(CollUtil.newArrayList());
+		}
+
+		// 2. 查询菜品 (强制 shopId 过滤)
+		List<Dish> list = list(new LambdaQueryWrapper<Dish>()
+				.eq(Dish::getCategoryId, categoryId)
+				.eq(Dish::getShopId, shopId)); // 增加 shopId 过滤
+
+		// 3. 组装 VO
+		List<DishVO> dishVOS = list.stream().map(dish -> {
+			DishVO dishVO = BeanUtil.copyProperties(dish, DishVO.class);
+			dishVO.setCategoryName(category.getName());
+			// 图片签名
+			String signedUrl = AliOssUtil.getSignedUrl(ossClient, dishVO.getImage(), ossConfig.getBucketName());
+			dishVO.setImage(signedUrl);
+			// 可选：加载口味信息
+			List<DishFlavor> flavors = dishFlavorMapper.selectList(new LambdaQueryWrapper<DishFlavor>()
+					.eq(DishFlavor::getDishId, dish.getId()));
+			dishVO.setFlavors(flavors);
+			
+			return dishVO;
+		}).collect(Collectors.toList());
+
+		return Result.success(dishVOS);
+	}
+
+	@Override
+	public Result<DishVO> getShopDishById(Long id, Long shopId) {
+		log.info("App端查询菜品详情，ID: {}, 店铺ID: {} 喵", id, shopId);
+		
+		Dish dish = getById(id);
+		if (dish == null || !dish.getShopId().equals(shopId)) {
+			// 不存在或不属于该店铺
+			throw new DishNotFoundException(ELIGIBLE_DISHES_DO_NOT_EXIST);
+		}
+
+		DishVO vo = BeanUtil.copyProperties(dish, DishVO.class);
+		
+		// 补充分类名称
+		Category category = categoryService.getById(dish.getCategoryId());
+		if (category != null) {
+			vo.setCategoryName(category.getName());
+		}
+
+		// 补充口味
+		List<DishFlavor> dishFlavors = dishFlavorMapper.selectList(new LambdaQueryWrapper<DishFlavor>()
+				.eq(DishFlavor::getDishId, vo.getId()));
+		vo.setFlavors(dishFlavors);
+
+		// 图片签名
+		String signedUrl = AliOssUtil.getSignedUrl(ossClient, vo.getImage(), ossConfig.getBucketName());
+		vo.setImage(signedUrl);
+
+		return Result.success(vo);
+	}
+
+	@Override
+	@Transactional(rollbackFor = Exception.class)
+	public Result<String> shopStartOrStop(Integer status, Long id, Long shopId) {
+		log.info("App端修改菜品状态，ID: {}, 状态: {}, 店铺ID: {} 喵", id, status, shopId);
+		
+		// 1. 权限校验
+		Dish dish = getById(id);
+		if (dish == null) {
+			throw new DishNotFoundException(ELIGIBLE_DISHES_DO_NOT_EXIST);
+		}
+		if (!dish.getShopId().equals(shopId)) {
+			throw new DeletionNotAllowedException("越权操作：该菜品不属于您的店铺喵！");
+		}
+
+		// 2. 停售校验 (沿用原有逻辑)
+		if (status.equals(StatusConstant.DISABLE)) {
+			// 判断当前菜品是否在套餐中
+			List<SetMealDish> setMealDishes = setMealDishService.list(new LambdaQueryWrapper<SetMealDish>()
+					.eq(SetMealDish::getDishId, id));
+			if (setMealDishes != null && !setMealDishes.isEmpty()) {
+				throw new DeletionNotAllowedException(MessageConstant.DISH_IS_RELATED_TO_SETMEAL);
+			}
+		}
+
+		// 3. 更新状态
+		dish.setStatus(status);
+		updateById(dish);
+
+		// 4. 清理缓存 (简单粗暴清理该店铺下所有菜品缓存，或者按分类清理)
+		// 原有的 Redis Key 是 DISH_CACHE_KEY + categoryId (e.g. "cache:dish:10")
+		// 建议清理该分类下的缓存
+		cleanCache(DISH_CACHE_KEY + dish.getCategoryId());
+
+		return Result.success();
+	}
+}

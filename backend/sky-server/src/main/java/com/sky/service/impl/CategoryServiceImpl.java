@@ -209,4 +209,21 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category>
 		List<CategoryVO> vos = BeanUtil.copyToList(list, CategoryVO.class);
 		return Result.success(vos);
 	}
+
+	// ==================================================
+	// =============== Meow App 商家端方法实现 =============
+	// ==================================================
+
+	@Override
+	public Result<List<CategoryVO>> getShopCategoryByType(Integer type, Long shopId) {
+		log.info("App端查询分类列表，类型: {}, 店铺ID: {} 喵", type, shopId);
+		// 强制加上 shopId 过滤
+		List<Category> list = list(new LambdaQueryWrapper<Category>()
+				.eq(Category::getShopId, shopId)
+				.eq(type != null, Category::getType, type)
+				.orderByAsc(Category::getSort));
+				
+		List<CategoryVO> vos = BeanUtil.copyToList(list, CategoryVO.class);
+		return Result.success(vos);
+	}
 }

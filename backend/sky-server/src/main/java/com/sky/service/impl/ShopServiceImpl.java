@@ -170,6 +170,23 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements Sh
         log.info("店铺数据预热任务执行完毕喵！✨");
     }
 
+    @Override
+    public void updateStatus(Long shopId, Integer status) {
+        log.info("更新店铺 {} 的状态为 {} 喵", shopId, status);
+        // 1. 更新数据库
+        Shop shop = new Shop();
+        shop.setId(shopId);
+        shop.setStatus(status);
+        shopMapper.updateById(shop);
+
+        // 2. 更新 Redis (针对多商家)
+        String key = RedisConstants.SHOP_STATUS_KEY + ":" + shopId;
+        stringRedisTemplate.opsForValue().set(key, status.toString());
+        
+        // 3. 同时更新全局 Key (可选，为了兼容某些旧逻辑，但推荐逐步弃用)
+        // stringRedisTemplate.opsForValue().set(RedisConstants.SHOP_STATUS_KEY, status.toString());
+    }
+
     private ShopVO convertToVO(Shop shop) {
         ShopVO vo = new ShopVO();
         BeanUtil.copyProperties(shop, vo);

@@ -83,4 +83,16 @@ public interface CategoryService extends IService<Category> {
 	 * @return
 	 */
 	Result<List<CategoryVO>> getCategoryByType(Integer type);
+
+	// ==================================================
+	// =============== Meow App 商家端方法 =================
+	// ==================================================
+
+	/**
+	 * 商家端根据类型查询分类 (强制 shopId 隔离)
+	 * @param type 分类类型 (1:菜品分类 2:套餐分类)
+	 * @param shopId 店铺ID
+	 * @return
+	 */
+	Result<List<CategoryVO>> getShopCategoryByType(Integer type, Long shopId);
 }
