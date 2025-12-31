@@ -1,8 +1,0 @@
-feat: 优化商家端 App 登录及店铺/订单详情逻辑
-
-- 登录优化：
-  - 将商家端 App 的 JWT Token 有效期延长至 7 天，提升商家使用体验喵。
-- 店铺管理：
-  - 在 AppShopController 中新增获取店铺详情接口，支持商家查看自身基本信息喵。
-- 订单模块修复：
-  - 在 OrderServiceImpl 的 getOrderDetailById 方法中增加图片签名逻辑，确保商品图片在 App 端正常显示喵。

@@ -95,4 +95,28 @@ public interface CategoryService extends IService<Category> {
 	 * @return
 	 */
 	Result<List<CategoryVO>> getShopCategoryByType(Integer type, Long shopId);
+
+	/**
+	 * 商家端新增分类 (带 shopId 归属)
+	 * @param categoryDTO 分类信息
+	 * @param shopId 店铺ID
+	 * @return
+	 */
+	Result<String> addShopCategory(CategoryDTO categoryDTO, Long shopId);
+
+	/**
+	 * 商家端修改分类 (带 shopId 权限检查)
+	 * @param categoryDTO 分类信息
+	 * @param shopId 店铺ID
+	 * @return
+	 */
+	Result<String> updateShopCategory(CategoryDTO categoryDTO, Long shopId);
+
+	/**
+	 * 商家端删除分类 (带 shopId 权限检查)
+	 * @param id 分类ID
+	 * @param shopId 店铺ID
+	 * @return
+	 */
+	Result<String> deleteShopCategory(Long id, Long shopId);
 }

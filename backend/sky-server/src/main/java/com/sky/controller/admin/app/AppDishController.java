@@ -1,6 +1,7 @@
 package com.sky.controller.admin.app;
 
 import com.sky.context.BaseContext;
+import com.sky.dto.DishDTO;
 import com.sky.result.Result;
 import com.sky.service.DishService;
 import com.sky.vo.DishVO;
@@ -26,8 +27,6 @@ public class AppDishController {
 
     /**
      * 根据分类id查询菜品
-     * @param categoryId
-     * @return
      */
     @GetMapping("/list")
     @ApiOperation("根据分类id查询菜品")
@@ -39,8 +38,6 @@ public class AppDishController {
 
     /**
      * 根据id查询菜品
-     * @param id
-     * @return
      */
     @GetMapping("/{id}")
     @ApiOperation("根据id查询菜品")
@@ -52,9 +49,6 @@ public class AppDishController {
 
     /**
      * 菜品起售停售
-     * @param status
-     * @param id
-     * @return
      */
     @PostMapping("/status/{status}")
     @ApiOperation("菜品起售停售")
@@ -62,5 +56,38 @@ public class AppDishController {
         Long shopId = BaseContext.getCurrentShopId();
         log.info("App端修改菜品状态，ID: {}, 状态: {}, 店铺ID: {} 喵", id, status, shopId);
         return dishService.shopStartOrStop(status, id, shopId);
+    }
+
+    /**
+     * 新增菜品
+     */
+    @PostMapping
+    @ApiOperation("新增菜品")
+    public Result<String> save(@RequestBody DishDTO dishDTO) {
+        Long shopId = BaseContext.getCurrentShopId();
+        log.info("App端新增菜品：{}, 店铺ID: {} 喵", dishDTO, shopId);
+        return dishService.addShopDish(dishDTO, shopId);
+    }
+
+    /**
+     * 修改菜品
+     */
+    @PutMapping
+    @ApiOperation("修改菜品")
+    public Result<String> update(@RequestBody DishDTO dishDTO) {
+        Long shopId = BaseContext.getCurrentShopId();
+        log.info("App端修改菜品：{}, 店铺ID: {} 喵", dishDTO, shopId);
+        return dishService.updateShopDish(dishDTO, shopId);
+    }
+
+    /**
+     * 批量删除菜品
+     */
+    @DeleteMapping
+    @ApiOperation("批量删除菜品")
+    public Result<String> delete(@RequestParam List<Long> ids) {
+        Long shopId = BaseContext.getCurrentShopId();
+        log.info("App端批量删除菜品：{}, 店铺ID: {} 喵", ids, shopId);
+        return dishService.deleteShopDishes(ids, shopId);
     }
 }

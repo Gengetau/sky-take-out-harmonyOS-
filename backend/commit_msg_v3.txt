@@ -1,0 +1,15 @@
+feat: 完善商家端 App 的分类/菜品/套餐管理功能及修复口味保存逻辑
+
+- 新增功能：
+  - 在 AppCategoryController 中增加分类的新增、修改和删除接口喵。
+  - 在 AppDishController 中增加菜品的新增、修改和批量删除接口喵。
+  - 在 AppSetMealController 中增加套餐的新增、修改和批量删除接口喵。
+  - 新增 AppCommonController 实现 App 端图片上传功能喵。
+
+- 业务层修复与增强：
+  - 新建 DishFlavorService 及其实现类，支持口味信息的批量保存操作喵。
+  - 修复 DishServiceImpl 中的 saveDish 和 updateDish 方法，补全了 Web 管理端丢失的口味保存逻辑喵。
+  - 统一 App 端增删改逻辑，强制执行 shopId 权限校验，确保多商户数据绝对安全喵。
+
+- 代码规范：
+  - 严格保留了原有代码的注释，并为所有新写的逻辑添加了详尽的中文注释说明喵！✨

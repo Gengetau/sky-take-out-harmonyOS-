@@ -214,16 +214,104 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category>
 	// =============== Meow App 商家端方法实现 =============
 	// ==================================================
 
+	/**
+	 * 商家端根据类型查询分类 (带 shopId 过滤)
+	 */
 	@Override
 	public Result<List<CategoryVO>> getShopCategoryByType(Integer type, Long shopId) {
 		log.info("App端查询分类列表，类型: {}, 店铺ID: {} 喵", type, shopId);
-		// 强制加上 shopId 过滤
 		List<Category> list = list(new LambdaQueryWrapper<Category>()
 				.eq(Category::getShopId, shopId)
 				.eq(type != null, Category::getType, type)
 				.orderByAsc(Category::getSort));
-				
 		List<CategoryVO> vos = BeanUtil.copyToList(list, CategoryVO.class);
 		return Result.success(vos);
+	}
+
+	/**
+	 * 商家端新增分类 (自动关联当前店铺)
+	 */
+	@Override
+	@Transactional(rollbackFor = Exception.class)
+	public Result<String> addShopCategory(CategoryDTO categoryDTO, Long shopId) {
+		// 1. 校验重名或排序冲突 (仅限当前店铺内检查喵)
+		long count = count(new LambdaQueryWrapper<Category>()
+				.eq(Category::getShopId, shopId)
+				.and(wrapper -> wrapper.eq(Category::getName, categoryDTO.getName())
+						.or().eq(Category::getSort, categoryDTO.getSort())));
+		if (count > 0) {
+			throw new CategoryExitException(MessageConstant.CATEGORY_EXIT);
+		}
+		
+		// 2. 转换实体并设置店铺ID
+		Category newCategory = BeanUtil.copyProperties(categoryDTO, Category.class);
+		newCategory.setShopId(shopId); 
+		newCategory.setStatus(StatusConstant.ENABLE); // 默认启用
+		
+		// 3. 保存入库
+		save(newCategory);
+		
+		// 4. 清理该店铺的分类缓存
+		cleanShopCache(shopId);
+		return Result.success();
+	}
+
+	/**
+	 * 商家端修改分类 (带越权检查)
+	 */
+	@Override
+	@Transactional(rollbackFor = Exception.class)
+	public Result<String> updateShopCategory(CategoryDTO categoryDTO, Long shopId) {
+		// 1. 权限校验：确保该分类属于当前操作的商家
+		Category category = getById(categoryDTO.getId());
+		if (category == null || !category.getShopId().equals(shopId)) {
+			throw new CategoryNotFoundException(MessageConstant.CATEGORY_NOT_FOUND);
+		}
+		
+		// 2. 执行更新
+		BeanUtil.copyProperties(categoryDTO, category);
+		updateById(category);
+		
+		// 3. 清理缓存
+		cleanShopCache(shopId);
+		return Result.success();
+	}
+
+	/**
+	 * 商家端删除分类 (带越权检查及关联检查)
+	 */
+	@Override
+	@Transactional(rollbackFor = Exception.class)
+	public Result<String> deleteShopCategory(Long id, Long shopId) {
+		// 1. 权限校验
+		Category category = getById(id);
+		if (category == null || !category.getShopId().equals(shopId)) {
+			throw new CategoryNotFoundException(MessageConstant.CATEGORY_NOT_FOUND);
+		}
+		
+		// 2. 关联检查：如果分类下有菜品或套餐，不允许删除
+		if (category.getType() == 1) {
+			long dishCount = dishService.count(new LambdaQueryWrapper<Dish>().eq(Dish::getCategoryId, id));
+			if (dishCount > 0) throw new DeletionNotAllowedException(MessageConstant.CATEGORY_BE_RELATED_BY_DISH);
+		} else {
+			long mealCount = setMealService.count(new LambdaQueryWrapper<SetMeal>().eq(SetMeal::getCategoryId, id));
+			if (mealCount > 0) throw new DeletionNotAllowedException(MessageConstant.CATEGORY_BE_RELATED_BY_SET_MEAL);
+		}
+		
+		// 3. 删除操作
+		removeById(id);
+		
+		// 4. 清理缓存
+		cleanShopCache(shopId);
+		return Result.success();
+	}
+
+	/**
+	 * 私有辅助方法：清理指定店铺的分类缓存
+	 */
+	private void cleanShopCache(Long shopId) {
+		String key = CACHE_CATEGORY_SHOP_KEY + shopId;
+		stringRedisTemplate.delete(key);
+		log.info("已清理店铺 {} 的分类缓存喵！✨", shopId);
 	}
 }

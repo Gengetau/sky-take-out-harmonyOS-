@@ -317,4 +317,152 @@ public class SetMealServiceImpl extends ServiceImpl<SetMealMapper, SetMeal>
 		// 3.新增套餐对应的菜品
 		setMealDishService.saveBatch(setMealDishes);
 	}
+
+	// ===============================================
+	// =================== Meow App 商家端实现 ============
+	// ===============================================
+
+	/**
+	 * 商家端根据分类查询套餐列表 (强制 shopId 隔离)
+	 */
+	@Override
+	public Result<List<SetMealVO>> getShopSetMealListByCategory(Long categoryId, Long shopId) {
+		log.info("App端根据分类查询套餐，分类ID: {}, 店铺ID: {} 喵", categoryId, shopId);
+		Category category = categoryService.getById(categoryId);
+		if (category == null || !category.getShopId().equals(shopId)) {
+			return Result.success(CollUtil.newArrayList());
+		}
+		List<SetMeal> list = list(new LambdaQueryWrapper<SetMeal>()
+				.eq(SetMeal::getCategoryId, categoryId)
+				.eq(SetMeal::getShopId, shopId));
+		List<SetMealVO> vos = list.stream().map(setMeal -> {
+			SetMealVO vo = BeanUtil.copyProperties(setMeal, SetMealVO.class);
+			vo.setCategoryName(category.getName());
+			String signedUrl = AliOssUtil.getSignedUrl(ossClient, vo.getImage(), ossConfig.getBucketName());
+			vo.setImage(signedUrl);
+			return vo;
+		}).collect(Collectors.toList());
+		return Result.success(vos);
+	}
+
+	/**
+	 * 商家端查询套餐详情 (强制 shopId 隔离)
+	 */
+	@Override
+	public Result<SetMealVO> getShopSetMealById(Long id, Long shopId) {
+		log.info("App端查询套餐详情，ID: {}, 店铺ID: {} 喵", id, shopId);
+		SetMeal setMeal = getById(id);
+		if (setMeal == null || !setMeal.getShopId().equals(shopId)) {
+			throw new SetMealNotFoundException(SET_MEAL_NOT_FOUND);
+		}
+		SetMealVO vo = BeanUtil.copyProperties(setMeal, SetMealVO.class);
+		List<SetMealDish> list = setMealDishService.list(new LambdaQueryWrapper<SetMealDish>().eq(SetMealDish::getSetMealId, id));
+		vo.setSetmealDishes(list);
+		String signedUrl = AliOssUtil.getSignedUrl(ossClient, vo.getImage(), ossConfig.getBucketName());
+		vo.setImage(signedUrl);
+		return Result.success(vo);
+	}
+
+	/**
+	 * 商家端起售/停售套餐 (强制 shopId 隔离)
+	 */
+	@Override
+	@Transactional(rollbackFor = Exception.class)
+	public Result<String> shopSetMealStatus(Integer status, Long id, Long shopId) {
+		log.info("App端修改套餐状态，ID: {}, 状态: {}, 店铺ID: {} 喵", id, status, shopId);
+		SetMeal setMeal = getById(id);
+		if (setMeal == null || !setMeal.getShopId().equals(shopId)) {
+			throw new SetMealNotFoundException(SET_MEAL_NOT_FOUND);
+		}
+		if (status.equals(ENABLE)) {
+			List<Long> dishIds = setMealDishService.list(new LambdaQueryWrapper<SetMealDish>().eq(SetMealDish::getSetMealId, id))
+					.stream().map(SetMealDish::getDishId).collect(Collectors.toList());
+			if (CollUtil.isNotEmpty(dishIds)) {
+				long disabledDishCount = dishService.count(new LambdaQueryWrapper<Dish>().in(Dish::getId, dishIds).eq(Dish::getStatus, DISABLE));
+				if (disabledDishCount > 0) throw new SetmealEnableFailedException(SET_MEAL_ENABLE_FAILED);
+			}
+		}
+		setMeal.setStatus(status);
+		updateById(setMeal);
+		cleanCache(SETMEAL_CACHE_KEY + "*");
+		return Result.success();
+	}
+
+	/**
+	 * 商家端新增套餐 (自动关联当前店铺)
+	 */
+	@Override
+	@Transactional(rollbackFor = Exception.class)
+	public Result<String> addShopSetMeal(SetmealDTO dto, Long shopId) {
+		// 1. 校验重名
+		long count = count(new LambdaQueryWrapper<SetMeal>().eq(SetMeal::getShopId, shopId).eq(SetMeal::getName, dto.getName()));
+		if (count > 0) throw new SetMealExitException(SET_MEAL_EXIT);
+		
+		// 2. 实体转换并保存套餐主体
+		SetMeal setMeal = BeanUtil.copyProperties(dto, SetMeal.class);
+		setMeal.setShopId(shopId);
+		setMeal.setImage(AliOssUtil.extractKeyFromUrl(dto.getImage()));
+		save(setMeal);
+		
+		// 3. 保存套餐与菜品的关系喵
+		List<SetMealDish> dishes = dto.getSetmealDishes();
+		if (CollUtil.isNotEmpty(dishes)) {
+			dishes.forEach(d -> d.setSetMealId(setMeal.getId()));
+			setMealDishService.saveBatch(dishes);
+		}
+		
+		cleanCache(SETMEAL_CACHE_KEY + "*");
+		return Result.success();
+	}
+
+	/**
+	 * 商家端修改套餐 (带越权校验)
+	 */
+	@Override
+	@Transactional(rollbackFor = Exception.class)
+	public Result<String> updateShopSetMeal(SetmealDTO dto, Long shopId) {
+		// 1. 权限校验
+		SetMeal oldSetMeal = getById(dto.getId());
+		if (oldSetMeal == null || !oldSetMeal.getShopId().equals(shopId)) {
+			throw new SetMealNotFoundException(SET_MEAL_NOT_FOUND);
+		}
+		
+		// 2. 更新套餐主体
+		SetMeal setMeal = BeanUtil.copyProperties(dto, SetMeal.class);
+		setMeal.setImage(AliOssUtil.extractKeyFromUrl(dto.getImage()));
+		updateById(setMeal);
+		
+		// 3. 更新关联关系 (先删后加)
+		setMealDishService.remove(new LambdaQueryWrapper<SetMealDish>().eq(SetMealDish::getSetMealId, setMeal.getId()));
+		List<SetMealDish> dishes = dto.getSetmealDishes();
+		if (CollUtil.isNotEmpty(dishes)) {
+			dishes.forEach(d -> d.setSetMealId(setMeal.getId()));
+			setMealDishService.saveBatch(dishes);
+		}
+		
+		cleanCache(SETMEAL_CACHE_KEY + "*");
+		return Result.success();
+	}
+
+	/**
+	 * 商家端批量删除套餐 (带越权校验)
+	 */
+	@Override
+	@Transactional(rollbackFor = Exception.class)
+	public Result<String> deleteShopSetMeals(List<Long> ids, Long shopId) {
+		// 1. 权限检查
+		long count = count(new LambdaQueryWrapper<SetMeal>().in(SetMeal::getId, ids).ne(SetMeal::getShopId, shopId));
+		if (count > 0) throw new DeletionNotAllowedException("操作失败：包含非本店铺套餐喵！");
+		
+		// 2. 状态检查：启售中的不能删
+		long onSaleCount = count(new LambdaQueryWrapper<SetMeal>().in(SetMeal::getId, ids).eq(SetMeal::getStatus, ENABLE));
+		if (onSaleCount > 0) throw new DeletionNotAllowedException(SET_MEAL_ON_SALE);
+		
+		// 3. 执行删除：先删关系，再删主体
+		setMealDishService.remove(new LambdaQueryWrapper<SetMealDish>().in(SetMealDish::getSetMealId, ids));
+		removeBatchByIds(ids);
+		
+		cleanCache(SETMEAL_CACHE_KEY + "*");
+		return Result.success();
+	}
 }
