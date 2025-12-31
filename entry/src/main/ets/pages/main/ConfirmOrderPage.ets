@@ -1,14 +1,15 @@
+import { promptAction } from '@kit.ArkUI';
 import { DateGroup, TimeGenerator } from '../../common/utils/TimeGenerator';
 import { CartItemDTO, OrderSubmitDTO } from '../../model/api/OrderModel';
 import { AddressBook } from '../../model/entity/AddressBook';
 import { CartItem, ShopVO } from '../../model/entity/ShopModel';
 import { CartService } from '../../service/CartService';
 import { OrderService } from '../../service/OrderService';
+import { ShopService } from '../../service/ShopService';
 import { AddressEditPage } from '../address/AddressEditPage';
 import { AddressListView } from '../address/components/AddressListView';
-import { RemarkPage } from './RemarkPage';
 import { PaymentPageParams } from './PaymentPage';
-import { promptAction } from '@kit.ArkUI';
+import { RemarkPage } from './RemarkPage';
 
 /**
  * 确认订单弹窗组件 - 多商店重构版 ✨
@@ -16,12 +17,10 @@ import { promptAction } from '@kit.ArkUI';
 @Component
 export struct ConfirmOrderView {
   @Consume('pageStack') pageStack: NavPathStack;
-  
   @Prop shopId: number;
   @Prop shopInfo: ShopVO | null;
-
-  onClose: () => void = () => {};
-  
+  onClose: () => void = () => {
+  };
   @State cartService: CartService = CartService.getInstance();
   @StorageProp('CartUpdateSignal') @Watch('onCartUpdate') cartSignal: number = 0;
   @State currentTotalPrice: number = 0;
@@ -29,22 +28,18 @@ export struct ConfirmOrderView {
   @State defaultAddress: AddressBook | null = null;
   @State remark: string = '';
   @State isLoading: boolean = false;
-  
-  @State payMethod: number = 2; 
-  @State tablewareNumber: number = 0; 
-  @State tablewareStatus: number = 1; 
-  
+  @State payMethod: number = 2;
+  @State tablewareNumber: number = 0;
+  @State tablewareStatus: number = 1;
   @State showAddressList: boolean = false;
   @State isEditingAddress: boolean = false;
-  @State isAddingRemark: boolean = false; 
+  @State isAddingRemark: boolean = false;
   @State editingAddressId: number = 0;
-  
   @State showTimeSheet: boolean = false;
   @State timeGroups: DateGroup[] = [];
   @State selectedDateIndex: number = 0;
   @State deliveryTimeText: string = TimeGenerator.getImmediateDeliveryTime();
-  
-  private packAmount: number = 2; 
+  private packAmount: number = 2;
 
   async aboutToAppear() {
     this.onCartUpdate();
@@ -79,6 +74,19 @@ export struct ConfirmOrderView {
     }
     this.isLoading = true;
     try {
+      // ✨ 终点哨卡：最后确认一次商家营业状态喵！
+      const shopDetail = await ShopService.getShopDetail(this.shopId);
+      if (!shopDetail || shopDetail.status === 0 ) {
+        promptAction.showToast({ message: '来晚了一步喵，商家刚刚打烊了~' });
+        this.isLoading = false;
+        // 关闭弹窗并清空购物车，防止用户反复重试喵
+        if ( this.onClose ) {
+          this.onClose();
+        }
+        this.cartService.clearCart();
+        return;
+      }
+
       const isImmediate = this.deliveryTimeText.startsWith('立即送出');
       const estimatedTime = this.parseEstimatedTime(this.deliveryTimeText);
 
@@ -119,8 +127,8 @@ export struct ConfirmOrderView {
 
       this.pageStack.pushPath({ name: 'PaymentPage', param: params });
 
-      if (this.onClose) {
-        this.onClose(); 
+      if ( this.onClose ) {
+        this.onClose();
       }
 
       this.cartService.clearCart();
@@ -330,7 +338,7 @@ export struct ConfirmOrderView {
             .backgroundColor('#F1F3F5')
           }
         }
-        .width('100%').layoutWeight(1) 
+        .width('100%').layoutWeight(1)
         .bindSheet(this.showTimeSheet, this.TimeSheetBuilder(), {
           height: 400,
           dragBar: true,
@@ -344,7 +352,7 @@ export struct ConfirmOrderView {
       .height('100%')
       // ✨ 将 AddressSheet 绑定到最外层 Column，物理隔离两个 Sheet
       .bindSheet(this.showAddressList, this.AddressListBuilder(), {
-        height: 600, 
+        height: 600,
         dragBar: true,
         backgroundColor: '#F1F3F5',
         onDisappear: () => {
@@ -406,7 +414,7 @@ export struct ConfirmOrderView {
     Column() {
       // 🏠 展示真实店名喵
       Text(this.shopInfo?.name || '商家').fontSize(14).fontWeight(FontWeight.Bold).margin({ bottom: 10 })
-      
+
       ForEach(this.cartService.cartItems, (item: CartItem) => {
         Row() {
           Image(item.image)
@@ -466,13 +474,13 @@ export struct ConfirmOrderView {
           .width(24)
           .height(24)
           .margin({ right: 10 })
-          .grayscale(1) 
-          .opacity(0.5) 
+          .grayscale(1)
+          .opacity(0.5)
 
         Text('微信支付')
           .fontSize(14)
           .layoutWeight(1)
-          .fontColor('#999') 
+          .fontColor('#999')
 
         Text('(维护中)')
           .fontSize(12)
@@ -481,7 +489,7 @@ export struct ConfirmOrderView {
 
         Radio({ value: '1', group: 'pay' })
           .checked(this.payMethod === 1)
-          .enabled(false) 
+          .enabled(false)
       }
       .width('100%')
       .padding({ top: 10, bottom: 10 })

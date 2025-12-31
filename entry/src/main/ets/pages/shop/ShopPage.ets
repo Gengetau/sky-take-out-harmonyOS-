@@ -2,7 +2,7 @@ import { promptAction } from '@kit.ArkUI';
 import { CategoryWithItems, DishVO, ShopVO } from '../../model/entity/ShopModel';
 import { CartService } from '../../service/CartService';
 import { ShopService } from '../../service/ShopService';
-import { ConfirmOrderView } from '../main/ConfirmOrderPage'; 
+import { ConfirmOrderView } from '../main/ConfirmOrderPage';
 import { CartBar } from './components/CartBar';
 import { DishCard } from './components/DishCard';
 import { FlavorDialog } from './components/FlavorDialog';
@@ -14,32 +14,26 @@ import { ShopHeader } from './components/ShopHeader';
 @Component
 export struct ShopPage {
   @Consume('pageStack') pageStack: NavPathStack;
-  
   // 1.数据源
   @State categoryList: CategoryWithItems[] = [];
   @State shopInfo: ShopVO | null = null;
   @State shopId: number = 0;
-
   // 2.状态变量
-  @State currentCategoryIndex: number = 0; 
-  @State isLoading: boolean = true; 
-  @State isShopOpen: boolean = false; 
+  @State currentCategoryIndex: number = 0;
+  @State isLoading: boolean = true;
+  @State isShopOpen: boolean = false;
   @State showConfirmOrder: boolean = false;
-  
   // 3.控制器
   private rightScroller: Scroller = new Scroller();
-  
   // 4.服务实例
   @Provide('cartService') cartService: CartService = CartService.getInstance();
-  
   // 5.标志变量
   private isClickScroll: boolean = false;
   @State currentDish: DishVO | null = null;
-  
   // 定义弹窗控制器
   private flavorController: CustomDialogController = new CustomDialogController({
     builder: FlavorDialog({
-      dish: this.currentDish!, 
+      dish: this.currentDish!,
       onConfirm: (flavors: string) => {
         if ( this.currentDish ) {
           this.cartService.addItem(this.currentDish, flavors);
@@ -47,52 +41,49 @@ export struct ShopPage {
         }
       }
     }),
-    alignment: DialogAlignment.Center, 
-    customStyle: true 
+    alignment: DialogAlignment.Center,
+    customStyle: true
   });
 
   async aboutToAppear() {
     // 🔍 从路由参数中获取 shopId
     const params = this.pageStack.getParamByName('ShopPage') as number[];
-    if (params && params.length > 0) {
-      this.shopId = params[params.length - 1]; 
-      
+    if ( params && params.length > 0 ) {
+      this.shopId = params[params.length - 1];
+
       // 🛒 切换购物车到当前店铺喵！
       this.cartService.switchShop(this.shopId);
     }
-    
+
     this.loadData();
   }
 
   async loadData() {
-    if (this.shopId <= 0) {
+    if ( this.shopId <= 0 ) {
       promptAction.showToast({ message: '商家信息异常喵' });
       return;
     }
-    
+
     this.isLoading = true;
 
     try {
       // 🚀 核心改动：拉取数据时带上 shopId，确保分类是该商家的喵！
       const results = await Promise.all([
-        ShopService.getShopStatus(),
         ShopService.getShopData(this.shopId), // 传递 shopId
         ShopService.getShopDetail(this.shopId)
       ]);
 
-      this.isShopOpen = results[0] === 1;
-      
-      const data = results[1];
+      const data = results[0];
       if ( data.length > 0 ) {
         this.categoryList = data;
       }
-      
-      this.shopInfo = results[2];
-      if (this.shopInfo) {
+
+      this.shopInfo = results[1];
+      if ( this.shopInfo ) {
         this.isShopOpen = this.shopInfo.status === 1;
       }
 
-    } catch (e) {
+    } catch ( e ) {
       console.error('加载店铺数据失败喵', e);
     } finally {
       this.isLoading = false;
@@ -113,7 +104,7 @@ export struct ShopPage {
   build() {
     NavDestination() {
       Column() {
-        ShopHeader({ 
+        ShopHeader({
           isShopOpen: this.isShopOpen,
           shopInfo: this.shopInfo,
           shopId: this.shopId // ✨ 传入 shopId 以触发关注状态检查喵！
@@ -144,10 +135,10 @@ export struct ShopPage {
                 })
               })
             }
-            .width('25%') 
+            .width('25%')
             .height('100%')
             .backgroundColor('#F8F8F8')
-            .scrollBar(BarState.Off) 
+            .scrollBar(BarState.Off)
 
             List({ scroller: this.rightScroller }) {
               ForEach(this.categoryList, (group: CategoryWithItems, groupIndex: number) => {
@@ -156,15 +147,15 @@ export struct ShopPage {
                     ListItem() {
                       DishCard({
                         dish: dish,
-                        isShopOpen: this.isShopOpen, 
-                        isSetmeal: group.category.type === 2, 
+                        isShopOpen: this.isShopOpen,
+                        isSetmeal: group.category.type === 2,
                         onOpenFlavorDialog: (dishToOpen: DishVO) => {
                           this.currentDish = dishToOpen;
                           this.flavorController.open();
                         }
                       })
                     }
-                  }, (dish: DishVO) => dish.id.toString()) 
+                  }, (dish: DishVO) => dish.id.toString())
                 }
               })
             }
@@ -172,7 +163,7 @@ export struct ShopPage {
             .height('100%')
             .backgroundColor(Color.White)
             .scrollBar(BarState.Off)
-            .sticky(StickyStyle.Header) 
+            .sticky(StickyStyle.Header)
             .onScrollIndex((firstIndex: number) => {
               if (!this.isClickScroll ) {
                 this.currentCategoryIndex = firstIndex;
@@ -182,12 +173,13 @@ export struct ShopPage {
               this.isClickScroll = false;
             })
           }
-          .layoutWeight(1) 
+          .layoutWeight(1)
           .alignItems(VerticalAlign.Top)
         }
 
         CartBar({
           isShopOpen: this.isShopOpen,
+          shopId: this.shopId,
           onCheckout: () => {
             this.showConfirmOrder = true;
           }
@@ -196,8 +188,8 @@ export struct ShopPage {
       .height('100%')
       .backgroundColor(Color.White)
       .bindSheet($$this.showConfirmOrder, this.ConfirmOrderBuilder(), {
-        height: SheetSize.LARGE, 
-        dragBar: true, 
+        height: SheetSize.LARGE,
+        dragBar: true,
         backgroundColor: '#F1F3F5',
         onDisappear: () => {
           this.showConfirmOrder = false;
@@ -220,8 +212,8 @@ export struct ShopPage {
   }
 
   selectCategory(index: number) {
-    this.isClickScroll = true; 
+    this.isClickScroll = true;
     this.currentCategoryIndex = index;
-    this.rightScroller.scrollToIndex(index, true); 
+    this.rightScroller.scrollToIndex(index, true);
   }
 }

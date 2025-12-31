@@ -1,4 +1,6 @@
+import { promptAction } from '@kit.ArkUI';
 import { CartService } from '../../../service/CartService';
+import { ShopService } from '../../../service/ShopService';
 import { CartDialog } from './CartDialog';
 
 /**
@@ -7,9 +9,10 @@ import { CartDialog } from './CartDialog';
 @Component
 export struct CartBar {
   @Prop isShopOpen: boolean;
+  @Prop shopId: number;
   // 增加一个点击去结算的回调，通知父组件弹窗
-  onCheckout: () => void = () => {};
-  
+  onCheckout: () => void = () => {
+  };
   @StorageProp('CartUpdateSignal') @Watch('onUpdate') cartSignal: number = 0;
   @State totalCount: number = 0;
   @State totalPrice: number = 0;
@@ -37,10 +40,35 @@ export struct CartBar {
     this.totalPrice = this.cartService.totalPrice;
   }
 
+  // ✨ 紧急状态检查喵！
+  async checkShopStatusAndProceed() {
+    if ( this.shopId <= 0 ) {
+      return;
+    }
+
+    try {
+      const detail = await ShopService.getShopDetail(this.shopId);
+      if ( detail && detail.status === 1 ) {
+        // ✅ 还在营业，冲呀！
+        if ( this.onCheckout ) {
+          this.onCheckout();
+        }
+      } else {
+        // ❌ 商家打烊了喵！
+        promptAction.showToast({ message: '非常抱歉，商家刚刚打烊了喵~' });
+        // 虽然我们可以改父组件的 isShopOpen，但在子组件改 Prop 不太规范，
+        // 这里的提示已经足够拦截非法操作了喵。
+      }
+    } catch ( e ) {
+      console.error('查岗失败:', e);
+      promptAction.showToast({ message: '网络好像有点慢喵，请重试' });
+    }
+  }
+
   build() {
     // 外层 Stack 用于让图标悬浮在 Bar 之上
     Stack({ alignContent: Alignment.BottomStart }) {
-      if (this.isShopOpen) {
+      if ( this.isShopOpen ) {
         // --- 1. 购物车条主体 (黑色的背景条) ---
         Row() {
           // 左侧留白 (给大图标腾位置)
@@ -60,7 +88,7 @@ export struct CartBar {
 
           // 右侧：按钮
           Row() {
-            if ( this.totalPrice >= this.minOrderPrice ) {
+            if ( this.totalCount > 0 && this.totalPrice >= this.minOrderPrice ) {
               Button('去结算')
                 .type(ButtonType.Normal)
                 .backgroundColor('#FFCC00')
@@ -69,11 +97,8 @@ export struct CartBar {
                 .width(100)
                 .height('100%')
                 .onClick(() => {
-                  console.info('喵！去付钱！');
-                  if (this.onCheckout) {
-                    this.onCheckout();
-                  }
-                  // ✨ 修正2：返回 true 来阻止事件冒泡
+                  console.info('喵！查岗中...');
+                  this.checkShopStatusAndProceed();
                   return true;
                 })
             } else {

@@ -1,10 +1,10 @@
 /**
  * 商店业务
  */
+import { FollowItem, FollowRdb } from '../common/utils/FollowRdb'; // ✨ 引入 FollowItem
 import { HttpUtil } from '../common/utils/HttpUtil';
 // 复用我们之前定义的聚合类
-import { CategoryWithItems, CategoryVO, DishVO, SetMealVO, ShopVO } from '../model/entity/ShopModel';
-import { FollowItem, FollowRdb } from '../common/utils/FollowRdb'; // ✨ 引入 FollowItem
+import { CategoryVO, CategoryWithItems, DishVO, SetMealVO, ShopVO } from '../model/entity/ShopModel';
 
 export class ShopService {
   // 🔗 接口地址
@@ -12,8 +12,8 @@ export class ShopService {
   private static readonly DISH_URL = '/client/dish';
   private static readonly SETMEAL_URL = '/client/setmeal';
   private static readonly SHOP_STATUS_URL = '/client/shop/status';
-  private static readonly SHOP_LIST_URL = '/client/shop/list'; 
-  private static readonly SHOP_DETAIL_URL = '/client/shop'; 
+  private static readonly SHOP_LIST_URL = '/client/shop/list';
+  private static readonly SHOP_DETAIL_URL = '/client/shop';
 
   /**
    * ❤️ 关注店铺 (本地 RDB)
@@ -46,15 +46,15 @@ export class ShopService {
   /**
    * 0️⃣ 获取店铺营业状态 (全局)
    */
-  static async getShopStatus(): Promise<number> {
-    try {
-      const status = await HttpUtil.get<number>(ShopService.SHOP_STATUS_URL);
-      return status;
-    } catch ( e ) {
-      console.error('获取店铺状态失败喵', JSON.stringify(e));
-      return 0; 
-    }
-  }
+  // static async getShopStatus(): Promise<number> {
+  //   try {
+  //     const status = await HttpUtil.get<number>(ShopService.SHOP_STATUS_URL);
+  //     return status;
+  //   } catch ( e ) {
+  //     console.error('获取店铺状态失败喵', JSON.stringify(e));
+  //     return 0;
+  //   }
+  // }
 
   /**
    * 🌟 0.1️⃣ 获取商家列表 (API 1.2)
@@ -110,7 +110,7 @@ export class ShopService {
       return list || [];
     } catch ( err ) {
       console.error(`获取分类 ${ categoryId } 的菜品失败喵`);
-      return []; 
+      return [];
     }
   }
 
@@ -155,7 +155,7 @@ export class ShopService {
           s.image,
           s.description,
           s.status,
-          cat.name, 
+          cat.name,
           []
         ));
       }
