@@ -45,9 +45,11 @@ public class AppEmployeeController {
         claims.put(JwtClaimsConstant.EMP_ID, employeeVO.getId());
         claims.put(JwtClaimsConstant.SHOP_ID, employeeVO.getShopId()); // 关键：在Token中存入店铺ID
 
+        // App端登录，设置7天有效期 (7 * 24 * 60 * 60 * 1000)
+        long appTtl = 604800000L;
         String token = JwtUtil.createJWT(
                 jwtProperties.getAdminSecretKey(),
-                jwtProperties.getAdminTtl(),
+                appTtl,
                 claims);
 
         employeeVO.setToken(token);

@@ -191,9 +191,16 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
 		List<OrderDetail> orderDetails = orderDetailService.list(new LambdaQueryWrapper<OrderDetail>()
 				.eq(OrderDetail::getOrderId, id));
 		List<String> strings = new ArrayList<>();
-		orderDetails.forEach(orderDetail -> {
-			strings.add(orderDetail.getName());
-		});
+		
+		// 处理图片签名
+		if (CollUtil.isNotEmpty(orderDetails)) {
+			orderDetails.forEach(orderDetail -> {
+				strings.add(orderDetail.getName());
+				String signedUrl = AliOssUtil.getSignedUrl(ossClient, orderDetail.getImage(), ossConfig.getBucketName());
+				orderDetail.setImage(signedUrl);
+			});
+		}
+
 		// 3.复制属性
 		OrderVO orderVO = BeanUtil.copyProperties(order, OrderVO.class);
 		orderVO.setOrderDishes(strings.toString());
