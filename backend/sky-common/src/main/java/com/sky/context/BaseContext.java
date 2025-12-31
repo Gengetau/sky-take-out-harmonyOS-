@@ -3,6 +3,7 @@ package com.sky.context;
 public class BaseContext {
 
     public static ThreadLocal<Long> threadLocal = new ThreadLocal<>();
+    public static ThreadLocal<Long> shopIdThreadLocal = new ThreadLocal<>();
 
     public static void setCurrentId(Long id) {
         threadLocal.set(id);
@@ -14,6 +15,18 @@ public class BaseContext {
 
     public static void removeCurrentId() {
         threadLocal.remove();
+    }
+
+    public static void setCurrentShopId(Long shopId) {
+        shopIdThreadLocal.set(shopId);
+    }
+
+    public static Long getCurrentShopId() {
+        return shopIdThreadLocal.get();
+    }
+
+    public static void removeCurrentShopId() {
+        shopIdThreadLocal.remove();
     }
 
 }

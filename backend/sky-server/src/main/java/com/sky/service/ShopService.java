@@ -35,4 +35,11 @@ public interface ShopService extends IService<Shop> {
      * 将数据库中的店铺地理位置数据预热到 Redis 喵
      */
     void loadShopGeoDataToRedis();
+
+    /**
+     * 更新店铺营业状态喵
+     * @param shopId 店铺ID
+     * @param status 状态 0:打烊 1:营业
+     */
+    void updateStatus(Long shopId, Integer status);
 }

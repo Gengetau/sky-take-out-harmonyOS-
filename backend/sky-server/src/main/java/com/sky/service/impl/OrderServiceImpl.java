@@ -191,9 +191,16 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
 		List<OrderDetail> orderDetails = orderDetailService.list(new LambdaQueryWrapper<OrderDetail>()
 				.eq(OrderDetail::getOrderId, id));
 		List<String> strings = new ArrayList<>();
-		orderDetails.forEach(orderDetail -> {
-			strings.add(orderDetail.getName());
-		});
+		
+		// 处理图片签名
+		if (CollUtil.isNotEmpty(orderDetails)) {
+			orderDetails.forEach(orderDetail -> {
+				strings.add(orderDetail.getName());
+				String signedUrl = AliOssUtil.getSignedUrl(ossClient, orderDetail.getImage(), ossConfig.getBucketName());
+				orderDetail.setImage(signedUrl);
+			});
+		}
+
 		// 3.复制属性
 		OrderVO orderVO = BeanUtil.copyProperties(order, OrderVO.class);
 		orderVO.setOrderDishes(strings.toString());
@@ -295,20 +302,13 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
 		orders.setStatus(COMPLETED);
 		updateById(orders);
 		
-		// 1. 推送系统通知：订单已完成 (Type=1/2，此处复用ORDER_NOTIFICATION即Type=2，如果想用Type=1需调用sendSystemNotification)
-		// 妮娅注：根据业务定义，Type=2是订单状态变更，Type=1是系统通知。这里作为订单状态流转，用sendOrderNotification(Type=2)比较合适。
-		// 但主人说要改回 Type=1？通常 Type=1 是 "支付成功" 这种。
-		// 如果主人坚持要 Type=1 (系统通知)，我就调用 sendSystemNotification。
-		// 如果是“订单状态变更”，通常保持 sendOrderNotification (Type=2)。
-		// 假设主人指的是“像之前那样由系统发出的订单状态通知(Type=2)”，而不是真的改成 Type=1 (SYSTEM_NOTIFICATION)。
-		// 既然之前代码里 ORDER_COMPLETED 也是走的 sendOrderNotification (Type=2)，那我就恢复成由系统发送的 Type=2。
-		
+		// 1. 推送系统通知：订单已完成
 		messageDispatcher.sendOrderNotification(orders.getUserId(), ORDER_COMPLETED, orders.getId());
 		
-		// 2. 推送商家私聊：温馨提示 (Type=3)
+		// 2. 推送商家私聊：温馨提示
 		messageDispatcher.sendPrivateMessageFromShop(
 				orders.getUserId(),
-				ORDER_COMPLETED, // 内容复用 "订单已送达..."
+				ORDER_COMPLETED,
 				orders.getId(),
 				orders.getShopId()
 		);
@@ -478,11 +478,11 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
 				List<OrderDetail> orderDetailList = orderDetailService.list(new LambdaQueryWrapper<OrderDetail>()
 						.eq(OrderDetail::getOrderId, orders.getId()));
 				
-				// 处理每个订单明细的图片链接 (生成签名 URL)
+				// 处理每个订单明细的图片链接
 				if (CollUtil.isNotEmpty(orderDetailList)) {
 					for (OrderDetail orderDetail : orderDetailList) {
 						String signedUrl = AliOssUtil.getSignedUrl(ossClient, orderDetail.getImage(), ossConfig.getBucketName());
-						orderDetail.setImage(signedUrl); // 这里会替换原始 key 为签名 URL，仅用于 VO 展示，不会保存回库
+						orderDetail.setImage(signedUrl);
 					}
 				}
 				
@@ -519,5 +519,72 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
 		}
 		
 		return Result.success(tradeStatus);
+	}
+
+	// =====================================================================
+	// ==================== 以下为 Meow 商家端 App 专属接口实现 ====================
+	// =====================================================================
+
+	@Override
+	public Result<Page<OrderVO>> getShopOrdersByPage(OrdersPageQueryDTO dto, Long shopId) {
+		log.info("商家端分页查询订单，店铺ID: {} 喵", shopId);
+		int currentPage = dto.getPage();
+		int pageSize = dto.getPageSize();
+		Page<Orders> page = new Page<>(currentPage, pageSize);
+		
+		LambdaQueryWrapper<Orders> qw = new LambdaQueryWrapper<>();
+		qw.eq(Orders::getShopId, shopId); // 强制 shopId 过滤
+		qw.eq(dto.getNumber() != null, Orders::getNumber, dto.getNumber());
+		qw.eq(dto.getPhone() != null, Orders::getPhone, dto.getPhone());
+		qw.ge(dto.getBeginTime() != null, Orders::getOrderTime, dto.getBeginTime());
+		qw.le(dto.getEndTime() != null, Orders::getOrderTime, dto.getEndTime());
+		qw.eq(dto.getStatus() != null, Orders::getStatus, dto.getStatus());
+		qw.orderByDesc(Orders::getOrderTime);
+
+		Page<Orders> ordersPage = page(page, qw);
+		if (CollUtil.isEmpty(ordersPage.getRecords())) {
+			return Result.success(new Page<>(currentPage, pageSize));
+		}
+
+		List<Long> orderIds = ordersPage.getRecords().stream().map(Orders::getId).collect(Collectors.toList());
+		Map<Long, List<String>> orderDetailMap = orderDetailService.list(new LambdaQueryWrapper<OrderDetail>()
+						.in(OrderDetail::getOrderId, orderIds))
+				.stream()
+				.collect(Collectors.groupingBy(OrderDetail::getOrderId,
+						Collectors.mapping(OrderDetail::getName, Collectors.toList())));
+
+		List<OrderVO> orderVOS = BeanUtil.copyToList(ordersPage.getRecords(), OrderVO.class);
+		orderVOS.forEach(orderVO -> {
+			List<String> strings = orderDetailMap.get(orderVO.getId());
+			if (strings != null) orderVO.setOrderDishes(strings.toString());
+		});
+
+		Page<OrderVO> orderVOPage = new Page<>(currentPage, pageSize);
+		orderVOPage.setRecords(orderVOS);
+		orderVOPage.setTotal(page.getTotal());
+		return Result.success(orderVOPage);
+	}
+
+	@Override
+	public Result<OrderStatisticsVO> getShopOrderStatistics(Long shopId) {
+		log.info("商家端统计订单数量，店铺ID: {} 喵", shopId);
+		// 1.待接单数量
+		long toBeConfirmed = count(new LambdaQueryWrapper<Orders>()
+				.eq(Orders::getShopId, shopId)
+				.eq(Orders::getStatus, TO_BE_CONFIRMED));
+		// 2.待派送数量
+		long confirmed = count(new LambdaQueryWrapper<Orders>()
+				.eq(Orders::getShopId, shopId)
+				.eq(Orders::getStatus, CONFIRMED));
+		// 3.派送中数量
+		long deliveryInProgress = count(new LambdaQueryWrapper<Orders>()
+				.eq(Orders::getShopId, shopId)
+				.eq(Orders::getStatus, DELIVERY_IN_PROGRESS));
+		
+		return Result.success(OrderStatisticsVO.builder()
+				.toBeConfirmed(toBeConfirmed)
+				.confirmed(confirmed)
+				.deliveryInProgress(deliveryInProgress)
+				.build());
 	}
 }

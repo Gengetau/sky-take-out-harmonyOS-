@@ -1,0 +1,10 @@
+fix: 修复附近商家查询包含打烊店铺的问题并完善分类管理接口
+
+- 店铺管理逻辑修复：
+  - 优化 ShopServiceImpl.updateStatus，在店铺打烊时同步从 Redis GEO 缓存中移除该店铺，实现搜索结果的实时准确性喵。
+  - 在 getNearbyShops 数据库查询层强制加入 status=1 过滤，为“只搜营业中”提供双重保险喵。
+- 分类管理功能补齐：
+  - 在 CategoryService 及实现类中新增 updateShopCategoryStatus 方法，支持 App 端启用/禁用分类喵。
+  - 在 AppCategoryController 中开放启用禁用分类的 API 接口喵。
+- 文档同步：
+  - 将最新的状态切换接口更新至 MERCHANT_APP_API.md 喵。

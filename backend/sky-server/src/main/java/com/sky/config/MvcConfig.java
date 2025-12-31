@@ -2,6 +2,7 @@ package com.sky.config;
 
 
 import com.sky.interceptor.JwtTokenAdminInterceptor;
+import com.sky.interceptor.JwtTokenAppInterceptor;
 import com.sky.interceptor.LoginInterceptor;
 import com.sky.interceptor.RefenceTokenInterceptor;
 import org.springframework.context.annotation.Configuration;
@@ -25,6 +26,9 @@ public class MvcConfig implements WebMvcConfigurer {
 	
 	@Resource
 	private JwtTokenAdminInterceptor jwtTokenAdminInterceptor;
+
+	@Resource
+	private JwtTokenAppInterceptor jwtTokenAppInterceptor;
 	
 	// 添加拦截器
 	@Override
@@ -39,11 +43,17 @@ public class MvcConfig implements WebMvcConfigurer {
 						"/admin/**",
 						"/notify/**",
 						"/ws/**").order(1);
-		// 添加jwt令牌拦截器
+		// 添加jwt令牌拦截器 (Web管理后台)
 		registry.addInterceptor(jwtTokenAdminInterceptor)
 				.addPathPatterns("/admin/**")
 				.excludePathPatterns("/admin/employee/login",
 						"/admin/shop/preheat",
-						"/admin/common/batchUpload");
+						"/admin/common/batchUpload",
+						"/admin/app/**"); // 关键：排除App端路径
+
+		// 添加商家App端jwt令牌拦截器
+		registry.addInterceptor(jwtTokenAppInterceptor)
+				.addPathPatterns("/admin/app/**")
+				.excludePathPatterns("/admin/app/employee/login"); // 排除登录接口
 	}
 }

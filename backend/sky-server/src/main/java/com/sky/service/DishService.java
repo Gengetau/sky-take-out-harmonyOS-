@@ -36,7 +36,41 @@ public interface DishService extends IService<Dish> {
 	
 	Result<String> updateDish(DishDTO dishDTO);
 	
-	    Result<String> deleteBatch(List<Long> ids);
+	Result<String> deleteBatch(List<Long> ids);
 	
-	    Result<String> startOrStop(Integer status, Long id);
-	}
+	Result<String> startOrStop(Integer status, Long id);
+
+	// ===============================================
+	// =================== Meow App 商家端 ============
+	// ===============================================
+
+	/**
+	 * 商家端根据分类查询菜品列表 (强制 shopId 隔离)
+	 */
+	Result<List<DishVO>> getShopDishListByCategory(Long categoryId, Long shopId);
+
+	/**
+	 * 商家端查询菜品详情 (强制 shopId 隔离)
+	 */
+	Result<DishVO> getShopDishById(Long id, Long shopId);
+
+	/**
+	 * 商家端起售/停售菜品 (强制 shopId 隔离)
+	 */
+	Result<String> shopStartOrStop(Integer status, Long id, Long shopId);
+
+	/**
+	 * 商家端新增菜品 (带店铺归属)
+	 */
+	Result<String> addShopDish(DishDTO dishDTO, Long shopId);
+
+	/**
+	 * 商家端修改菜品 (带越权检查)
+	 */
+	Result<String> updateShopDish(DishDTO dishDTO, Long shopId);
+
+	/**
+	 * 商家端批量删除菜品 (带越权检查)
+	 */
+	Result<String> deleteShopDishes(List<Long> ids, Long shopId);
+}
