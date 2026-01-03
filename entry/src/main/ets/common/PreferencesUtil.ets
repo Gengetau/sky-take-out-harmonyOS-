@@ -42,4 +42,16 @@ export class PreferencesUtil {
     await PreferencesUtil.pref.put(PreferencesUtil.KEY_EMPLOYEE_INFO, JSON.stringify(info));
     await PreferencesUtil.pref.flush();
   }
+
+  static async getEmployeeInfo<T>(): Promise<T | null> {
+    if (!PreferencesUtil.pref) return null;
+    const jsonStr = await PreferencesUtil.pref.get(PreferencesUtil.KEY_EMPLOYEE_INFO, '') as string;
+    if (!jsonStr) return null;
+    try {
+      return JSON.parse(jsonStr) as T;
+    } catch (e) {
+      console.error('喵！解析员工信息失败:', e);
+      return null;
+    }
+  }
 }

@@ -2,6 +2,8 @@ import { AbilityConstant, ConfigurationConstant, UIAbility, Want } from '@kit.Ab
 import { window } from '@kit.ArkUI';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 
+import { MessageRdb } from '../common/MessageRdb';
+
 const DOMAIN = 0x0000;
 
 export default class EntryAbility extends UIAbility {
@@ -12,6 +14,9 @@ export default class EntryAbility extends UIAbility {
       hilog.error(DOMAIN, 'testTag', 'Failed to set colorMode. Cause: %{public}s', JSON.stringify(err));
     }
     hilog.info(DOMAIN, 'testTag', '%{public}s', 'Ability onCreate');
+    
+    // 初始化消息数据库喵
+    MessageRdb.init(this.context);
   }
 
   onDestroy(): void {

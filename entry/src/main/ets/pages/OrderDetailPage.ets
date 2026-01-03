@@ -63,7 +63,7 @@ struct OrderDetailPage {
     Column() {
       // 导航栏
       Row() {
-        Image($r('app.media.startIcon')) // 使用返回图标，这里暂用 startIcon 代替
+        Image($r('app.media.app_logo')) // 使用返回图标，这里暂用 startIcon 代替
           .width(24)
           .height(24)
           .onClick(() => router.back())

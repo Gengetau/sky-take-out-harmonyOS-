@@ -1,13 +1,16 @@
 import { common } from '@kit.AbilityKit';
 import { PreferencesUtil } from '../common/PreferencesUtil';
+import { EmployeeLoginVO } from '../model/EmployeeLoginModel';
 import { Login } from './Login';
-import { MainTabs } from './MainTabs';
 import { OrderDetailPage } from './main/OrderDetailPage';
-import { DishManagePage } from './manage/DishManagePage';
-import { SetmealManagePage } from './manage/SetmealManagePage';
+import { MainTabs } from './MainTabs';
 import { CategoryManagePage } from './manage/CategoryManagePage';
 import { DishEditPage } from './manage/DishEditPage';
+import { DishManagePage } from './manage/DishManagePage';
 import { SetmealEditPage } from './manage/SetmealEditPage';
+import { SetmealManagePage } from './manage/SetmealManagePage';
+import { ChatPage } from './message/ChatPage';
+import { ShopInfoPage } from './ShopInfoPage';
 
 @Entry
 @Component
@@ -33,6 +36,10 @@ struct Index {
       DishEditPage()
     } else if (name === 'SetmealEditPage') {
       SetmealEditPage()
+    } else if (name === 'ChatPage') {
+      ChatPage()
+    } else if (name === 'ShopInfoPage') {
+      ShopInfoPage()
     }
   }
 
@@ -55,6 +62,14 @@ struct Index {
     if ( token ) {
       console.info('喵！发现 Token，尝试进入主页');
       AppStorage.setOrCreate('token', token);
+
+      // 恢复员工信息喵
+      const employeeInfo = await PreferencesUtil.getEmployeeInfo<EmployeeLoginVO>();
+      if ( employeeInfo ) {
+        console.info(`喵！恢复员工信息: ${ employeeInfo.name } (ShopID: ${ employeeInfo.shopId })`);
+        AppStorage.setOrCreate('employeeInfo', employeeInfo);
+      }
+
       this.pageStack.pushPath({ name: 'MainTabs' }, false);
     } else {
       console.info('喵！无 Token，进入登录页');
