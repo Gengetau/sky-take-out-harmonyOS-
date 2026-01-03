@@ -1,34 +1,41 @@
 import { HttpUtil } from '../common/HttpUtil';
-import { EmployeeLoginDTO, EmployeeLoginVO } from '../model/EmployeeLoginModel';
 import { PreferencesUtil } from '../common/PreferencesUtil';
+import { EmployeeLoginDTO, EmployeeLoginVO,PasswordEditDTO } from '../model/EmployeeLoginModel';
 
 export class AuthService {
   /**
    * 员工登录
-   * @param dto 登录参数
-   * @returns 登录结果
    */
   static async login(dto: EmployeeLoginDTO): Promise<EmployeeLoginVO> {
-    // 发送登录请求
     const result = await HttpUtil.post<EmployeeLoginVO>('/employee/login', dto);
-    
-    // 1. 存入内存，供当前会话使用
     AppStorage.setOrCreate('token', result.token);
     AppStorage.setOrCreate('employeeInfo', result);
-
-    // 2. 持久化存储，下次启动自动登录
     await PreferencesUtil.saveToken(result.token);
     await PreferencesUtil.saveEmployeeInfo(result);
-    
     return result;
   }
-  
+
   /**
    * 退出登录
    */
-  static logout() {
+  static async logout() {
+    try {
+      await HttpUtil.post<void>('/employee/logout');
+    } catch ( e ) {
+    }
     AppStorage.setOrCreate('token', '');
     AppStorage.setOrCreate('employeeInfo', null);
-    // TODO: 跳转回登录页逻辑
+    await PreferencesUtil.deleteToken();
+  }
+
+  /**
+   * 修改密码喵 (API 2.3)
+   */
+  static async updatePassword(oldPassword: string, newPassword: string): Promise<void> {
+    const data:PasswordEditDTO = {
+      oldPassword : oldPassword,
+      newPassword : newPassword
+    }
+    return HttpUtil.put<void>('/employee/password', data);
   }
 }

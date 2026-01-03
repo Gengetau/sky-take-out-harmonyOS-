@@ -21,3 +21,11 @@ export interface EmployeeLoginVO {
   token: string;
   shopId: number;
 }
+
+/**
+ * 密码修改对象
+ */
+export interface PasswordEditDTO {
+  oldPassword:string;
+  newPassword:string;
+}

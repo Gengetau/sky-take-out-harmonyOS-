@@ -1,8 +1,8 @@
 # Meow 外卖商家端 App API 接口规范
 
-*Version: 1.7.0 (全量终极完备版 - 严禁任何简写)*
+*Version: 1.7.1 (全量终极完备版 - 严禁任何简写)*
 *Created by: Nia (妮娅)*
-*Last Updated: 2025-12-31*
+*Last Updated: 2026-01-03*
 
 ---
 
@@ -65,6 +65,22 @@
 { "code": 1, "msg": null, "data": null }
 ```
 
+### 2.3 修改密码 (Update Password)
+*   **URL**: `/password`
+*   **Method**: `PUT`
+*   **Description**: 修改当前登录员工的密码。
+*   **Request Body**:
+```json
+{
+  "oldPassword": "旧密码",
+  "newPassword": "新密码"
+}
+```
+*   **Response (Success)**:
+```json
+{ "code": 1, "msg": null, "data": null }
+```
+
 ---
 
 ## 3. 店铺管理模块 (Shop)
@@ -104,6 +120,55 @@
 *   **Method**: `PUT`
 *   **Description**: 切换店铺营业/打烊状态。
 *   **Path Variables**: `status` (1:营业, 0:打烊)
+*   **Response (Success)**:
+```json
+{ "code": 1, "msg": null }
+```
+
+### 3.4 注册新店铺 (Register)
+*   **URL**: `/register`
+*   **Method**: `POST`
+*   **Description**: 开放接口，无需登录。注册成功后会自动创建一个管理员账号（账号=手机号，密码=123456）。
+*   **Request Body**:
+```json
+{
+  "name": "Meow炸鸡店",
+  "address": "上海市浦东新区...",
+  "phone": "13800138000",
+  "shopTypeId": 1,          // 店铺类型ID
+  "avatar": "https://oss...", // 可选
+  "longitude": 121.5,       // 经度
+  "latitude": 31.2          // 纬度
+}
+```
+*   **Response (Success)**:
+```json
+{
+  "code": 1,
+  "data": {
+    "id": 101,
+    "name": "Meow炸鸡店",
+    "status": 1
+  }
+}
+```
+
+### 3.5 修改店铺信息 (Update)
+*   **URL**: `/`
+*   **Method**: `PUT`
+*   **Description**: 修改店铺的基础信息（配送费、起送价、名称等）。
+*   **Request Body**:
+```json
+{
+  "name": "新店铺名称",
+  "avatar": "new-logo-key.png",
+  "phone": "13812341234",
+  "address": "新地址",
+  "description": "新简介",
+  "deliveryPrice": 20.00,
+  "shippingFee": 5.00
+}
+```
 *   **Response (Success)**:
 ```json
 { "code": 1, "msg": null }

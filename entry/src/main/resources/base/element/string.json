@@ -11,6 +11,10 @@
     {
       "name": "EntryAbility_label",
       "value": "Meow商家"
+    },
+    {
+      "name": "location_reason",
+      "value": "用于获取店铺入驻时的地理位置信息"
     }
   ]
 }

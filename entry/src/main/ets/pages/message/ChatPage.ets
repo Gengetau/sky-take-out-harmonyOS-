@@ -20,7 +20,7 @@ export class ChatPageParam {
 }
 
 /**
- * 聊天详情页
+ * 聊天详情页 (隔离版)
  */
 @Component
 export struct ChatPage {
@@ -31,21 +31,17 @@ export struct ChatPage {
   @State title: string = '';
   @State targetAvatar: string = ''; 
   
-  // 监听新消息信号，自动刷新
   @StorageLink('NewMessageSignal') @Watch('onMessageSignal') signal: number = 0;
-  
-  // 获取店铺信息 (含 Logo)
   @StorageLink('shopInfo') shopInfo: ShopInfoVO | null = null;
+  // 🐾 拿到 shopId
+  @StorageLink('employeeInfo') employeeInfo: EmployeeLoginVO | null = null;
   private defaultAvatar: Resource = $r('app.media.app_logo');
 
   initParams(params: ChatPageParam) {
     this.sessionId = params.sessionId;
     this.title = params.title;
     this.targetAvatar = params.targetAvatar;
-
-    // 标记进入会话
     MessageManager.getInstance().enterChat(this.sessionId);
-
     this.refreshMessages();
   }
   
@@ -58,8 +54,14 @@ export struct ChatPage {
   }
 
   async refreshMessages() {
-    this.messages = await MessageRdb.getMessages(this.sessionId);
-    await MessageRdb.saveSession(new SessionModel(
+    if (!this.employeeInfo?.shopId) return;
+    const shopId = this.employeeInfo.shopId;
+
+    // 🐾 调用带 shopId 的查询
+    this.messages = await MessageRdb.getMessages(shopId, this.sessionId);
+    
+    // 🐾 保存会话也带上 shopId
+    await MessageRdb.saveSession(shopId, new SessionModel(
       this.sessionId,
       this.title,
       this.targetAvatar,
@@ -93,16 +95,13 @@ export struct ChatPage {
   build() {
     NavDestination() {
       Column() {
-        // 消息列表
         List() {
           ForEach(this.messages, (item: MessageEntity) => {
             ListItem() {
               Row() {
-                if (item.role === 1) { // 对方 (用户/系统)
-                  // 头像处理喵
+                if (item.role === 1) { // 对方
                   if (this.sessionId === 'system_notify') {
-                    // 系统通知详情页也用 App Logo 喵
-                    Image($r('app.media.app_logo'))
+                     Image($r('app.media.app_logo'))
                       .width(40).height(40).borderRadius(20)
                       .objectFit(ImageFit.Cover)
                       .backgroundColor('#F0F0F0')
@@ -113,7 +112,6 @@ export struct ChatPage {
                       .backgroundColor('#F0F0F0')
                   }
 
-                  // 气泡
                   Text(item.content)
                     .backgroundColor(Color.White)
                     .fontColor('#333333')
@@ -121,23 +119,22 @@ export struct ChatPage {
                     .borderRadius(8)
                     .margin({ left: 10 })
                     .constraintSize({ maxWidth: '70%' })
-                } else { // 我 (商家)
+                } else { // 我
                   Text(item.content)
-                    .backgroundColor($r('app.color.theme_color')) // 商家用主题色(黄色)
+                    .backgroundColor($r('app.color.theme_color'))
                     .fontColor('#333333')
                     .padding(12)
                     .borderRadius(8)
                     .margin({ right: 10 })
                     .constraintSize({ maxWidth: '70%' })
 
-                  // 我的头像: 优先使用 shopInfo.avatar，否则用默认 defaultAvatar 喵
                   Image(this.shopInfo?.avatar ? this.shopInfo.avatar : this.defaultAvatar)
                     .width(40).height(40).borderRadius(20)
                     .objectFit(ImageFit.Cover)
                 }
               }
               .width('100%')
-              .justifyContent(item.role === 1 ? FlexAlign.Start : FlexAlign.End) // 左对齐或右对齐
+              .justifyContent(item.role === 1 ? FlexAlign.Start : FlexAlign.End)
               .padding({ left: 12, right: 12, top: 10, bottom: 10 })
             }
           })
@@ -145,7 +142,6 @@ export struct ChatPage {
         .layoutWeight(1)
         .backgroundColor('#F5F5F5')
 
-        // 底部输入框 (仅当非系统通知时显示)
         if (this.sessionId !== 'system_notify') {
           Row() {
             TextInput({ text: this.inputText, placeholder: '回复用户...' })

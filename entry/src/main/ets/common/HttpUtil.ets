@@ -6,9 +6,9 @@ import { rcp } from '@kit.RemoteCommunicationKit';
 import { Result } from '../model/ResultModel';
 import { promptAction } from '@kit.ArkUI';
 
-// TODO: 如果真机调试，请修改为电脑的局域网IP；模拟器通常可以使用 127.0.0.1 或宿主IP
+// TODO: 如果真机调试，请修改为电脑的局域网IP
 const BASE_URL = 'http://192.168.0.210:8080/admin/app/'; 
-const TIMEOUT = 5000;
+const TIMEOUT = 10000;
 
 /**
  * 拦截器，负责给请求头加上 token
@@ -16,12 +16,19 @@ const TIMEOUT = 5000;
 class TokenInterceptor implements rcp.Interceptor {
   async intercept(context: rcp.RequestContext, next: rcp.RequestHandler): Promise<rcp.Response> {
     const token = AppStorage.get<string>('token');
+    
+    // 🐾 调试日志：检查拦截器是否拿到了 Token
     if (token) {
+      console.info('喵！[TokenInterceptor] 发现 Token，准备注入 Header');
       if (!context.request.headers) {
         context.request.headers = {};
       }
-      context.request.headers['token'] = token;
+      // 强制转型以确保能设置属性
+      (context.request.headers as Record<string, string | string[]> )['token'] = token;
+    } else {
+      console.warn('喵！[TokenInterceptor] 未发现 Token，本次请求可能报错 401');
     }
+    
     return next.handle(context);
   }
 }
@@ -29,9 +36,8 @@ class TokenInterceptor implements rcp.Interceptor {
 class LogInterceptor implements rcp.Interceptor {
   async intercept(context: rcp.RequestContext, next: rcp.RequestHandler): Promise<rcp.Response> {
     console.info(`喵！[Request] URL: ${context.request.url.href}`);
-    console.info(`喵！[Request] Method: ${context.request.method}`);
     const response = await next.handle(context);
-    console.info(`喵！[Response] Code: ${response.statusCode}`);
+    console.info(`喵！[Response] Code: ${response.statusCode} URL: ${context.request.url.href}`);
     return response;
   }
 }
@@ -120,12 +126,11 @@ export class HttpUtil {
   }
 
   /**
-   * 📤 上传文件
+   * 📤 上传文件 (已经补回来啦喵！)
    * @param url 相对路径，例如 '/common/upload'
    * @param fileUri 文件本地路径
    */
   static async upload<T>(url: string, fileUri: string): Promise<T> {
-    // ⚠️ 使用专用 Session，避免全局 Session 的 'Content-Type': 'application/json' 干扰
     const uploadSession = rcp.createSession({
       baseAddress: BASE_URL,
       interceptors: [new TokenInterceptor(), new LogInterceptor()]
@@ -137,8 +142,6 @@ export class HttpUtil {
       }
       
       const req = new rcp.Request(BASE_URL + url, 'POST');
-
-      // 构造多部分表单
       const form = new rcp.MultipartForm({
         'file': {
           contentOrPath: fileUri
@@ -157,9 +160,13 @@ export class HttpUtil {
 
   private static handleResponse<T>(resp: rcp.Response): Promise<T> {
     if (resp.statusCode !== 200) {
+      try {
+        const errBody = resp.toString();
+        console.error(`喵！[HttpUtil] 非200响应详情: ${errBody}`);
+      } catch (e) {}
       return Promise.reject(`HTTP Error: ${resp.statusCode}`);
     }
-    // 自动推断 JSON
+    
     const result = resp.toJSON() as Result<T>;
     if (result.code === 1) {
       return Promise.resolve(result.data);
@@ -179,16 +186,13 @@ export class HttpUtil {
     }
 
     console.error(`[HttpUtil] Error: ${msg}`);
-    // 使用 promptAction 显示 Toast
     try {
        if (HttpUtil.uiContext) {
          HttpUtil.uiContext.getPromptAction().showToast({ message: msg });
        } else {
          promptAction.showToast({ message: msg });
        }
-    } catch (e) {
-      console.error('Failed to show toast:', e);
-    }
+    } catch (e) {}
     
     return Promise.reject(msg);
   }

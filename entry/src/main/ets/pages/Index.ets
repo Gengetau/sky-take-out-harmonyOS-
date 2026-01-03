@@ -11,6 +11,9 @@ import { SetmealEditPage } from './manage/SetmealEditPage';
 import { SetmealManagePage } from './manage/SetmealManagePage';
 import { ChatPage } from './message/ChatPage';
 import { ShopInfoPage } from './ShopInfoPage';
+import { RegisterPage } from './RegisterPage';
+import { ChangePasswordPage } from './ChangePasswordPage';
+import { EditFieldPage } from './EditFieldPage';
 
 @Entry
 @Component
@@ -40,6 +43,12 @@ struct Index {
       ChatPage()
     } else if (name === 'ShopInfoPage') {
       ShopInfoPage()
+    } else if (name === 'RegisterPage') {
+      RegisterPage()
+    } else if (name === 'ChangePasswordPage') {
+      ChangePasswordPage()
+    } else if (name === 'EditFieldPage') {
+      EditFieldPage()
     }
   }
 

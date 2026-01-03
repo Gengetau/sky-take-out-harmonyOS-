@@ -69,7 +69,7 @@ export struct MineContent {
 
         ListItem() {
           this.MenuItem('账号设置', '修改密码等', () => {
-            promptAction.showToast({ message: '功能建设中喵~' });
+            this.pageStack.pushPath({ name: 'ChangePasswordPage' });
           })
         }
         
